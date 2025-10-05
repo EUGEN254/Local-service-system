@@ -114,3 +114,19 @@ export const handleCallback = async (req, res) => {
     }
   };
   
+
+  export const getPaymentStatus = async (req, res) => {
+    try {
+      const { transactionId } = req.params;
+      const tx = await mpesaTransactionsSchema.findOne({ transactionId });
+  
+      if (!tx) {
+        return res.status(404).json({ success: false, message: "Transaction not found" });
+      }
+  
+      res.json({ success: true, status: tx.status });
+    } catch (error) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  };
+  

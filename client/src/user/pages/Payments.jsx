@@ -40,13 +40,11 @@ const Payments = () => {
 
   const renderStars = (rating) =>
     Array.from({ length: 5 }, (_, i) => (
-      <FaStar
-        key={i}
-        className={i < 4 ? "text-yellow-400" : "text-gray-300"}
-      />
+      <FaStar key={i} className={i < 4 ? "text-yellow-400" : "text-gray-300"} />
     ));
 
   // ✅ handle M-Pesa payment
+  // ✅ handle M-Pesa payment with polling before redirect
   const handleMpesaPayment = async () => {
     try {
       setLoading(true);
@@ -65,33 +63,69 @@ const Payments = () => {
         { withCredentials: true }
       );
 
-      if (mpesaRes.data.success) {
-        // Step 2: Save booking in database
-        await axios.post(
-          `${backendUrl}/api/customer/create`,
-          {
-            serviceId: displayService._id || displayService.id,
-            serviceName: displayService.serviceName,
-            categoryName: displayService.category,
-            amount: displayService.amount,
-            address: formData.address,
-            city: formData.city,
-            delivery_date: formData.delivery_date,
-            paymentMethod: "Mpesa",
-            is_paid: true, // assuming STK success
-          },
-          { withCredentials: true }
-        );
-
-        setMessage("Payment successful! Redirecting to My Bookings...");
-        setTimeout(() => navigate("/mybookings"), 2500);
-      } else {
+      if (!mpesaRes.data.success) {
         setError("Failed to process M-Pesa payment.");
+        setLoading(false);
+        return;
       }
+
+      const checkoutId = mpesaRes.data.data.CheckoutRequestID;
+
+      // Step 2: Poll backend every 3s to check payment status
+      setMessage("Waiting for payment confirmation...");
+      let attempts = 0;
+      const maxAttempts = 30; // ≈ 90 seconds timeout
+
+      const checkStatus = async () => {
+        try {
+          const statusRes = await axios.get(
+            `${backendUrl}/api/mpesa/status/${checkoutId}`
+          );
+
+          const status = statusRes.data.status;
+          if (status === "completed") {
+            // ✅ Payment confirmed
+            setMessage("Payment successful! Saving your booking...");
+
+            await axios.post(
+              `${backendUrl}/api/customer/create`,
+              {
+                serviceId: displayService._id || displayService.id,
+                serviceName: displayService.serviceName,
+                categoryName: displayService.category,
+                amount: displayService.amount,
+                address: formData.address,
+                city: formData.city,
+                delivery_date: formData.delivery_date,
+                paymentMethod: "Mpesa",
+                is_paid: true,
+              },
+              { withCredentials: true }
+            );
+
+            setMessage("Booking successful! Redirecting to My Bookings...");
+            setTimeout(() => navigate("/my-bookings"), 2500);
+          } else if (status === "failed") {
+            setError("Payment failed. Please try again.");
+            setLoading(false);
+          } else if (attempts < maxAttempts) {
+            attempts++;
+            setTimeout(checkStatus, 3000);
+          } else {
+            setError("Payment timeout. Please try again.");
+            setLoading(false);
+          }
+        } catch (err) {
+          console.error("Polling error:", err);
+          setError("Error checking payment status.");
+          setLoading(false);
+        }
+      };
+
+      checkStatus();
     } catch (err) {
       console.error("M-Pesa Error:", err);
       setError("M-Pesa payment failed. Try again.");
-    } finally {
       setLoading(false);
     }
   };
@@ -134,7 +168,9 @@ const Payments = () => {
 
     if (paymentMethod === "Mpesa") {
       if (Number(mpesaAmount) !== Number(displayService.amount)) {
-        setError(`Amount must be exactly ${currSymbol}${displayService.amount}`);
+        setError(
+          `Amount must be exactly ${currSymbol}${displayService.amount}`
+        );
         return;
       }
       handleMpesaPayment();
@@ -290,9 +326,7 @@ const Payments = () => {
 
           {/* Feedback */}
           {message && (
-            <p className="mt-4 text-green-600 text-sm font-medium">
-              {message}
-            </p>
+            <p className="mt-4 text-green-600 text-sm font-medium">{message}</p>
           )}
           {error && !loading && (
             <p className="mt-4 text-red-600 text-sm font-medium">{error}</p>
