@@ -15,7 +15,7 @@ const port = process.env.PORT || 4000;
 connectDb();
 connectCloudinary();
 
-const allowedOrigins = ['http://localhost:5173']
+const allowedOrigins = ['http://localhost:5173','https://local-service-system.vercel.app']
 
 app.use(express.json())
 app.use(cookieParser())
