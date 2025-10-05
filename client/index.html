@@ -5,51 +5,9 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Local Services System</title>
-    <style>
-      /* Preloader styles */
-      #preloader {
-        position: fixed;
-        inset: 0;
-        background: #1e1e1e;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        flex-direction: column;
-        z-index: 9999;
-        opacity: 1;
-        transition: opacity 0.5s ease;
-      }
-
-      .spinner {
-        width: 50px;
-        height: 50px;
-        border: 6px solid #f3f3f3;
-        border-top: 6px solid #facc15;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin-bottom: 1rem;
-      }
-
-      @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-
-      .preloader-text {
-        color: #facc15;
-        font-size: 1.5rem;
-        font-weight: bold;
-        font-family: sans-serif;
-      }
-    </style>
   </head>
   <body>
-    <div id="preloader">
-      <div class="spinner"></div>
-      <div class="preloader-text">LSS</div>
-    </div>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
-    <!-- NO SCRIPT HERE - React handles everything -->
   </body>
 </html>

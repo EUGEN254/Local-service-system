@@ -33,50 +33,61 @@ export const registerUser = async (req, res) => {
   // Generate JWT token with role
   const token = generateToken(user);
 
-  // Set HttpOnly cookie
   res.cookie("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
   });
+  
 
-  // Respond with user info
   res.status(201).json({
     success: true,
     message: "User registered successfully",
-    user: { name: user.name, email: user.email, role: user.role },
+    user: { 
+      id: user._id, // Add this
+      name: user.name, 
+      email: user.email, 
+      role: user.role 
+    },
   });
 };
 
 export const loginUser = async (req, res) => {
-  const { email, password, role } = req.body; 
+  const { email, password, role } = req.body;
 
   if (!email || !password || !role) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Email, password and role required" });
+    return res.status(400).json({
+      success: false,
+      message: "Email, password, and role are required.",
+    });
   }
 
-  const user = await User.findOne({ email });
+  // 🔹 Find user by email and role
+  const user = await User.findOne({ email, role }).select("name email password role").lean();
+
   if (!user) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid credentials" });
+    // Check if email exists with another role
+    const otherRoleUser = await User.findOne({ email });
+    if (otherRoleUser) {
+      return res.status(400).json({
+        success: false,
+        message: `This email is registered as a ${otherRoleUser.role}. Please log in as a ${otherRoleUser.role}.`,
+      });
+    }
+
+    return res.status(400).json({
+      success: false,
+      message: "No account found with this email.",
+    });
   }
 
-  // Check if the selected role matches the user's role
-  if (user.role !== role) {
-    return res
-      .status(400)
-      .json({ success: false, message: `No ${role} account found with this email` });
-  }
-
+  // 🔹 Check password
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Invalid credentials" });
+    return res.status(400).json({
+      success: false,
+      message: "Incorrect password. Please try again.",
+    });
   }
 
   const token = generateToken(user);
@@ -84,14 +95,15 @@ export const loginUser = async (req, res) => {
   res.cookie("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
   });
 
-  res.json({
+  const { password: _, ...userWithoutPassword } = user;
+
+  return res.status(200).json({
     success: true,
-    message: "Login successful",
-    user: { name: user.name, email: user.email, role: user.role },
+    message: "Login successful!",
+    user: userWithoutPassword,
   });
 };
 

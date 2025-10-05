@@ -21,6 +21,8 @@ import SPSettings from "./service-provider/pages/Settings";
 import SPAnalytics from "./service-provider/pages/Analytics";
 import SPEarnings from "./service-provider/pages/Earnings";
 import SPHomeLayout from "./service-provider/pages/Home";
+import SPNotification from "./service-provider/pages/Notification";
+
 
 // User
 import UserDashboard from "./user/pages/Dashboard";
@@ -35,50 +37,30 @@ import UserHomeLayout from "./user/pages/Home";
 
 const App = () => {
   const { user, authLoading } = useContext(ShareContext);
-  const location = useLocation();
   const role = user?.role;
 
-
-  // Control preloader visibility based on auth loading state
-  React.useEffect(() => {
-    const preloader = document.getElementById("preloader");
-    
-    if (authLoading) {
-      if (preloader) {
-        preloader.style.display = "flex";
-        preloader.style.opacity = "1";
-        preloader.style.visibility = "visible";
-      }
-    } else {
-      if (preloader) {
-        preloader.style.opacity = "0";
-        setTimeout(() => {
-          preloader.style.display = "none";
-          preloader.style.visibility = "hidden";
-        }, 500);
-      }
-    }
-  }, [authLoading]);
-
-  // Show nothing while loading OR while user state is undefined (during transitions)
-  if (authLoading || user === undefined) {
-    return null;
+  if (authLoading) {
+    // Return a full-screen loader while checking auth (prevents flicker)
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-900 text-white">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-yellow-400"></div>
+        <span className="ml-3 text-lg">Loading...</span>
+      </div>
+    );
   }
-
 
   return (
     <>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={true}
+       <ToastContainer
+        position="top-center"
+        autoClose={1500}
+        newestOnTop
         closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
         pauseOnHover
+        draggable
+        className="!z-[10000]"
       />
+
 
       <Routes>
         {/* Public routes - exact paths */}
@@ -116,6 +98,7 @@ const App = () => {
           <Route path="settings" element={<SPSettings />} />
           <Route path="analytics" element={<SPAnalytics />} />
           <Route path="earnings" element={<SPEarnings />} />
+          <Route path="notifications" element={<SPNotification />} />
         </Route>
 
         {/* Protected routes - Customer */}

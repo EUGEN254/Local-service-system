@@ -1,24 +1,30 @@
-// src/main.jsx
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
-import App from './App.jsx'
-import AppContextProvider from './sharedcontext/SharedContext.jsx'
-import './index.css'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+import App from "./App.jsx";
+import AppContextProvider from "./sharedcontext/SharedContext.jsx";
+import "./index.css";
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
 
 root.render(
-  <React.StrictMode>
-    <BrowserRouter>
-      <AppContextProvider>
-        <App />
-      </AppContextProvider>
-    </BrowserRouter>
-  </React.StrictMode>
-);
+  <BrowserRouter>
+    <AppContextProvider>
+      <App />
+    </AppContextProvider>
 
-// Notify that React is ready
-if (window.reactAppReady) {
-  window.reactAppReady();
-}
+    {/* ✅ ToastContainer is outside App — always mounted */}
+    <ToastContainer
+      position="top-center"
+      autoClose={1500}
+      newestOnTop
+      closeOnClick
+      pauseOnHover
+      draggable
+      toastClassName="!z-[10000]"
+    />
+  </BrowserRouter>
+);

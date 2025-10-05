@@ -1,4 +1,3 @@
-// src/sharedcontext/SharedContext.jsx
 import { createContext, useEffect, useState } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -10,10 +9,10 @@ const AppContextProvider = (props) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
 
-  const [user, setUser] = useState(undefined); // Start as undefined for initial load
   const [authLoading, setAuthLoading] = useState(true);
+  const [user, setUser] = useState(null);
 
-  // Fetch current logged-in user
+  // 🔹 Fetch current user
   const fetchCurrentUser = async () => {
     try {
       setAuthLoading(true);
@@ -21,78 +20,46 @@ const AppContextProvider = (props) => {
         withCredentials: true,
       });
 
-      if (data.success) {
+      if (data.success && data.user) {
         setUser(data.user);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        localStorage.setItem("role", data.user.role);
       } else {
-        setUser(null); // Set to null when definitely not logged in
+        setUser(null);
+        localStorage.removeItem("user");
+        localStorage.removeItem("role");
       }
     } catch (err) {
-      console.error(err);
-      setUser(null); // Set to null when definitely not logged in
+      console.log("User not logged in:", err.message);
+      setUser(null);
+      localStorage.removeItem("user");
+      localStorage.removeItem("role");
     } finally {
-      setAuthLoading(false);
+      setTimeout(() => setAuthLoading(false), 150);
     }
   };
 
-  // Logout function - IMPROVED VERSION
+  // 🔹 Logout user
   const logoutUser = async () => {
     try {
-      setUser(undefined);
-      setAuthLoading(true); // Show loader during logout
-      
-      const { data } = await axios.post(
-        `${backendUrl}/api/user/logout`,
-        {},
-        { withCredentials: true }
-      );
+      setAuthLoading(true);
+      setUser(null);
+      localStorage.removeItem("user");
+      localStorage.removeItem("role");
 
-      if (data.success) {
-        toast.success(data.message);
-        
-        // Navigate first, then set final state
-        navigate("/", { replace: true });
-        
-        // Small delay to ensure navigation completes before final state
-        setTimeout(() => {
-          setUser(null); // Final state - definitely logged out
-          setAuthLoading(false);
-        }, 100);
-      } else {
-        toast.error(data.message);
-        // If logout failed, restore user state
-        await fetchCurrentUser();
-      }
+      navigate("/", { replace: true });
+      setTimeout(() => toast.success("Logged out successfully"), 100);
+
+      await axios.post(`${backendUrl}/api/user/logout`, {}, {
+        withCredentials: true,
+      });
     } catch (err) {
-      console.error("❌ DEBUG - Logout error:", err);
-      toast.error(err.response?.data?.message || "Logout failed");
-      // If logout failed, restore user state
-      await fetchCurrentUser();
+      console.log("Logout error:", err);
+    } finally {
+      setTimeout(() => setAuthLoading(false), 150);
     }
   };
 
-  // Enhanced login helper function
-  const loginUser = async (userData) => {
-    setUser(userData);
-    localStorage.setItem("role", userData.role);
-  };
-
-  // Clear user data (for edge cases)
-  const clearUser = () => {
-    setUser(null);
-    localStorage.removeItem("role");
-  };
-
-  // Check if user is authenticated
-  const isAuthenticated = () => {
-    return user !== null && user !== undefined;
-  };
-
-  // Get user role safely
-  const getUserRole = () => {
-    return user?.role || null;
-  };
-
-  // Load current user on mount
   useEffect(() => {
     fetchCurrentUser();
   }, []);
@@ -100,13 +67,11 @@ const AppContextProvider = (props) => {
   const value = {
     backendUrl,
     user,
-    authLoading,
+    setUser,
     fetchCurrentUser,
     logoutUser,
-    loginUser,
-    clearUser,
-    isAuthenticated,
-    getUserRole,
+    authLoading,
+    setAuthLoading,
   };
 
   return (

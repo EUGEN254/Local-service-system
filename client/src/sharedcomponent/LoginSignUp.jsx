@@ -45,74 +45,57 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
     setShowRoleConfirm(false);
     setPendingRole("");
   };
+ 
+// In LoginSignUp.jsx - FIX
+const onsubmitHandler = async (e) => {
+  e.preventDefault();
 
-  const onsubmitHandler = async (e) => {
-    e.preventDefault();
-    
-    // For sign up, ensure terms are accepted
-    if (currState === "Sign Up" && !termsAccepted) {
-      toast.error("Please accept the terms and conditions");
-      return;
+  if (currState === "Sign Up" && !termsAccepted) {
+    toast.error("Please accept the terms and conditions");
+    return;
+  }
+
+  setIsLoading(true);
+
+  try {
+    let data;
+    if (currState === "Sign Up") {
+      const response = await axios.post(
+        `${backendUrl}/api/user/register`,
+        { name, email, password, termsAccepted, role },
+        { withCredentials: true }
+      );
+      data = response.data;
+    } else {
+      const response = await axios.post(
+        `${backendUrl}/api/user/login`,
+        { email, password, role },
+        { withCredentials: true, validateStatus: () => true }
+      );
+      data = response.data;
     }
-    
-    setIsLoading(true);
 
-    try {
-      if (currState === "Sign Up") {
-        // Signup request
-        const { data } = await axios.post(
-          `${backendUrl}/api/user/register`,
-          { name, email, password, termsAccepted, role },
-          { withCredentials: true }
-        );
+    if (data.success) {
+      await fetchCurrentUser();
 
-        if (data.success) {
-          toast.success(data.message);
-          
-          // Navigate immediately without waiting for context update
-          const targetRoute = data.user.role === "customer" ? "/user" : "/sp";
-          navigate(targetRoute, { replace: true });
-          
-          // Then update context in background
-          await fetchCurrentUser();
-          localStorage.setItem("role", data.user.role);
-          if (setShowAuthModal) setShowAuthModal(false);
-        } else {
-          toast.error(data.message);
-        }
-      } else {
-        // Login request
-        const { data } = await axios.post(
-          `${backendUrl}/api/user/login`,
-          { email, password, role },
-          { withCredentials: true, validateStatus: () => true }
-        );
+      // Navigation and local actions
+      const targetRoute = data.user.role === "customer" ? "/user" : "/sp";
+      navigate(targetRoute, { replace: true });
+      toast.success(data.message);
 
-        if (data.success) {
-          toast.success(data.message);
-          
-          // Navigate immediately without waiting for context update
-          const targetRoute = data.user.role === "customer" ? "/user" : "/sp";
-          navigate(targetRoute, { replace: true });
-          
-          // Then update context in background
-          await fetchCurrentUser();
-          localStorage.setItem("role", data.user.role);
-          if (setShowAuthModal) setShowAuthModal(false);
-        } else {
-          // Handles wrong password, role mismatch, or missing fields
-          toast.error(data.message);
-        }
-      }
-    } catch (err) {
-      // Only network errors or unexpected backend issues reach here
-      const errorMsg =
-        err.response?.data?.message || "Action failed. Please try again.";
-      toast.error(errorMsg);
-    } finally {
-      setIsLoading(false);
+      if (setShowAuthModal) setShowAuthModal(false);
+    } else {
+      toast.error(data.message);
     }
-  };
+  } catch (err) {
+    const errorMsg =
+      err.response?.data?.message || "Action failed. Please try again.";
+    toast.error(errorMsg);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   // Get role confirmation message
   const getRoleConfirmationMessage = () => {
