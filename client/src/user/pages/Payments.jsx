@@ -68,7 +68,7 @@ const Payments = () => {
       if (mpesaRes.data.success) {
         // Step 2: Save booking in database
         await axios.post(
-          `${backendUrl}/api/bookings/create`,
+          `${backendUrl}/api/customer/create`,
           {
             serviceId: displayService._id || displayService.id,
             serviceName: displayService.serviceName,
