@@ -144,7 +144,7 @@ const Payments = () => {
         `${backendUrl}/api/customer/create`,
         {
           serviceId: displayService._id || displayService.id,
-          serviceProvider: displayService.serviceProviderName,
+          servicerProvider: displayService.serviceProviderName,
           serviceName: displayService.serviceName,
           categoryName: displayService.category,
           amount: displayService.amount,

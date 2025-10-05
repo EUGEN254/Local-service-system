@@ -170,7 +170,8 @@ const MyBookings = () => {
 
                 {/* Payment */}
                 <div>
-                  <PaymentStatusBadge paid={booking.is_paid} />
+                  <PaymentStatusBadge 
+                  paid={booking.is_paid} />
                   {!booking.is_paid && (
                     <Link
                       to="/user/payment"
