@@ -16,7 +16,7 @@ import {
 const navLinks = {
   menu: [
     { name: "Dashboard", icon: <FaTachometerAlt />, path: "dashboard" },
-    { name: "Bookings/Transactions", icon: <FaDollarSign />, path: "payment" }, // Fixed path to match your route
+    { name: "Bookings", icon: <FaDollarSign />, path: "payment" }, // Fixed path to match your route
     { name: "Categories", icon: <FaServicestack />, path: "service-categories" },
     { name: "Service Providers", icon: <FaInbox />, path: "service-providers" },
     { name: "User management", icon: <FaInbox />, path: "user-management" },

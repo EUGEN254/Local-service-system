@@ -6,12 +6,9 @@
     <title>Local Services System</title>
 
     <!-- ✅ Performance Optimizations -->
-    <!-- Preconnect to required origins -->
+    <!-- Preconnect to Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-
-    <!-- Preload critical scripts -->
-    <link rel="preload" href="/src/main.jsx" as="script" />
 
     <!-- Google Font -->
     <link
@@ -22,30 +19,28 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
+    <!-- Preload main React module correctly -->
+    <link rel="modulepreload" href="/src/main.jsx" />
+
     <style>
       /* ==============================
          GLOBAL STYLES & PRELOADER
       =============================== */
-      html,
-      body {
+      html, body {
         margin: 0;
         padding: 0;
         height: 100%;
-        background-color: #111827; /* bg-gray-900 */
-        color: white;
+        background-color: #ffff; 
         font-family: "Outfit", sans-serif;
         font-size: 14px;
         line-height: 1.5;
       }
 
       /* Disable scroll while loading */
-      html.loading,
-      body.loading {
+      html.loading, body.loading {
         overflow: hidden;
       }
-
-      html:not(.loading),
-      body:not(.loading) {
+      html:not(.loading), body:not(.loading) {
         overflow: auto;
       }
 
@@ -56,11 +51,11 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: #111827; /* bg-gray-900 */
+        background-color: #111827;
         color: white;
         z-index: 99999;
         opacity: 1;
-        transition: opacity 0.1s ease;
+        transition: opacity 0.2s ease;
         font-family: "Outfit", sans-serif;
       }
 
@@ -69,12 +64,12 @@
         pointer-events: none;
       }
 
-      /* Spinner same as auth loader */
+      /* Spinner */
       .spinner {
         width: 40px;
         height: 40px;
-        border-radius: 9999px; /* rounded-full */
-        border-bottom: 2px solid #facc15; /* yellow-400 */
+        border-radius: 9999px; 
+        border-bottom: 2px solid #facc15; 
         border-left: 2px solid transparent;
         border-right: 2px solid transparent;
         border-top: 2px solid transparent;
@@ -83,14 +78,12 @@
       }
 
       @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
+        to { transform: rotate(360deg); }
       }
 
       .loading-text {
-        margin-left: 0.75rem; /* ml-3 */
-        font-size: 1.125rem; /* text-lg */
+        margin-left: 0.75rem;
+        font-size: 1.125rem;
       }
     </style>
   </head>
@@ -117,7 +110,7 @@
 
         if (loader) {
           loader.classList.add("fade-out");
-          setTimeout(() => loader.remove(), 100);
+          setTimeout(() => loader.remove(), 200); // Slightly smoother fade
         }
       });
     </script>

@@ -1,14 +1,124 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="loading">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Admin Dashboard</title>
-   
+    <title>Admin</title>
+
+    
+    <!-- Preconnect to required origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Preload critical scripts -->
+    <link rel="preload" href="/src/main.jsx" as="script" />
+
+    <!-- Google Font -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <style>
+      /* ==============================
+         GLOBAL STYLES & PRELOADER
+      =============================== */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background-color: #f9fafb;
+        font-family: "Outfit", sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      /* Disable scroll while loading */
+      html.loading,
+      body.loading {
+        overflow: hidden;
+      }
+
+      html:not(.loading),
+      body:not(.loading) {
+        overflow: auto;
+      }
+
+      /* Full-screen loader */
+      #startup-loader {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #111827; /* bg-gray-900 */
+        color: white;
+        z-index: 99999;
+        opacity: 1;
+        transition: opacity 0.1s ease;
+        font-family: "Outfit", sans-serif;
+      }
+
+      #startup-loader.fade-out {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* Spinner same as auth loader */
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border-radius: 9999px; /* rounded-full */
+        border-bottom: 2px solid #facc15; /* yellow-400 */
+        border-left: 2px solid transparent;
+        border-right: 2px solid transparent;
+        border-top: 2px solid transparent;
+        animation: spin 1s linear infinite;
+        will-change: transform;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .loading-text {
+        margin-left: 0.75rem; /* ml-3 */
+        font-size: 1.125rem; /* text-lg */
+      }
+    </style>
   </head>
-  <body>
+
+  <body class="loading bg-gray-900 text-white">
+    <!-- Startup Loader -->
+    <div id="startup-loader">
+      <div class="spinner"></div>
+      <span class="loading-text">LSS Loading...</span>
+    </div>
+
+    <!-- React Root -->
     <div id="root"></div>
+
+    <!-- Main React Entry -->
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Preloader Fade Logic -->
+    <script>
+      window.addEventListener("load", () => {
+        const loader = document.getElementById("startup-loader");
+        document.documentElement.classList.remove("loading");
+        document.body.classList.remove("loading");
+
+        if (loader) {
+          loader.classList.add("fade-out");
+          setTimeout(() => loader.remove(), 100);
+        }
+      });
+    </script>
   </body>
 </html>

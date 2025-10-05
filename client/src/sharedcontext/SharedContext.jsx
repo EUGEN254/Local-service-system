@@ -8,10 +8,14 @@ export const ShareContext = createContext();
 const AppContextProvider = (props) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
+  const [services, setServices] = useState([]); // service provider services
+  const [loadingServices, setLoadingServices] = useState(false);
+  const currSymbol = 'KES'
+  
 
   const cachedUser = localStorage.getItem("user");
   const [user, setUser] = useState(cachedUser ? JSON.parse(cachedUser) : null);
-  const [authLoading, setAuthLoading] = useState(false); // 👈 always start false
+  const [authLoading, setAuthLoading] = useState(false);
 
   // 🔹 Fetch current user (optional loader)
   const fetchCurrentUser = async (showLoader = true) => {
@@ -41,6 +45,31 @@ const AppContextProvider = (props) => {
     }
   };
 
+  const fetchServices = async () => {
+    setLoadingServices(true);
+    try {
+      const { data } = await axios.get(
+        `${backendUrl}/api/serviceprovider/my-services`,
+        {
+          withCredentials: true,
+        }
+      );
+      if (data.success) setServices(data.services);
+    } catch (err) {
+      toast.error("Failed to load services");
+    } finally {
+      setLoadingServices(false);
+    }
+  };
+
+  const addService = (service) => {
+    setServices((prev) => [service, ...prev]);
+  };
+
+  const removeService = (id) => {
+    setServices((prev) => prev.filter((s) => s._id !== id));
+  };
+
   // 🔹 Logout user
   const logoutUser = async () => {
     try {
@@ -52,9 +81,13 @@ const AppContextProvider = (props) => {
       navigate("/", { replace: true });
       setTimeout(() => toast.success("Logged out successfully"), 100);
 
-      await axios.post(`${backendUrl}/api/user/logout`, {}, {
-        withCredentials: true,
-      });
+      await axios.post(
+        `${backendUrl}/api/user/logout`,
+        {},
+        {
+          withCredentials: true,
+        }
+      );
     } catch (err) {
       console.log("Logout error:", err);
     } finally {
@@ -80,6 +113,12 @@ const AppContextProvider = (props) => {
     logoutUser,
     authLoading,
     setAuthLoading,
+    services,
+    loadingServices,
+    fetchServices,
+    addService,
+    removeService,
+    currSymbol
   };
 
   return (

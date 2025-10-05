@@ -5,6 +5,8 @@ import cookieParser from 'cookie-parser'
 import  connectDb from './configs/mongodb.js'
 import connectCloudinary from './configs/cloudinary.js'
 import userRouter from './routes/userRoutes.js'
+import serviceRouter from './routes/serviceProviderRoute.js'
+import customerRouter from './routes/customeRoutes.js'
 
 
 
@@ -27,6 +29,8 @@ app.listen(port, ()=> console.log(`Server started on PORT: ${port}`));
 // routes now
 
 app.use('/api/user', userRouter);
+app.use('/api/serviceprovider', serviceRouter);
+app.use('/api/customer', customerRouter);
 
 
 

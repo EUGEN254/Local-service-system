@@ -1,7 +1,8 @@
-import React, { useContext } from "react";
+import React from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
+
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
@@ -13,6 +14,13 @@ import NotFound from "../../client/src/sharedcomponent/NotFound";
 import ServiceCategories from "./pages/ServiceCategories";
 import ServiceProvider from "./pages/ServiceProvider";
 import UserManagement from "./pages/UserManagement";
+import AdminLogin from "./pages/AdminLogin";
+
+// ✅ Protected Route Wrapper
+const ProtectedRoute = ({ children }) => {
+  const isLoggedIn = localStorage.getItem("isAdminLoggedIn") === "true";
+  return isLoggedIn ? children : <Navigate to="/" replace />;
+};
 
 const App = () => {
   return (
@@ -23,14 +31,24 @@ const App = () => {
         hideProgressBar={false}
         newestOnTop={true}
         closeOnClick
-        rtl={false}
         pauseOnFocusLoss
         draggable
         pauseOnHover
       />
+
       <Routes>
-        {/* Home route with nested routes for sidebar/navbar layout */}
-        <Route path="/" element={<Home />}>
+        {/* Default route shows Admin Login */}
+        <Route path="/" element={<AdminLogin />} />
+
+        {/* Protected admin routes */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }
+        >
           <Route index element={<Dashboard />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="profile" element={<Profile />} />
@@ -43,7 +61,7 @@ const App = () => {
           <Route path="user-management" element={<UserManagement />} />
         </Route>
 
-        {/* Global catch-all */}
+        {/* Fallback */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </>

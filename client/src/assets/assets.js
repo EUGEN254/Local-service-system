@@ -1,5 +1,13 @@
 // src/service-provider/assets.js
 import { FaClipboardList, FaCogs, FaDollarSign } from "react-icons/fa";
+import uploadArea from './uploadArea.svg'
+
+
+
+export const assets = {
+  uploadArea,
+}
+
 
 export const summaryCards = [
   {

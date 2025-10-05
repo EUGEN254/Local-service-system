@@ -1,12 +1,14 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { FiSmartphone } from "react-icons/fi";
 import { FaStar } from "react-icons/fa";
+import { ShareContext } from "../../sharedcontext/SharedContext";
 
 const Payments = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { service } = location.state || {};
+  const{currSymbol} = useContext(ShareContext)
 
   // If no service selected, use placeholder
   const displayService = service || {
@@ -155,25 +157,24 @@ const Payments = () => {
         </form>
 
         {/* Right: Booking Summary */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
+        <div className="bg-white p-6 rounded-lg shadow-md md:h-[50vh]">
           <h3 className="text-xl font-semibold mb-4">Booking Summary</h3>
 
           <div className="flex items-center mb-4">
             <img
-              src="https://via.placeholder.com/80"
+              src={displayService.image}
               alt={displayService.name}
               className="w-20 h-20 rounded-full mr-4 object-cover"
             />
             <div>
-              <h4 className="text-lg font-semibold">{displayService.name}</h4>
-              <p className="text-sm text-gray-500">{displayService.category}</p>
+              <h4 className="text-lg font-semibold">Service name:  {displayService.serviceName}</h4>
+              <p className="text-sm text-gray-500">Service Category:  {displayService.category}</p>
               <div className="flex mt-1">{renderStars(4)}</div>
             </div>
           </div>
 
           <p className="text-sm text-gray-500 mb-1">Payment Status: Not Paid</p>
-          <p className="text-sm text-gray-500 mb-1">Date Added: {displayService.dateAdded}</p>
-          <p className="text-lg font-bold mt-4">Price: ${displayService.amount}</p>
+          <p className="text-lg font-bold mt-4">Price: {currSymbol} {displayService.amount}</p>
         </div>
       </div>
     </div>

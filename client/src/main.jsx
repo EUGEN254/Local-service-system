@@ -15,16 +15,5 @@ root.render(
     <AppContextProvider>
       <App />
     </AppContextProvider>
-
-    {/* ✅ ToastContainer is outside App — always mounted */}
-    <ToastContainer
-      position="top-center"
-      autoClose={1500}
-      newestOnTop
-      closeOnClick
-      pauseOnHover
-      draggable
-      toastClassName="!z-[10000]"
-    />
   </BrowserRouter>
 );
