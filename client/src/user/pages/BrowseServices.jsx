@@ -7,7 +7,7 @@ import { ShareContext } from "../../sharedcontext/SharedContext";
 
 const BrowseServices = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const {backendUrl,currSymbol} = useContext(ShareContext)
+  const {backendUrl,currSymbol} = useContext(ShareContext);
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
