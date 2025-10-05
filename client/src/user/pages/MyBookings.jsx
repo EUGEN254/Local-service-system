@@ -173,7 +173,7 @@ const MyBookings = () => {
                   <PaymentStatusBadge paid={booking.is_paid} />
                   {!booking.is_paid && (
                     <Link
-                      to="/payment"
+                      to="/user/payment"
                       state={{ service: booking }}
                       className="flex items-center w-fit gap-2 mt-2 px-2 py-1 bg-gray-800 text-white rounded-md text-xs hover:bg-gray-700"
                     >

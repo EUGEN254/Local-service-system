@@ -6,7 +6,8 @@ import Booking from "../models/bookingSchema.js";
 // 1️⃣ INITIATE STK PUSH
 export const handleMpesa = async (req, res) => {
   try {
-    const { amount, phone, serviceId, serviceName } = req.body;
+    const { amount, phone, serviceId, serviceName, bookingId } = req.body;
+
     console.log("🟢 handleMpesa called with:", { amount, phone, serviceId, serviceName });
 
     // Generate M-Pesa OAuth token
@@ -53,6 +54,7 @@ export const handleMpesa = async (req, res) => {
     // Save transaction to DB
     const transaction = new mpesaTransactionsSchema({
       customer: req.customerName,
+      bookingId,
       serviceId,
       serviceName,
       amount,
@@ -116,7 +118,7 @@ export const handleCallback = async (req, res) => {
       // 🔹 Automatically mark booking as paid
       console.log("🔄 Updating booking as paid...");
       const bookingUpdate = await Booking.updateOne(
-        { _id: transaction.serviceId },
+        { _id: transaction.bookingId },
         {
           $set: {
             is_paid: true,

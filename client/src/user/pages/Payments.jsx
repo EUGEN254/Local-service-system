@@ -43,67 +43,67 @@ const Payments = () => {
       <FaStar key={i} className={i < 4 ? "text-yellow-400" : "text-gray-300"} />
     ));
 
-  // ✅ handle M-Pesa payment
   // ✅ handle M-Pesa payment with polling before redirect
   const handleMpesaPayment = async () => {
     try {
       setLoading(true);
-      setError("");
-      setMessage("Initiating M-Pesa STK push...");
-
-      // Step 1: Call backend M-Pesa route
-      const mpesaRes = await axios.post(
-        `${backendUrl}/api/mpesa/stkpush`,
+      setMessage("Creating booking...");
+  
+      // 1️⃣ Create booking first (unpaid)
+      const bookingRes = await axios.post(
+        `${backendUrl}/api/customer/create`,
         {
-          amount: mpesaAmount,
-          phone: formData.phone,
           serviceId: displayService._id || displayService.id,
           serviceName: displayService.serviceName,
+          categoryName: displayService.category,
+          amount: displayService.amount,
+          address: formData.address,
+          city: formData.city,
+          delivery_date: formData.delivery_date,
+          paymentMethod: "Mpesa",
+          is_paid: false,
         },
         { withCredentials: true }
       );
-
+  
+      const bookingId = bookingRes.data.booking._id;
+  
+      // 2️⃣ Initiate M-Pesa payment
+      setMessage("Initiating M-Pesa STK push...");
+      const mpesaRes = await axios.post(
+        `${backendUrl}/api/mpesa/stkpush`,
+        {
+          amount: displayService.amount,
+          phone: formData.phone,
+          serviceId: displayService._id || displayService.id,
+          serviceName: displayService.serviceName,
+          bookingId, 
+        },
+        { withCredentials: true }
+      );
+  
       if (!mpesaRes.data.success) {
         setError("Failed to process M-Pesa payment.");
         setLoading(false);
         return;
       }
-
+  
       const checkoutId = mpesaRes.data.data.CheckoutRequestID;
-
-      // Step 2: Poll backend every 3s to check payment status
+  
+      // 3️⃣ Poll for payment confirmation
       setMessage("Waiting for payment confirmation...");
       let attempts = 0;
-      const maxAttempts = 30; // ≈ 90 seconds timeout
-
+      const maxAttempts = 30;
+  
       const checkStatus = async () => {
         try {
           const statusRes = await axios.get(
             `${backendUrl}/api/mpesa/status/${checkoutId}`
           );
-
           const status = statusRes.data.status;
+  
           if (status === "completed") {
-            // ✅ Payment confirmed
-            setMessage("Payment successful! Saving your booking...");
-
-            await axios.post(
-              `${backendUrl}/api/customer/create`,
-              {
-                serviceId: displayService._id || displayService.id,
-                serviceName: displayService.serviceName,
-                categoryName: displayService.category,
-                amount: displayService.amount,
-                address: formData.address,
-                city: formData.city,
-                delivery_date: formData.delivery_date,
-                paymentMethod: "Mpesa",
-                is_paid: true,
-              },
-              { withCredentials: true }
-            );
-
-            setMessage("Booking successful! Redirecting to My Bookings...");
+            setMessage("Payment successful!");
             setTimeout(() => navigate("/user/my-bookings"), 2500);
           } else if (status === "failed") {
             setError("Payment failed. Please try again.");
@@ -121,7 +121,7 @@ const Payments = () => {
           setLoading(false);
         }
       };
-
+  
       checkStatus();
     } catch (err) {
       console.error("M-Pesa Error:", err);
@@ -129,6 +129,7 @@ const Payments = () => {
       setLoading(false);
     }
   };
+  
 
   // ✅ handle cash payment
   const handleCashPayment = async () => {

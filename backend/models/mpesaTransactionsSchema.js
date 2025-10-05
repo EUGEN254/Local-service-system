@@ -5,6 +5,7 @@ const mpesaTransactionSchema = new mongoose.Schema(
   {
     customer: { type: String, required: true },
     serviceId: { type: mongoose.Schema.Types.ObjectId, ref: "Service" },
+    bookingId: { type: mongoose.Schema.Types.ObjectId, ref: "Booking" },
     serviceName: { type: String },
     amount: { type: Number, required: true },
     phone: { type: String, required: true },
