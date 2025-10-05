@@ -1,17 +1,17 @@
 import React, { useContext, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { FiSmartphone } from "react-icons/fi";
-import { FaMoneyBillWave, FaStar } from "react-icons/fa";
+import { FaStar } from "react-icons/fa";
+import axios from "axios";
 import { ShareContext } from "../../sharedcontext/SharedContext";
 
 const Payments = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { service } = location.state || {};
   const { backendUrl, currSymbol } = useContext(ShareContext);
 
-  // if service not found
+  // service passed from MyBookings or Service page
+  const { service } = location.state || {};
   const displayService = service || {
     serviceName: "No Service Selected",
     category: "N/A",
@@ -26,92 +26,128 @@ const Payments = () => {
     city: "",
     delivery_date: "",
   });
+
   const [paymentMethod, setPaymentMethod] = useState("Mpesa");
   const [mpesaAmount, setMpesaAmount] = useState(displayService.amount);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const serviceAmount = Number(displayService.amount) || 0;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
   };
 
-  // validate mpesa amount
-  const handleAmountChange = (e) => {
-    const value = Number(e.target.value);
-    setMpesaAmount(value);
+  const renderStars = (rating) =>
+    Array.from({ length: 5 }, (_, i) => (
+      <FaStar
+        key={i}
+        className={i < 4 ? "text-yellow-400" : "text-gray-300"}
+      />
+    ));
 
-    if (value !== serviceAmount) {
-      setError(`Amount must be exactly ${currSymbol}${serviceAmount}`);
-    } else {
-      setError("");
-    }
-  };
-
-  // handle mpesa stk push
+  // ✅ handle M-Pesa payment
   const handleMpesaPayment = async () => {
     try {
       setLoading(true);
-      setMessage("");
+      setError("");
+      setMessage("Initiating M-Pesa STK push...");
 
-      const { phone } = formData;
-      if (!phone) return setError("Please enter a valid phone number.");
-
-      if (Number(mpesaAmount) !== serviceAmount)
-        return setError(`Amount must be exactly ${currSymbol}${serviceAmount}`);
-
-      const res = await axios.post(
+      // Step 1: Call backend M-Pesa route
+      const mpesaRes = await axios.post(
         `${backendUrl}/api/mpesa/stkpush`,
         {
           amount: mpesaAmount,
-          phone,
-          serviceId: displayService.id,
+          phone: formData.phone,
+          serviceId: displayService._id || displayService.id,
           serviceName: displayService.serviceName,
         },
         { withCredentials: true }
       );
 
-      setMessage("✅ M-Pesa STK Push sent! Check your phone to complete payment.");
-      console.log("Mpesa Response:", res.data);
+      if (mpesaRes.data.success) {
+        // Step 2: Save booking in database
+        await axios.post(
+          `${backendUrl}/api/bookings/create`,
+          {
+            serviceId: displayService._id || displayService.id,
+            serviceName: displayService.serviceName,
+            categoryName: displayService.category,
+            amount: displayService.amount,
+            address: formData.address,
+            city: formData.city,
+            delivery_date: formData.delivery_date,
+            paymentMethod: "Mpesa",
+            is_paid: true, // assuming STK success
+          },
+          { withCredentials: true }
+        );
+
+        setMessage("Payment successful! Redirecting to My Bookings...");
+        setTimeout(() => navigate("/mybookings"), 2500);
+      } else {
+        setError("Failed to process M-Pesa payment.");
+      }
     } catch (err) {
-      console.error("Mpesa Error:", err.response?.data || err.message);
+      console.error("M-Pesa Error:", err);
+      setError("M-Pesa payment failed. Try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  // handle cash payment
-  const handleCashPayment = () => {
-    setMessage(
-      "💵 You have chosen to pay in cash. Please pay the service provider upon arrival."
-    );
+  // ✅ handle cash payment
+  const handleCashPayment = async () => {
+    try {
+      setLoading(true);
+      setError("");
+      setMessage("Saving cash payment booking...");
+
+      await axios.post(
+        `${backendUrl}/api/bookings/create`,
+        {
+          serviceId: displayService._id || displayService.id,
+          serviceName: displayService.serviceName,
+          categoryName: displayService.category,
+          amount: displayService.amount,
+          address: formData.address,
+          city: formData.city,
+          delivery_date: formData.delivery_date,
+          paymentMethod: "Cash",
+          is_paid: false,
+        },
+        { withCredentials: true }
+      );
+
+      setMessage("Booking created successfully! Redirecting...");
+      setTimeout(() => navigate("/mybookings"), 2000);
+    } catch (err) {
+      console.error("Cash Booking Error:", err);
+      setError("Failed to create booking. Try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // handle submit
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (paymentMethod === "Mpesa") {
+      if (Number(mpesaAmount) !== Number(displayService.amount)) {
+        setError(`Amount must be exactly ${currSymbol}${displayService.amount}`);
+        return;
+      }
       handleMpesaPayment();
-    } else if (paymentMethod === "Cash") {
+    } else {
       handleCashPayment();
     }
   };
 
-  const renderStars = (rating) =>
-    Array.from({ length: 5 }, (_, i) => (
-      <FaStar
-        key={i}
-        className={i < rating ? "text-yellow-400" : "text-gray-300"}
-      />
-    ));
-
   return (
-    <div className="p-6 max-w-6xl mx-auto h-[calc(100vh-4rem)] overflow-y-auto scrollbar-none">
-      <h2 className="text-3xl font-bold mb-8 text-center">Complete Your Booking</h2>
+    <div className="p-6 max-w-6xl mx-auto min-h-screen overflow-y-auto bg-gray-50">
+      <h2 className="text-3xl font-bold mb-8 text-center">
+        Complete Your Booking
+      </h2>
 
       <div className="grid md:grid-cols-2 gap-8">
         {/* Left: Payment Form */}
@@ -122,7 +158,6 @@ const Payments = () => {
           <h3 className="text-xl font-semibold mb-6">Payment Details</h3>
 
           <div className="space-y-4">
-            {/* Customer Details */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Full Name
@@ -146,8 +181,8 @@ const Payments = () => {
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md"
                 placeholder="2547XXXXXXXX"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md"
                 required
               />
             </div>
@@ -197,15 +232,13 @@ const Payments = () => {
             {/* Payment Method */}
             <div className="mt-6">
               <h4 className="text-lg font-medium mb-2">Payment Method</h4>
-
-              {/* M-Pesa Option */}
               <div className="flex items-center mb-3">
                 <input
                   type="radio"
                   name="paymentMethod"
                   checked={paymentMethod === "Mpesa"}
                   onChange={() => setPaymentMethod("Mpesa")}
-                  className="h-4 w-4 text-green-600 border-gray-300"
+                  className="h-4 w-4 text-blue-600 border-gray-300"
                 />
                 <label className="ml-3 flex items-center">
                   <FiSmartphone className="w-5 h-5 text-green-500 mr-2" />
@@ -213,82 +246,71 @@ const Payments = () => {
                 </label>
               </div>
 
-              {/* Cash Option */}
               <div className="flex items-center mb-3">
                 <input
                   type="radio"
                   name="paymentMethod"
                   checked={paymentMethod === "Cash"}
                   onChange={() => setPaymentMethod("Cash")}
-                  className="h-4 w-4 text-green-600 border-gray-300"
+                  className="h-4 w-4 text-blue-600 border-gray-300"
                 />
-                <label className="ml-3 flex items-center">
-                  <FaMoneyBillWave className="w-5 h-5 text-gray-700 mr-2" />
-                  Pay in Cash
-                </label>
+                <label className="ml-3">Pay in Cash</label>
               </div>
 
-              {/* M-Pesa Amount */}
               {paymentMethod === "Mpesa" && (
-                <div className="ml-7 pl-2 border-l-2 border-green-200 mt-3">
+                <div className="ml-7 pl-1 border-l-2 border-green-200">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Amount (KES)
                   </label>
                   <input
                     type="number"
                     value={mpesaAmount}
-                    onChange={handleAmountChange}
-                    className={`w-full px-4 py-2 border rounded-md ${
-                      error ? "border-red-500" : "border-gray-300"
-                    }`}
+                    onChange={(e) => setMpesaAmount(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
                   />
-                  {error && (
-                    <p className="text-red-500 text-xs mt-1">{error}</p>
-                  )}
                   <p className="mt-1 text-xs text-gray-500">
-                    You’ll receive an M-Pesa prompt on your phone.
+                    You will receive an M-Pesa prompt on your phone.
                   </p>
                 </div>
               )}
             </div>
 
-            {/* Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-green-600 text-white py-3 rounded-md hover:bg-green-700 mt-4 disabled:bg-green-300"
+              className="w-full bg-blue-600 text-white py-3 rounded-md hover:bg-blue-700 mt-4 disabled:bg-blue-400"
             >
               {loading
                 ? "Processing..."
                 : paymentMethod === "Mpesa"
                 ? "Pay with M-Pesa"
-                : "Confirm Cash Payment"}
+                : "Confirm Cash Booking"}
             </button>
-
-            {message && (
-              <p className="text-green-600 text-sm mt-3 font-medium">{message}</p>
-            )}
-            {error && !loading && (
-              <p className="text-red-600 text-sm mt-3 font-medium">{error}</p>
-            )}
           </div>
+
+          {/* Feedback */}
+          {message && (
+            <p className="mt-4 text-green-600 text-sm font-medium">
+              {message}
+            </p>
+          )}
+          {error && !loading && (
+            <p className="mt-4 text-red-600 text-sm font-medium">{error}</p>
+          )}
         </form>
 
         {/* Right: Booking Summary */}
         <div className="bg-white p-6 rounded-lg shadow-md md:h-[50vh]">
           <h3 className="text-xl font-semibold mb-4">Booking Summary</h3>
-
           <div className="flex items-center mb-4">
-            {displayService.image && (
-              <img
-                src={displayService.image}
-                alt={displayService.serviceName}
-                className="w-20 h-20 rounded-full mr-4 object-cover"
-              />
-            )}
+            <img
+              src={displayService.image}
+              alt={displayService.serviceName}
+              className="w-20 h-20 rounded-full mr-4 object-cover"
+            />
             <div>
               <h4 className="text-lg font-semibold">
-                Service: {displayService.serviceName}
+                {displayService.serviceName}
               </h4>
               <p className="text-sm text-gray-500">
                 Category: {displayService.category}
@@ -296,22 +318,11 @@ const Payments = () => {
               <div className="flex mt-1">{renderStars(4)}</div>
             </div>
           </div>
-
-          <p className="text-sm text-gray-500 mb-1">Payment Status: Not Paid</p>
+          <p className="text-sm text-gray-500 mb-1">Payment Status: Pending</p>
           <p className="text-lg font-bold mt-4">
-            Price: {currSymbol} {serviceAmount}
+            Price: {currSymbol} {displayService.amount}
           </p>
         </div>
-      </div>
-
-      {/* Back button */}
-      <div className="mt-6 text-center">
-        <button
-          onClick={() => navigate(-1)}
-          className="text-gray-600 hover:text-gray-900 underline"
-        >
-          ← Back to My Bookings
-        </button>
       </div>
     </div>
   );

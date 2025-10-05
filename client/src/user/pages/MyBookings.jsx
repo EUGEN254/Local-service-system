@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
+import axios from "axios";
 import { Link } from "react-router-dom";
 import {
   FaCalendarAlt,
@@ -6,26 +7,51 @@ import {
   FaCheckCircle,
   FaTimesCircle,
   FaSearch,
+  FaMapMarkerAlt,
 } from "react-icons/fa";
-import { dummyBookings } from "../../assets/assets";
+import { ShareContext } from "../../sharedcontext/SharedContext";
 
 const MyBookings = () => {
+  const { backendUrl, currSymbol } = useContext(ShareContext);
+  const [bookings, setBookings] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateTo, setDateTo] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const filteredBookings = dummyBookings.filter((booking) => {
+  // Fetch bookings from backend
+  useEffect(() => {
+    const fetchBookings = async () => {
+      try {
+        setLoading(true);
+        const { data } = await axios.get(`${backendUrl}/api/customer/mybookings`, {
+          withCredentials: true,
+        });
+        if (data.success) {
+          setBookings(data.bookings);
+        }
+      } catch (err) {
+        console.error("Error fetching bookings:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchBookings();
+  }, [backendUrl]);
+
+  // 🔍 Filters
+  const filteredBookings = bookings.filter((booking) => {
     const search = searchTerm.toLowerCase();
     const matchesSearch =
-      booking.service_name.toLowerCase().includes(search) ||
-      booking.category_name.toLowerCase().includes(search);
+      booking.serviceName?.toLowerCase().includes(search) ||
+      booking.categoryName?.toLowerCase().includes(search);
 
     const matchesStatus =
       statusFilter === "all" ||
       (statusFilter === "paid" && booking.is_paid) ||
       (statusFilter === "pending" && !booking.is_paid);
 
-    const serviceDate = new Date(booking.service_date);
+    const serviceDate = new Date(booking.delivery_date);
     const matchesDate = !dateTo || serviceDate <= new Date(dateTo);
 
     return matchesSearch && matchesStatus && matchesDate;
@@ -40,7 +66,7 @@ const MyBookings = () => {
 
   const PaymentStatusBadge = ({ paid }) => (
     <span
-      className={`inline-flex w-fit mt-2 -ml-2 items-center px-3 py-1 rounded-full text-xs font-medium ${
+      className={`inline-flex w-fit mt-2 items-center px-3 py-1 rounded-full text-xs font-medium ${
         paid ? "bg-green-50 text-green-700" : "bg-red-50 text-red-700"
       }`}
     >
@@ -59,13 +85,13 @@ const MyBookings = () => {
   );
 
   return (
-    <div className="py-12 px-4 max-w-6xl mx-auto bg-gray-50 h-[calc(100vh-4rem)] overflow-y-auto scrollbar-none">
+    <div className="py-12 px-4 max-w-6xl mx-auto bg-gray-50 min-h-screen overflow-y-auto scrollbar-none">
       <h1 className="text-3xl font-bold mb-4">My Bookings</h1>
       <p className="mb-8 text-gray-600">
-        Track and manage your booked services.
+        Track your services, payment status, and booking details.
       </p>
 
-      {/* Search + Filters */}
+      {/* 🔎 Search + Filters */}
       <div className="grid md:grid-cols-3 gap-4 mb-8">
         <div className="relative">
           <FaSearch className="absolute left-3 top-3 text-gray-400" />
@@ -96,71 +122,70 @@ const MyBookings = () => {
         />
       </div>
 
-      {/* Bookings List */}
-      {filteredBookings.length > 0 ? (
+      {/* 📄 Bookings List */}
+      {loading ? (
+        <div className="text-center py-20 text-gray-500">Loading bookings...</div>
+      ) : filteredBookings.length > 0 ? (
         <div className="overflow-x-auto">
-          <div className="min-w-[700px] bg-white rounded-lg shadow-md overflow-hidden">
-            {/* Table Headers */}
-            <div className="grid grid-cols-4 gap-4 bg-gray-100 p-4 font-semibold text-gray-700">
-              <div>Image</div>
+          <div className="min-w-[750px] bg-white rounded-lg shadow-md overflow-hidden">
+            {/* Table Header */}
+            <div className="grid grid-cols-5 gap-4 bg-gray-100 p-4 font-semibold text-gray-700">
               <div>Service</div>
-              <div>Booking</div>
+              <div>Provider</div>
+              <div>Address</div>
+              <div>Status</div>
               <div>Date</div>
             </div>
 
-            {/* Table Rows */}
+            {/* Rows */}
             {filteredBookings.map((booking) => (
               <div
-                key={booking.id}
-                className="grid grid-cols-4 gap-4 p-4 border-b border-gray-200 items-center"
+                key={booking._id}
+                className="grid grid-cols-5 gap-4 p-4 border-b border-gray-200 items-center"
               >
-                {/* Column 1: Image */}
-                <div className="flex items-center">
-                  <img
-                    src={
-                      booking.service_image || "https://via.placeholder.com/80"
-                    }
-                    alt={booking.service_name}
-                    className="w-24 h-24 rounded-lg object-cover"
-                  />
-                </div>
-
-                {/* Column 2: Service Name */}
-                <div className="flex flex-col justify-center">
-                  <h3 className="text-lg font-semibold">
-                    {booking.service_name}
+                {/* Service Info */}
+                <div>
+                  <h3 className="text-base font-semibold">
+                    {booking.serviceName}
                   </h3>
-                  <p className="text-sm text-gray-500">
-                    {booking.category_name}
+                  <p className="text-sm text-gray-500">{booking.categoryName}</p>
+                  <p className="text-sm font-semibold mt-1">
+                    {currSymbol} {booking.amount}
                   </p>
-                  {booking.provider_name && (
-                    <p className="text-sm text-gray-500">
-                      Provider: {booking.provider_name}
-                    </p>
-                  )}
                 </div>
 
-                {/* Column 3: Booking Total */}
-                <div className="flex flex-col justify-center">
-                  <p className="text-sm text-gray-500">KES {booking.amount}</p>
+                {/* Provider */}
+                <div>
+                  <p className="text-sm text-gray-700">{booking.providerName}</p>
+                </div>
+
+                {/* Address */}
+                <div>
+                  <p className="text-sm text-gray-600 flex items-center">
+                    <FaMapMarkerAlt className="mr-1 text-gray-500" />{" "}
+                    {booking.city || "N/A"}
+                  </p>
+                  <p className="text-xs text-gray-400">{booking.address}</p>
+                </div>
+
+                {/* Payment */}
+                <div>
                   <PaymentStatusBadge paid={booking.is_paid} />
-                </div>
-
-                {/* Column 4: Service Date + Action */}
-                <div className="flex flex-col justify-center">
-                  <p className="text-sm text-gray-500">
-                    <FaCalendarAlt className="inline mr-1" />
-                    {formatDate(booking.service_date)}
-                  </p>
                   {!booking.is_paid && (
                     <Link
                       to="/payment"
                       state={{ service: booking }}
-                      className="flex items-center w-fit gap-2 mt-2 px-2 py-1 bg-gray-800 text-white rounded-md text-sm hover:bg-gray-700"
+                      className="flex items-center w-fit gap-2 mt-2 px-2 py-1 bg-gray-800 text-white rounded-md text-xs hover:bg-gray-700"
                     >
-                      <FaMoneyBillWave /> Complete Payment
+                      <FaMoneyBillWave /> Pay Now
                     </Link>
                   )}
+                </div>
+
+                {/* Date */}
+                <div className="text-sm text-gray-600">
+                  <FaCalendarAlt className="inline mr-1 text-gray-400" />
+                  {formatDate(booking.delivery_date)}
                 </div>
               </div>
             ))}
@@ -172,7 +197,7 @@ const MyBookings = () => {
             No bookings found.{" "}
             {searchTerm
               ? "Try a different search term."
-              : "You haven't booked any services yet."}
+              : "You haven’t booked any services yet."}
           </p>
         </div>
       )}
