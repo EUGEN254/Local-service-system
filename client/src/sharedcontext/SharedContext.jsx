@@ -9,13 +9,15 @@ const AppContextProvider = (props) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
 
-  const [authLoading, setAuthLoading] = useState(true);
-  const [user, setUser] = useState(null);
+  const cachedUser = localStorage.getItem("user");
+  const [user, setUser] = useState(cachedUser ? JSON.parse(cachedUser) : null);
+  const [authLoading, setAuthLoading] = useState(false); // 👈 always start false
 
-  // 🔹 Fetch current user
-  const fetchCurrentUser = async () => {
+  // 🔹 Fetch current user (optional loader)
+  const fetchCurrentUser = async (showLoader = true) => {
     try {
-      setAuthLoading(true);
+      if (showLoader) setAuthLoading(true);
+
       const { data } = await axios.get(`${backendUrl}/api/user/me`, {
         withCredentials: true,
       });
@@ -35,7 +37,7 @@ const AppContextProvider = (props) => {
       localStorage.removeItem("user");
       localStorage.removeItem("role");
     } finally {
-      setTimeout(() => setAuthLoading(false), 150);
+      if (showLoader) setTimeout(() => setAuthLoading(false), 150);
     }
   };
 
@@ -60,8 +62,14 @@ const AppContextProvider = (props) => {
     }
   };
 
+  // 🔹 Verify session in background
   useEffect(() => {
-    fetchCurrentUser();
+    if (cachedUser) {
+      fetchCurrentUser(false); // no visible loader
+    } else {
+      // If no cached user, still verify session silently, but no spinner
+      fetchCurrentUser(false);
+    }
   }, []);
 
   const value = {

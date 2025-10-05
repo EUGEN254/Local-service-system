@@ -1,13 +1,109 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="loading">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Local Services System</title>
+
+    <!-- Import fonts & Tailwind -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Your main CSS file (the one with all imports and animations) -->
+    <link rel="stylesheet" href="/src/index.css" />
+
+    <style>
+      /* Prevent scrolling while loader is active */
+      html.loading,
+      body.loading {
+        overflow: hidden;
+      }
+
+      html:not(.loading),
+      body:not(.loading) {
+        overflow: auto;
+      }
+
+      /* Preloader styling */
+      #startup-loader {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #111827; /* Tailwind bg-gray-900 */
+        color: white;
+        font-family: "Outfit", sans-serif;
+        z-index: 99999;
+        opacity: 1;
+        transition: opacity 0.5s ease;
+        user-select: none;
+        cursor: default;
+      }
+
+      #startup-loader.fade-out {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      /* Spinner (matches your auth loader) */
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border-radius: 9999px; /* rounded-full */
+        border-bottom: 2px solid #facc15; /* Tailwind yellow-400 */
+        border-left: 2px solid transparent;
+        border-right: 2px solid transparent;
+        border-top: 2px solid transparent;
+        animation: spin 1s linear infinite;
+        will-change: transform;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      .loading-text {
+        margin-left: 0.75rem; /* ml-3 */
+        font-size: 1.125rem; /* text-lg */
+        animation: fadeIn 1s ease-in-out;
+      }
+    </style>
   </head>
-  <body>
+
+  <body class="loading bg-gray-900 text-white">
+    <!-- Startup Loader -->
+    <div id="startup-loader">
+      <div class="spinner"></div>
+      <span class="loading-text">LSS Loading...</span>
+    </div>
+
+    <!-- React Root -->
     <div id="root"></div>
+
     <script type="module" src="/src/main.jsx"></script>
+
+    <script>
+      // Remove loading class and fade out preloader when React mounts
+      window.addEventListener("load", () => {
+        document.documentElement.classList.remove("loading");
+        document.body.classList.remove("loading");
+
+        const loader = document.getElementById("startup-loader");
+        if (loader) {
+          loader.classList.add("fade-out");
+          setTimeout(() => loader.remove(), 500);
+        }
+      });
+    </script>
   </body>
 </html>

@@ -1,180 +1,75 @@
 @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap");
 @import "tailwindcss";
 
-/* Set base font size */
+/* Base font settings */
 body {
   font-family: 'Outfit', sans-serif;
-  font-size: 14px; /* reduced from default */
+  font-size: 14px;
   line-height: 1.5;
 }
 
-/* Custom Animations */
+/* === Your custom animations === */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
-
 @keyframes slideUp {
-  from { 
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to { 
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes slideRight {
-  from { 
-    opacity: 0;
-    transform: translateX(-20px);
-  }
-  to { 
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
 }
-
 @keyframes scaleIn {
-  from { 
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to { 
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
 }
-
 @keyframes countUp {
-  from { 
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to { 
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
-
-/* Counting number animation */
 @keyframes countNumber {
-  from {
-    --num: 0;
-  }
-  to {
-    --num: var(--target);
-  }
+  from { --num: 0; }
+  to { --num: var(--target); }
 }
 
-/* Animation Classes */
-.animate-fade-in {
-  animation: fadeIn 0.8s ease-in-out;
-}
-
-.animate-slide-up {
-  animation: slideUp 0.8s ease-out;
-}
-
-.animate-slide-right {
-  animation: slideRight 0.6s ease-out;
-}
-
-.animate-scale-in {
-  animation: scaleIn 0.3s ease-out;
-}
-
-.animate-pulse-slow {
-  animation: pulse 3s infinite;
-}
-
-.animate-count-up {
-  animation: countUp 1s ease-out forwards;
-  opacity: 0;
-}
+/* Animation utilities */
+.animate-fade-in { animation: fadeIn 0.8s ease-in-out; }
+.animate-slide-up { animation: slideUp 0.8s ease-out; }
+.animate-slide-right { animation: slideRight 0.6s ease-out; }
+.animate-scale-in { animation: scaleIn 0.3s ease-out; }
+.animate-pulse-slow { animation: pulse 3s infinite; }
+.animate-count-up { animation: countUp 1s ease-out forwards; opacity: 0; }
 
 /* Counter styles */
-.counter {
-  animation: countNumber 2s ease-out forwards;
-  counter-reset: num var(--num);
-}
+.counter { animation: countNumber 2s ease-out forwards; counter-reset: num var(--num); }
+.counter::before { content: counter(num); }
 
-.counter::before {
-  content: counter(num);
-}
-
-/* Global scrollbar styling */
-::-webkit-scrollbar {
-  width: 4px; /* width of the vertical scrollbar */
-  height: 12px; /* height of the horizontal scrollbar */
-}
-
-::-webkit-scrollbar-track {
-  background: #f0f0f0; /* track color */
-  border-radius: 6px;
-}
-
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 4px; height: 12px; }
+::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 6px; }
 ::-webkit-scrollbar-thumb {
-  background-color: #888; /* scrollbar color */
-  border-radius: 6px;
-  border: 3px solid #f0f0f0; /* adds spacing around thumb */
-}
-
-
-
-
-/* Custom scrollbar */
-.scrollbar-thin::-webkit-scrollbar {
-  width: 2px;
-}
-
-.scrollbar-thin::-webkit-scrollbar-track {
-  background: #f0f0f0;
-  border-radius: 2px;
-}
-
-.scrollbar-thin::-webkit-scrollbar-thumb {
   background-color: #888;
-  border-radius: 4px;
+  border-radius: 6px;
+  border: 3px solid #f0f0f0;
 }
+.scrollbar-thin::-webkit-scrollbar { width: 2px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 2px; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background-color: #888; border-radius: 4px; }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: #555; }
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: #888 #f0f0f0; }
 
-.scrollbar-thin::-webkit-scrollbar-thumb:hover {
-  background-color: #555;
-}
+/* Cursor behavior */
+* { caret-color: transparent; }
+input, textarea, [contenteditable="true"] { caret-color: auto; }
+button, a, div, span, li, .clickable { cursor: default; }
 
-/* Firefox */
-.scrollbar-thin {
-  scrollbar-width: thin;
-  scrollbar-color: #888 #f0f0f0;
-}
-
-
-
-
-/* Remove text cursor from non-interactive elements */
-* {
-  caret-color: transparent;
-}
-
-/* Ensure only actual input elements show text cursor */
-input, textarea, [contenteditable="true"] {
-  caret-color: auto;
-}
-
-/* Remove outline and cursor from clickable elements that shouldn't show text cursor */
-button, a, div, span, li, .clickable {
-  cursor: default;
-}
-
-/* Specifically for your preloader */
+/* Preloader focus/cursor behavior */
 #preloader {
   cursor: default;
   user-select: none;
 }
-
-/* Remove any focus outlines that might cause the blink effect */
 #preloader:focus {
   outline: none;
 }
-
