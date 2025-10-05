@@ -19,28 +19,30 @@
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
-    <!-- Preload main React module correctly -->
-    <link rel="modulepreload" href="/src/main.jsx" />
+   
 
     <style>
       /* ==============================
          GLOBAL STYLES & PRELOADER
       =============================== */
-      html, body {
+      html,
+      body {
         margin: 0;
         padding: 0;
         height: 100%;
-        background-color: #ffff; 
+        background-color: #ffff;
         font-family: "Outfit", sans-serif;
         font-size: 14px;
         line-height: 1.5;
       }
 
       /* Disable scroll while loading */
-      html.loading, body.loading {
+      html.loading,
+      body.loading {
         overflow: hidden;
       }
-      html:not(.loading), body:not(.loading) {
+      html:not(.loading),
+      body:not(.loading) {
         overflow: auto;
       }
 
@@ -68,8 +70,8 @@
       .spinner {
         width: 40px;
         height: 40px;
-        border-radius: 9999px; 
-        border-bottom: 2px solid #facc15; 
+        border-radius: 9999px;
+        border-bottom: 2px solid #facc15;
         border-left: 2px solid transparent;
         border-right: 2px solid transparent;
         border-top: 2px solid transparent;
@@ -78,7 +80,9 @@
       }
 
       @keyframes spin {
-        to { transform: rotate(360deg); }
+        to {
+          transform: rotate(360deg);
+        }
       }
 
       .loading-text {
@@ -98,7 +102,7 @@
     <!-- React Root -->
     <div id="root"></div>
 
-    <!-- Main React Entry -->
+    <!-- ✅ Correct React Entry -->
     <script type="module" src="/src/main.jsx"></script>
 
     <!-- Preloader Fade Logic -->
