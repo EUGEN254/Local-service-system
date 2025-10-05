@@ -6,8 +6,8 @@ body {
   font-family: 'Outfit', sans-serif;
   font-size: 14px;
   line-height: 1.5;
+  color: black; 
 }
-
 /* === Your custom animations === */
 @keyframes fadeIn {
   from { opacity: 0; }

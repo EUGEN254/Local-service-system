@@ -2,21 +2,43 @@
 <html lang="en" class="loading">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Local Services System</title>
 
-    <!-- Import fonts & Tailwind -->
+    <!-- ✅ Performance Optimizations -->
+    <!-- Preconnect to required origins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Preload critical scripts -->
+    <link rel="preload" href="/src/main.jsx" as="script" />
+
+    <!-- Google Font -->
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap"
       rel="stylesheet"
     />
 
-    <!-- Your main CSS file (the one with all imports and animations) -->
-    <link rel="stylesheet" href="/src/index.css" />
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 
     <style>
-      /* Prevent scrolling while loader is active */
+      /* ==============================
+         GLOBAL STYLES & PRELOADER
+      =============================== */
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background-color: #111827; /* bg-gray-900 */
+        color: white;
+        font-family: "Outfit", sans-serif;
+        font-size: 14px;
+        line-height: 1.5;
+      }
+
+      /* Disable scroll while loading */
       html.loading,
       body.loading {
         overflow: hidden;
@@ -27,25 +49,19 @@
         overflow: auto;
       }
 
-      /* Preloader styling */
+      /* Full-screen loader */
       #startup-loader {
         position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 100vw;
-        height: 100vh;
+        inset: 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        background-color: #111827; /* Tailwind bg-gray-900 */
+        background-color: #111827; /* bg-gray-900 */
         color: white;
-        font-family: "Outfit", sans-serif;
         z-index: 99999;
         opacity: 1;
-        transition: opacity 0.5s ease;
-        user-select: none;
-        cursor: default;
+        transition: opacity 0.1s ease;
+        font-family: "Outfit", sans-serif;
       }
 
       #startup-loader.fade-out {
@@ -53,12 +69,12 @@
         pointer-events: none;
       }
 
-      /* Spinner (matches your auth loader) */
+      /* Spinner same as auth loader */
       .spinner {
         width: 40px;
         height: 40px;
         border-radius: 9999px; /* rounded-full */
-        border-bottom: 2px solid #facc15; /* Tailwind yellow-400 */
+        border-bottom: 2px solid #facc15; /* yellow-400 */
         border-left: 2px solid transparent;
         border-right: 2px solid transparent;
         border-top: 2px solid transparent;
@@ -75,7 +91,6 @@
       .loading-text {
         margin-left: 0.75rem; /* ml-3 */
         font-size: 1.125rem; /* text-lg */
-        animation: fadeIn 1s ease-in-out;
       }
     </style>
   </head>
@@ -90,18 +105,19 @@
     <!-- React Root -->
     <div id="root"></div>
 
+    <!-- Main React Entry -->
     <script type="module" src="/src/main.jsx"></script>
 
+    <!-- Preloader Fade Logic -->
     <script>
-      // Remove loading class and fade out preloader when React mounts
       window.addEventListener("load", () => {
+        const loader = document.getElementById("startup-loader");
         document.documentElement.classList.remove("loading");
         document.body.classList.remove("loading");
 
-        const loader = document.getElementById("startup-loader");
         if (loader) {
           loader.classList.add("fade-out");
-          setTimeout(() => loader.remove(), 500);
+          setTimeout(() => loader.remove(), 100);
         }
       });
     </script>
