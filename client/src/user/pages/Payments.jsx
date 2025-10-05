@@ -13,7 +13,7 @@ const Payments = () => {
   // service passed from MyBookings or Service page
   const { service } = location.state || {};
   const displayService = service || {
-    serviceprovider:"N/A",
+    serviceprovider: "N/A",
     serviceName: "No Service Selected",
     category: "N/A",
     amount: 0,
@@ -49,13 +49,13 @@ const Payments = () => {
     try {
       setLoading(true);
       setMessage("Creating booking...");
-  
+
       // 1️⃣ Create booking first (unpaid)
       const bookingRes = await axios.post(
         `${backendUrl}/api/customer/create`,
         {
           serviceId: displayService._id || displayService.id,
-          servicerProvider:displayService.serviceProviderName,
+          servicerProvider: displayService.serviceProviderName,
           serviceName: displayService.serviceName,
           categoryName: displayService.category,
           amount: displayService.amount,
@@ -67,9 +67,9 @@ const Payments = () => {
         },
         { withCredentials: true }
       );
-  
+
       const bookingId = bookingRes.data.booking._id;
-  
+
       // 2️⃣ Initiate M-Pesa payment
       setMessage("Initiating M-Pesa STK push...");
       const mpesaRes = await axios.post(
@@ -79,31 +79,31 @@ const Payments = () => {
           phone: formData.phone,
           serviceId: displayService._id || displayService.id,
           serviceName: displayService.serviceName,
-          bookingId, 
+          bookingId,
         },
         { withCredentials: true }
       );
-  
+
       if (!mpesaRes.data.success) {
         setError("Failed to process M-Pesa payment.");
         setLoading(false);
         return;
       }
-  
+
       const checkoutId = mpesaRes.data.data.CheckoutRequestID;
-  
+
       // 3️⃣ Poll for payment confirmation
       setMessage("Waiting for payment confirmation...");
       let attempts = 0;
       const maxAttempts = 30;
-  
+
       const checkStatus = async () => {
         try {
           const statusRes = await axios.get(
             `${backendUrl}/api/mpesa/status/${checkoutId}`
           );
           const status = statusRes.data.status;
-  
+
           if (status === "completed") {
             setMessage("Payment successful!");
             setTimeout(() => navigate("/user/my-bookings"), 2500);
@@ -123,7 +123,7 @@ const Payments = () => {
           setLoading(false);
         }
       };
-  
+
       checkStatus();
     } catch (err) {
       console.error("M-Pesa Error:", err);
@@ -131,19 +131,20 @@ const Payments = () => {
       setLoading(false);
     }
   };
-  
 
   // ✅ handle cash payment
   const handleCashPayment = async () => {
     try {
       setLoading(true);
       setError("");
-      setMessage("Saving cash payment booking...");
+      setMessage("Creating your cash booking...");
 
-      await axios.post(
-        `${backendUrl}/api/bookings/create`,
+      // 1️⃣ Create the booking directly (no M-Pesa)
+      const bookingRes = await axios.post(
+        `${backendUrl}/api/customer/create`,
         {
           serviceId: displayService._id || displayService.id,
+          serviceProvider: displayService.serviceProviderName,
           serviceName: displayService.serviceName,
           categoryName: displayService.category,
           amount: displayService.amount,
@@ -156,11 +157,18 @@ const Payments = () => {
         { withCredentials: true }
       );
 
-      setMessage("Booking created successfully! Redirecting...");
-      setTimeout(() => navigate("/mybookings"), 2000);
+      if (bookingRes.data.success) {
+        setMessage("Cash booking created successfully!");
+        setTimeout(() => navigate("/user/my-bookings"), 2000);
+      } else {
+        throw new Error("Booking creation failed");
+      }
     } catch (err) {
-      console.error("Cash Booking Error:", err);
-      setError("Failed to create booking. Try again.");
+      console.error("❌ Cash Booking Error:", err);
+      setError(
+        err.response?.data?.message ||
+          "Failed to create cash booking. Please try again."
+      );
     } finally {
       setLoading(false);
     }
