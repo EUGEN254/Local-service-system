@@ -156,7 +156,7 @@ const MyBookings = () => {
 
                 {/* Provider */}
                 <div>
-                  <p className="text-sm text-gray-700">{booking.servicerProvider}</p>
+                  <p className="text-sm text-gray-700">{booking.providerName}</p>
                 </div>
 
                 {/* Address */}
