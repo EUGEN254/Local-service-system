@@ -1,6 +1,7 @@
 import axios from "axios";
 import { generateAuthToken } from "../middleware/mpesaAuth.js";
 import mpesaTransactionsSchema from "../models/mpesaTransactionsSchema.js";
+import Booking from "../models/bookingSchema.js";
 
 export const handleMpesa = async (req, res) => {
   try {
@@ -77,10 +78,10 @@ export const handleMpesa = async (req, res) => {
 
 
 
+// 2️⃣ CALLBACK FROM M-PESA
 export const handleCallback = async (req, res) => {
     try {
       const callbackData = req.body;
-  
       console.log("📥 M-Pesa Callback Received:", JSON.stringify(callbackData, null, 2));
   
       const { Body } = callbackData;
@@ -90,7 +91,7 @@ export const handleCallback = async (req, res) => {
       const transactionId = stkCallback.CheckoutRequestID;
       const resultCode = stkCallback.ResultCode;
   
-      const transaction = await mpesaTransactionsSchema.findOne({ transactionId });
+      const transaction = await MpesaTransaction.findOne({ transactionId });
       if (!transaction) {
         console.warn("Transaction not found for ID:", transactionId);
         return res.status(404).send("Transaction not found");
@@ -101,8 +102,21 @@ export const handleCallback = async (req, res) => {
         transaction.mpesaReceiptNumber = stkCallback.CallbackMetadata?.Item?.find(
           (i) => i.Name === "MpesaReceiptNumber"
         )?.Value;
+        transaction.callbackData = stkCallback;
+  
+        // 🔹 Automatically mark booking as paid
+        await Booking.updateOne(
+          { _id: transaction.serviceId },
+          {
+            $set: {
+              is_paid: true,
+              paymentMethod: "Mpesa",
+            },
+          }
+        );
       } else {
         transaction.status = "failed";
+        transaction.callbackData = stkCallback;
       }
   
       await transaction.save();

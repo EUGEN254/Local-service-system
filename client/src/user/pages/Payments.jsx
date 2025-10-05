@@ -104,7 +104,7 @@ const Payments = () => {
             );
 
             setMessage("Booking successful! Redirecting to My Bookings...");
-            setTimeout(() => navigate("/my-bookings"), 2500);
+            setTimeout(() => navigate("/user/my-bookings"), 2500);
           } else if (status === "failed") {
             setError("Payment failed. Please try again.");
             setLoading(false);
