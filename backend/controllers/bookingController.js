@@ -4,16 +4,15 @@ import Booking from "../models/bookingSchema.js";
 // Create a new booking (after payment or cash selection)
 export const createBooking = async (req, res) => {
   try {
-    const { serviceId, serviceName, categoryName, providerName, amount, address, city, delivery_date, paymentMethod } = req.body;
+    const { serviceId, serviceName, categoryName, servicerProvider, amount, address, city, delivery_date, paymentMethod } = req.body;
     const customerId = req.user._id; // from auth middleware
 
     const booking = await Booking.create({
       customer: customerId,
       serviceId,
       serviceName,
-      servicerProvider,
       categoryName,
-      providerName,
+      providerName:servicerProvider,
       amount,
       address,
       city,
