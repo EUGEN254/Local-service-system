@@ -134,7 +134,7 @@ const MyBookings = () => {
               <div>Provider</div>
               <div>Address</div>
               <div>Status</div>
-              <div>Date</div>
+              <div>Date Customer is Available</div>
             </div>
 
             {/* Rows */}

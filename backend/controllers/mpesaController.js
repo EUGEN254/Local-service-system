@@ -78,11 +78,11 @@ export const handleMpesa = async (req, res) => {
 export const handleCallback = async (req, res) => {
   try {
     const callbackData = req.body;
-    console.log("📥 M-Pesa Callback Received:", JSON.stringify(callbackData, null, 2));
+  
 
     const stkCallback = callbackData?.Body?.stkCallback;
     if (!stkCallback) {
-      console.warn("⚠️ Invalid callback payload (missing stkCallback)");
+     
       return res.status(400).send("Invalid callback payload");
     }
 
@@ -90,16 +90,16 @@ export const handleCallback = async (req, res) => {
     const resultCode = stkCallback.ResultCode;
     const resultDesc = stkCallback.ResultDesc;
 
-    console.log(`🔍 ResultCode: ${resultCode}, Description: ${resultDesc}`);
+   
     const transaction = await mpesaTransactionsSchema.findOne({ transactionId });
     if (!transaction) {
-      console.warn("⚠️ Transaction not found for ID:", transactionId);
+     
       return res.status(404).send("Transaction not found");
     }
 
     // Prevent overwriting successful payments
     if (transaction.status === "completed") {
-      console.log("✅ Transaction already marked completed — skipping update.");
+      
       return res.status(200).send("Already processed");
     }
 
@@ -115,7 +115,7 @@ export const handleCallback = async (req, res) => {
         )?.Value;
         transaction.callbackData = stkCallback;
 
-        console.log("✅ Payment completed successfully from Safaricom");
+       
 
         // Update booking
         if (transaction.bookingId) {
@@ -123,7 +123,6 @@ export const handleCallback = async (req, res) => {
             { _id: transaction.bookingId },
             { $set: { is_paid: true, paymentMethod: "Mpesa" } }
           );
-          console.log("🟢 Booking marked as paid.");
         }
         break;
 
