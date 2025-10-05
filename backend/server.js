@@ -7,6 +7,7 @@ import connectCloudinary from './configs/cloudinary.js'
 import userRouter from './routes/userRoutes.js'
 import serviceRouter from './routes/serviceProviderRoute.js'
 import customerRouter from './routes/customeRoutes.js'
+import mpesaRouter from './routes/mpesaRoutes.js'
 
 
 
@@ -31,6 +32,7 @@ app.listen(port, ()=> console.log(`Server started on PORT: ${port}`));
 app.use('/api/user', userRouter);
 app.use('/api/serviceprovider', serviceRouter);
 app.use('/api/customer', customerRouter);
+app.use('/api/mpesa', mpesaRouter);
 
 
 
