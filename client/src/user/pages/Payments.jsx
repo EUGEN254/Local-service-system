@@ -13,6 +13,7 @@ const Payments = () => {
   // service passed from MyBookings or Service page
   const { service } = location.state || {};
   const displayService = service || {
+    serviceprovider:"N/A",
     serviceName: "No Service Selected",
     category: "N/A",
     amount: 0,
@@ -54,6 +55,7 @@ const Payments = () => {
         `${backendUrl}/api/customer/create`,
         {
           serviceId: displayService._id || displayService.id,
+          servicerProvider:displayService.serviceProviderName,
           serviceName: displayService.serviceName,
           categoryName: displayService.category,
           amount: displayService.amount,

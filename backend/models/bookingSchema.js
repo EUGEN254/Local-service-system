@@ -5,6 +5,7 @@ const bookingSchema = new mongoose.Schema(
     customer: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
     serviceId: { type: mongoose.Schema.Types.ObjectId, ref: "Service", required: true },
     serviceName: String,
+    servicerProvider:String,
     categoryName: String,
     providerName: String,
     amount: Number,

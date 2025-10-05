@@ -11,6 +11,7 @@ export const createBooking = async (req, res) => {
       customer: customerId,
       serviceId,
       serviceName,
+      servicerProvider,
       categoryName,
       providerName,
       amount,
