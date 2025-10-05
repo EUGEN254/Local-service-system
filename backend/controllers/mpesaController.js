@@ -74,3 +74,43 @@ export const handleMpesa = async (req, res) => {
     });
   }
 };
+
+
+
+export const handleCallback = async (req, res) => {
+    try {
+      const callbackData = req.body;
+  
+      console.log("📥 M-Pesa Callback Received:", JSON.stringify(callbackData, null, 2));
+  
+      const { Body } = callbackData;
+      const stkCallback = Body?.stkCallback;
+      if (!stkCallback) return res.status(400).send("Invalid callback payload");
+  
+      const transactionId = stkCallback.CheckoutRequestID;
+      const resultCode = stkCallback.ResultCode;
+  
+      const transaction = await mpesaTransactionsSchema.findOne({ transactionId });
+      if (!transaction) {
+        console.warn("Transaction not found for ID:", transactionId);
+        return res.status(404).send("Transaction not found");
+      }
+  
+      if (resultCode === 0) {
+        transaction.status = "completed";
+        transaction.mpesaReceiptNumber = stkCallback.CallbackMetadata?.Item?.find(
+          (i) => i.Name === "MpesaReceiptNumber"
+        )?.Value;
+      } else {
+        transaction.status = "failed";
+      }
+  
+      await transaction.save();
+  
+      res.status(200).send("Callback processed successfully");
+    } catch (err) {
+      console.error("M-Pesa Callback Error:", err.message);
+      res.status(500).send("Server Error");
+    }
+  };
+  
