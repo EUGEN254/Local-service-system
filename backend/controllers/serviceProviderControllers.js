@@ -60,7 +60,6 @@ export const getProviderBookings = async (req, res) => {
     const bookings = await Booking.find({ providerName })
       .populate("customer", "name email phone") 
       .sort({ createdAt: -1 });
-      console.log(bookings)
     res.status(200).json({ success: true, bookings });
   } catch (error) {
     console.error("Fetch provider bookings error:", error);

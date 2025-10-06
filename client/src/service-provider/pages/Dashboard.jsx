@@ -12,7 +12,7 @@ import axios from "axios";
 import { HiClipboardList, HiCog, HiXCircle } from "react-icons/hi";
 
 const Dashboard = () => {
-  const { backendUrl } = useContext(ShareContext);
+  const { backendUrl, currSymbol } = useContext(ShareContext);
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
@@ -179,6 +179,7 @@ const Dashboard = () => {
           Completed: 0,
           Pending: 0,
           "Waiting for Work": 0,
+          "In Progress": 0, // ✅ Added In Progress
           Cancelled: 0,
           label: displayLabel,
         };
@@ -187,6 +188,7 @@ const Dashboard = () => {
       if (b.status === "Completed") grouped[key].Completed += 1;
       else if (b.status === "Pending") grouped[key].Pending += 1;
       else if (b.status === "Waiting for Work") grouped[key]["Waiting for Work"] += 1;
+      else if (b.status === "In Progress") grouped[key]["In Progress"] += 1; // ✅ Added In Progress counting
       else if (b.status === "Cancelled") grouped[key].Cancelled += 1;
     });
 
@@ -197,6 +199,7 @@ const Dashboard = () => {
         Completed: grouped[key].Completed,
         Pending: grouped[key].Pending,
         "Waiting for Work": grouped[key]["Waiting for Work"],
+        "In Progress": grouped[key]["In Progress"], // ✅ Added In Progress
         Cancelled: grouped[key].Cancelled,
       }));
   };
@@ -218,6 +221,12 @@ const Dashboard = () => {
         title: "Waiting for Work",
         count: bookings.filter((b) => b.status === "Waiting for Work").length,
         bgColor: "bg-blue-500",
+        icon: HiCog,
+      },
+      {
+        title: "In Progress", // ✅ Added In Progress card
+        count: bookings.filter((b) => b.status === "In Progress").length,
+        bgColor: "bg-purple-500",
         icon: HiCog,
       },
       {
@@ -261,6 +270,8 @@ const Dashboard = () => {
         return "text-green-600";
       case "Waiting for Work":
         return "text-blue-600";
+      case "In Progress":
+        return "text-purple-600"; // ✅ Updated color for In Progress
       case "Pending":
         return "text-yellow-600";
       case "Cancelled":
@@ -293,76 +304,104 @@ const Dashboard = () => {
         })}
       </div>
 
-      {/* Bar Chart */}
-      <div className="bg-white p-6 rounded-xl shadow-md space-y-4 max-w-2xl mx-auto">
-        <p className="font-semibold text-gray-700">Overview of Services</p>
-        <div className="flex justify-between items-center mb-2 flex-wrap gap-2 sm:gap-4">
-          <div className="flex items-center gap-2 sm:gap-3">
-            {dotStyle("#10B981")}
-            <span className="text-xs sm:text-sm font-semibold text-gray-700">
-              Completed
-            </span>
-            {dotStyle("#3B82F6")}
-            <span className="text-xs sm:text-sm font-semibold text-gray-700">
-              Waiting for Work
-            </span>
-            {dotStyle("#F59E0B")}
-            <span className="text-xs sm:text-sm font-semibold text-gray-700">
-              Pending
-            </span>
-            {dotStyle("#9CA3AF")}
-            <span className="text-xs sm:text-sm font-semibold text-gray-700">
-              Cancelled
-            </span>
+      {/* Bar Chart - IMPROVED MOBILE RESPONSIVENESS */}
+      <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md space-y-4 w-full">
+        <p className="font-semibold text-gray-700 text-lg sm:text-xl">Overview of Services</p>
+        
+        {/* Improved legend and filter section for mobile */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+          {/* Legend - Improved for mobile */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3">
+              <div className="flex items-center gap-1 sm:gap-2">
+                {dotStyle("#10B981")}
+                <span className="text-xs font-semibold text-gray-700">Completed</span>
+              </div>
+              <div className="flex items-center gap-1 sm:gap-2">
+                {dotStyle("#3B82F6")}
+                <span className="text-xs font-semibold text-gray-700">Waiting</span>
+              </div>
+              <div className="flex items-center gap-1 sm:gap-2">
+                {dotStyle("#8B5CF6")}
+                <span className="text-xs font-semibold text-gray-700">In Progress</span>
+              </div>
+              <div className="flex items-center gap-1 sm:gap-2">
+                {dotStyle("#F59E0B")}
+                <span className="text-xs font-semibold text-gray-700">Pending</span>
+              </div>
+              <div className="flex items-center gap-1 sm:gap-2">
+                {dotStyle("#9CA3AF")}
+                <span className="text-xs font-semibold text-gray-700">Cancelled</span>
+              </div>
+            </div>
           </div>
-          <select
-            value={timeFilter}
-            onChange={(e) => setTimeFilter(e.target.value)}
-            className="border border-gray-300 rounded-md px-2 py-1 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
-          >
-            <option>Monthly</option>
-            <option>Weekly</option>
-            <option>Daily</option>
-          </select>
+          
+          {/* Time filter - Improved for mobile */}
+          <div className="flex justify-end">
+            <select
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 w-full sm:w-auto"
+            >
+              <option>Monthly</option>
+              <option>Weekly</option>
+              <option>Daily</option>
+            </select>
+          </div>
         </div>
 
-        <div className="w-full h-64">
+        {/* Chart container with better mobile handling */}
+        <div className="w-full h-64 sm:h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
-              margin={{ top: 20, bottom: 5 }}
-              barSize={12}
+              margin={{ 
+                top: 20, 
+                bottom: 10,
+                left: 0,
+                right: 10
+              }}
+              barSize={14}
             >
-              <XAxis dataKey="period" />
-              <YAxis />
+              <XAxis 
+                dataKey="period" 
+                angle={-45}
+                textAnchor="end"
+                height={60}
+                fontSize={12}
+                interval={0}
+              />
+              <YAxis fontSize={12} />
               <Tooltip />
-              <Bar dataKey="Completed" fill="#10B981" radius={[5, 5, 0, 0]} />
-              <Bar dataKey="Waiting for Work" fill="#3B82F6" radius={[5, 5, 0, 0]} />
-              <Bar dataKey="Pending" fill="#F59E0B" radius={[5, 5, 0, 0]} />
-              <Bar dataKey="Cancelled" fill="#9CA3AF" radius={[5, 5, 0, 0]} />
+              <Bar dataKey="Completed" fill="#10B981" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="Waiting for Work" fill="#3B82F6" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="In Progress" fill="#8B5CF6" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="Pending" fill="#F59E0B" radius={[2, 2, 0, 0]} />
+              <Bar dataKey="Cancelled" fill="#9CA3AF" radius={[2, 2, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       {/* Upcoming Bookings Table */}
-      <div className="bg-white p-4 -mt-2 rounded-xl shadow-md space-y-3">
+      <div className="bg-white p-4 rounded-xl shadow-md space-y-3">
         <div className="flex justify-between items-center flex-wrap gap-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <select
-              className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 w-full sm:w-auto"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
               <option value="">All Status</option>
               <option value="Pending">Pending</option>
               <option value="Waiting for Work">Waiting for Work</option>
+              <option value="In Progress">In Progress</option>
               <option value="Completed">Completed</option>
               <option value="Cancelled">Cancelled</option>
             </select>
 
             <select
-              className="border border-gray-300 rounded-md px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400"
+              className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 w-full sm:w-auto"
               value={paymentFilter}
               onChange={(e) => setPaymentFilter(e.target.value)}
             >
@@ -393,6 +432,9 @@ const Dashboard = () => {
                     Status
                   </th>
                   <th className="p-3 text-left text-sm font-semibold text-gray-700">
+                    Amount
+                  </th>
+                  <th className="p-3 text-left text-sm font-semibold text-gray-700">
                     Payment
                   </th>
                   <th className="p-3 text-left text-sm font-semibold text-gray-700">
@@ -409,7 +451,7 @@ const Dashboard = () => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="text-center py-10 text-gray-500">
+                    <td colSpan={9} className="text-center py-10 text-gray-500">
                       Loading bookings...
                     </td>
                   </tr>
@@ -433,6 +475,7 @@ const Dashboard = () => {
                             >
                               <option value="Pending">Pending</option>
                               <option value="Waiting for Work">Waiting for Work</option>
+                              <option value="In Progress">In Progress</option>
                               <option value="Completed">Completed</option>
                               <option value="Cancelled">Cancelled</option>
                             </select>
@@ -458,15 +501,16 @@ const Dashboard = () => {
                           </span>
                         )}
                       </td>
-                      <td
-                        className={`p-3 text-sm font-semibold ${
-                          b.is_paid
-                            ? "text-green-600"
-                            : b.paymentMethod === "Cash"
-                            ? "text-yellow-600"
-                            : "text-red-600"
-                        }`}
-                      >
+                      <td className="p-3 text-sm text-gray-900 font-semibold">
+                        {currSymbol} {b.amount}
+                      </td>
+                      <td className={`p-3 text-sm font-semibold ${
+                        b.is_paid
+                          ? "text-green-600"
+                          : b.paymentMethod === "Cash"
+                          ? "text-yellow-600"
+                          : "text-red-600"
+                      }`}>
                         {b.is_paid
                           ? "Paid"
                           : b.paymentMethod === "Cash"
@@ -490,7 +534,7 @@ const Dashboard = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={8} className="text-center py-10 text-gray-500">
+                    <td colSpan={9} className="text-center py-10 text-gray-500">
                       No requests found for selected filters.
                     </td>
                   </tr>
