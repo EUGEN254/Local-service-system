@@ -1,5 +1,8 @@
 import { v2 as cloudinary } from "cloudinary";
 import plumbingServiceSchema from "../models/plumbingServiceSchema.js";
+import Booking from "../models/bookingSchema.js";
+import User from "../models/userSchema.js";
+import mpesaTransactionsSchema from "../models/mpesaTransactionsSchema.js";
 
 // Add a new service
 export const addService = async (req, res) => {
@@ -47,6 +50,72 @@ export const getMyServices = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Failed to fetch services" });
+  }
+};
+
+
+export const getProviderBookings = async (req, res) => {
+  try {
+    const providerName = req.user.name; 
+    const bookings = await Booking.find({ providerName })
+      .populate("customer", "name email phone") 
+      .sort({ createdAt: -1 });
+      console.log(bookings)
+    res.status(200).json({ success: true, bookings });
+  } catch (error) {
+    console.error("Fetch provider bookings error:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch bookings", error });
+  }
+};
+
+
+
+
+
+export const getCustomerDetails = async (req, res) => {
+  try {
+    const customerId = req.params.customerId;
+
+    // Fetch customer from Users collection
+    const customer = await User.findById(customerId);
+    if (!customer) {
+      return res.status(404).json({ success: false, message: "Customer not found" });
+    }
+ 
+
+    const latestTransaction = await mpesaTransactionsSchema.findOne({ customer: customer.name })
+      .sort({ createdAt: -1 });
+
+
+    const customerData = {
+      name: customer.name,
+      email: customer.email,
+      phone: latestTransaction ? latestTransaction.phone : "N/A",
+    };
+
+    res.json({ success: true, customer: customerData });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
+
+
+
+export const getServiceDetails = async (req, res) => {
+  try {
+    const { serviceId } = req.params;
+    const service = await plumbingServiceSchema.findById(serviceId);
+
+    if (!service) {
+      return res.status(404).json({ success: false, message: "Service not found" });
+    }
+
+    res.status(200).json({ success: true, service });
+  } catch (error) {
+    console.error("Get service details error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -105,5 +174,20 @@ export const editService = async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Failed to update service" });
+  }
+};
+
+
+export const updateStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true }
+    );
+    res.json({ success: true, booking });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
   }
 };

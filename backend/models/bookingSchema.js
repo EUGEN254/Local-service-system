@@ -13,9 +13,20 @@ const bookingSchema = new mongoose.Schema(
     delivery_date: Date,
     is_paid: { type: Boolean, default: false },
     paymentMethod: { type: String, enum: ["Mpesa", "Cash"], default: "Mpesa" },
+    status: { type: String, default: "Pending" }, // <-- new status field
   },
   { timestamps: true }
 );
+
+
+bookingSchema.pre("save", function (next) {
+  if (this.is_paid) {
+    this.status = "Waiting for Work";
+  } else {
+    this.status = "Pending"; 
+  }
+  next();
+});
 
 const Booking = mongoose.model("Booking", bookingSchema);
 export default Booking;

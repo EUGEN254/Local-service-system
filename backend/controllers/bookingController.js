@@ -46,14 +46,17 @@ export const createBooking = async (req, res) => {
 export const getUserBookings = async (req, res) => {
   try {
     const customerId = req.user._id;
+
+    // Fetch bookings for this user
     const bookings = await Booking.find({ customer: customerId }).sort({ createdAt: -1 });
+    console.log(bookings); // for debugging
+
     res.status(200).json({ success: true, bookings });
   } catch (error) {
     console.error("Fetch bookings error:", error);
     res.status(500).json({ success: false, message: "Failed to fetch bookings", error });
   }
 };
-
 // Update payment status (after M-Pesa callback or confirmation)
 export const updatePaymentStatus = async (req, res) => {
   try {
