@@ -4,7 +4,7 @@
 // const updateStatuses = async () => {
 //   try {
 //     // Hardcode the connection string for testing
-//     const connectionString = "mongodb+srv://bitinyo:12345@cluster0.c6vd6s9.mongodb.net/mern-auth";
+//     const connectionString =
     
 //     console.log("Connecting with:", connectionString);
 //     // 
