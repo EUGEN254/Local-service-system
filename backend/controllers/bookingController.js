@@ -4,6 +4,7 @@ import Booking from "../models/bookingSchema.js";
 // Create a new booking (after payment or cash selection)
 export const createBooking = async (req, res) => {
     try {
+      console.log("📥 Received booking data:", req.body);
       const { 
         serviceId, 
         serviceName, 
