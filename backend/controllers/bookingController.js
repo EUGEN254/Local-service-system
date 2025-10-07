@@ -80,4 +80,4 @@ export const updateFailedBooking = async (req, res) => {
     console.error("Error updating booking:", err);
     res.status(500).json({ success: false, message: "Failed to update booking" });
   }
-});
+};
