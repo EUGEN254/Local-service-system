@@ -50,9 +50,9 @@ const Payments = () => {
       setLoading(true);
       setError("");
       setMessage("Processing payment...");
-  
+
       let bookingId = displayService._id || displayService.bookingId; // Existing booking if any
-  
+
       // 🧩 Step 1: Create booking only if it doesn't already exist
       if (!bookingId) {
         setMessage("Creating booking...");
@@ -76,7 +76,7 @@ const Payments = () => {
       } else {
         console.log("♻️ Reusing existing booking:", bookingId);
       }
-  
+
       // 🧩 Step 2: Start M-Pesa STK push
       setMessage("Initiating M-Pesa STK push...");
       const mpesaRes = await axios.post(
@@ -90,14 +90,14 @@ const Payments = () => {
         },
         { withCredentials: true }
       );
-  
+
       if (!mpesaRes.data.success) {
         setLoading(false);
         setError("Failed to initiate M-Pesa payment.");
         setMessage("");
         return;
       }
-  
+
       const checkoutId = mpesaRes.data.data?.CheckoutRequestID;
       if (!checkoutId) {
         setLoading(false);
@@ -105,33 +105,37 @@ const Payments = () => {
         setMessage("");
         return;
       }
-  
+
       // 🧩 Step 3: Poll for payment confirmation
       setMessage("Waiting for payment confirmation...");
       let attempts = 0;
       const maxAttempts = 30;
       let pollingActive = true;
-  
+
       const checkStatus = async () => {
         if (!pollingActive) return;
-  
+
         try {
           const statusRes = await axios.get(
             `${backendUrl}/api/mpesa/status/${checkoutId}`
           );
           const status = statusRes.data.status;
-  
+
           if (status === "completed") {
             pollingActive = false;
             setMessage("✅ Payment successful!");
             setError("");
-  
+
             // 🧩 Mark booking as paid in backend
-            await axios.put(`${backendUrl}/api/customer/update-booking-status/${bookingId}`, {
-              is_paid: true,
-              status: "Waiting for Work",
-            }, { withCredentials: true });
-  
+            await axios.put(
+              `${backendUrl}/api/customer/update-booking-status/${bookingId}`,
+              {
+                is_paid: true,
+                status: "Waiting for Work",
+              },
+              { withCredentials: true }
+            );
+
             setTimeout(() => navigate("/user/my-bookings"), 2500);
           } else if (status === "failed") {
             pollingActive = false;
@@ -155,7 +159,7 @@ const Payments = () => {
           setLoading(false);
         }
       };
-  
+
       checkStatus();
     } catch (err) {
       console.error("M-Pesa Error:", err);
@@ -164,8 +168,7 @@ const Payments = () => {
       setLoading(false);
     }
   };
-  
-  
+
   // ✅ handle cash payment
   const handleCashPayment = async () => {
     try {
@@ -273,10 +276,11 @@ const Payments = () => {
                 City or County
               </label>
               <input
-                type="text"
-                name="city"
-                value={formData.city}
+                type="date"
+                name="delivery_date"
+                value={formData.delivery_date}
                 onChange={handleChange}
+                min={new Date().toISOString().split("T")[0]} // Prevent past dates
                 className="w-full px-4 py-2 border border-gray-300 rounded-md"
                 required
               />
