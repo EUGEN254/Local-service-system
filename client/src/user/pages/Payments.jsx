@@ -107,6 +107,7 @@ const Payments = () => {
       if (!checkoutId) {
         setLoading(false);
         setError("Missing payment reference. Please try again.");
+        setMessage("");
         return;
       }
   
@@ -137,8 +138,10 @@ const Payments = () => {
               { withCredentials: true }
             );
             setTimeout(() => navigate("/user/my-bookings"), 2500);
-          } else if (status === "failed") {
+          } 
+          else if (status === "failed") {
             pollingActive = false;
+            setMessage(""); // ✅ clear waiting message
             setError("❌ Payment failed. Please try again.");
             await axios.put(
               `${backendUrl}/api/customer/update-booking-status/${bookingId}`,
@@ -149,11 +152,14 @@ const Payments = () => {
               { withCredentials: true }
             );
             setLoading(false);
-          } else if (attempts < maxAttempts) {
+          } 
+          else if (attempts < maxAttempts) {
             attempts++;
             setTimeout(checkStatus, 3000);
-          } else {
+          } 
+          else {
             pollingActive = false;
+            setMessage(""); // ✅ clear waiting message
             setError("⚠️ Payment timeout. Please try again.");
             await axios.put(
               `${backendUrl}/api/customer/update-booking-status/${bookingId}`,
@@ -168,6 +174,7 @@ const Payments = () => {
         } catch (err) {
           console.error("Polling error:", err);
           pollingActive = false;
+          setMessage(""); // ✅ clear waiting message
           setError("Error checking payment status.");
           setLoading(false);
         }
@@ -176,6 +183,7 @@ const Payments = () => {
       checkStatus();
     } catch (err) {
       console.error("M-Pesa Error:", err);
+      setMessage(""); // ✅ clear waiting message
       setError("M-Pesa payment failed. Try again.");
       setLoading(false);
     }
