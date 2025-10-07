@@ -276,11 +276,10 @@ const Payments = () => {
                 City or County
               </label>
               <input
-                type="date"
-                name="delivery_date"
-                value={formData.delivery_date}
+                type="text"
+                name="city"
+                value={formData.city}
                 onChange={handleChange}
-                min={new Date().toISOString().split("T")[0]} // Prevent past dates
                 className="w-full px-4 py-2 border border-gray-300 rounded-md"
                 required
               />
@@ -295,6 +294,7 @@ const Payments = () => {
                 name="delivery_date"
                 value={formData.delivery_date}
                 onChange={handleChange}
+                min={new Date().toISOString().split("T")[0]} 
                 className="w-full px-4 py-2 border border-gray-300 rounded-md"
                 required
               />
