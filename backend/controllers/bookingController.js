@@ -1,7 +1,7 @@
 import Booking from "../models/bookingSchema.js";
 
 // Create a new booking (after payment or cash selection)
-export const createBooking = async (req, res) => { 
+export const createBooking = async (req, res) => {
   try {
     const {
       serviceId,
@@ -16,20 +16,16 @@ export const createBooking = async (req, res) => {
     } = req.body;
 
     const customerId = req.user._id;
-
-    // 🕒 Prevent past dates
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
     const selectedDate = new Date(delivery_date);
 
-    if (selectedDate < today) {
+    if (selectedDate < today.setHours(0, 0, 0, 0)) {
       return res.status(400).json({
         success: false,
         message: "Delivery date cannot be in the past.",
       });
     }
 
-    // 🧾 Create booking
     const booking = await Booking.create({
       customer: customerId,
       serviceId,
@@ -40,18 +36,16 @@ export const createBooking = async (req, res) => {
       address,
       city,
       delivery_date,
-      is_paid: false,
+      is_paid: isPaid,
       paymentMethod,
     });
 
     res.status(201).json({ success: true, booking });
   } catch (error) {
     console.error("❌ Create booking error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to create booking",
-      error: error.message,
-    });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to create booking", error });
   }
 };
 
