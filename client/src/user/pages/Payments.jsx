@@ -98,16 +98,16 @@ const Payments = () => {
   
       if (!mpesaRes.data.success) {
         setLoading(false);
-        setError("Failed to initiate M-Pesa payment.");
         setMessage("");
+        setError("Failed to initiate M-Pesa payment.");
         return;
       }
   
       const checkoutId = mpesaRes.data.data?.CheckoutRequestID;
       if (!checkoutId) {
         setLoading(false);
-        setError("Missing payment reference. Please try again.");
         setMessage("");
+        setError("Missing payment reference. Please try again.");
         return;
       }
   
@@ -129,6 +129,7 @@ const Payments = () => {
           if (status === "completed") {
             pollingActive = false;
             setMessage("✅ Payment successful!");
+            setError("");
             await axios.put(
               `${backendUrl}/api/customer/update-booking-status/${bookingId}`,
               {
@@ -140,9 +141,10 @@ const Payments = () => {
             setTimeout(() => navigate("/user/my-bookings"), 2500);
           } 
           else if (status === "failed") {
+            // 🧩 Payment failed – clear waiting msg, show failure
             pollingActive = false;
-            setMessage(""); // ✅ clear waiting message
-            setError("❌ Payment failed. Please try again.");
+            setMessage("❌ Payment failed. Please try again."); // show clear failure message
+            setError("");
             await axios.put(
               `${backendUrl}/api/customer/update-booking-status/${bookingId}`,
               {
@@ -158,9 +160,10 @@ const Payments = () => {
             setTimeout(checkStatus, 3000);
           } 
           else {
+            // 🧩 Timed out – clear waiting msg, show timeout
             pollingActive = false;
-            setMessage(""); // ✅ clear waiting message
-            setError("⚠️ Payment timeout. Please try again.");
+            setMessage("⚠️ Payment timeout. Please try again.");
+            setError("");
             await axios.put(
               `${backendUrl}/api/customer/update-booking-status/${bookingId}`,
               {
@@ -174,8 +177,8 @@ const Payments = () => {
         } catch (err) {
           console.error("Polling error:", err);
           pollingActive = false;
-          setMessage(""); // ✅ clear waiting message
-          setError("Error checking payment status.");
+          setMessage("⚠️ Error checking payment status.");
+          setError("");
           setLoading(false);
         }
       };
@@ -183,11 +186,12 @@ const Payments = () => {
       checkStatus();
     } catch (err) {
       console.error("M-Pesa Error:", err);
-      setMessage(""); // ✅ clear waiting message
-      setError("M-Pesa payment failed. Try again.");
+      setMessage("❌ M-Pesa payment failed. Try again.");
+      setError("");
       setLoading(false);
     }
   };
+  
   
 
   // ✅ Handle Cash Payment
