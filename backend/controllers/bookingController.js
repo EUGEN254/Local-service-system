@@ -3,45 +3,43 @@ import Booking from "../models/bookingSchema.js";
 
 // Create a new booking (after payment or cash selection)
 export const createBooking = async (req, res) => {
-    try {
-      console.log("📥 Received booking data:", req.body);
-      const { 
-        serviceId, 
-        serviceName, 
-        categoryName, 
-        servicerProvider, 
-        amount, 
-        address, 
-        city, 
-        delivery_date, 
-        paymentMethod 
-      } = req.body;
-  
-      const customerId = req.user._id; 
-  
-      const isPaid = paymentMethod.toLowerCase() === "mpesa"; 
-  
-      const booking = await Booking.create({
-        customer: customerId,
-        serviceId,
-        serviceName,
-        categoryName,
-        providerName: servicerProvider,
-        amount,
-        address,
-        city,
-        delivery_date,
-        is_paid: isPaid,
-        paymentMethod,
-      });
-  
-      res.status(201).json({ success: true, booking });
-    } catch (error) {
-      console.error("❌ Create booking error:", error);
-      res.status(500).json({ success: false, message: "Failed to create booking", error });
-    }
-  };
-  
+  try {
+    const { 
+      serviceId, 
+      serviceName, 
+      categoryName, 
+      serviceProvider, 
+      amount, 
+      address, 
+      city, 
+      delivery_date, 
+      paymentMethod 
+    } = req.body;
+
+    const customerId = req.user._id; 
+    const isPaid = paymentMethod.toLowerCase() === "mpesa"; 
+
+    const booking = await Booking.create({
+      customer: customerId,
+      serviceId,
+      serviceName,
+      categoryName,
+      providerName: serviceProvider, 
+      amount,
+      address,
+      city,
+      delivery_date,
+      is_paid: isPaid,
+      paymentMethod,
+    });
+
+    res.status(201).json({ success: true, booking });
+  } catch (error) {
+    console.error("❌ Create booking error:", error);
+    res.status(500).json({ success: false, message: "Failed to create booking", error });
+  }
+};
+
 
 // Get all bookings for current user
 export const getUserBookings = async (req, res) => {

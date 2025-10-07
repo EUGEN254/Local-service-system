@@ -27,6 +27,7 @@ const MyBookings = () => {
         const { data } = await axios.get(`${backendUrl}/api/customer/mybookings`, {
           withCredentials: true,
         });
+        console.log(data)
      
         
         if (data.success) {
