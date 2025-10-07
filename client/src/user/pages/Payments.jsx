@@ -48,8 +48,9 @@ const Payments = () => {
   const handleMpesaPayment = async () => {
     try {
       setLoading(true);
+      setError("");
       setMessage("Creating booking...");
-
+  
       // 1️⃣ Create booking first (unpaid)
       const bookingRes = await axios.post(
         `${backendUrl}/api/customer/create`,
@@ -67,9 +68,9 @@ const Payments = () => {
         },
         { withCredentials: true }
       );
-
+  
       const bookingId = bookingRes.data.booking._id;
-
+  
       // 2️⃣ Initiate M-Pesa payment
       setMessage("Initiating M-Pesa STK push...");
       const mpesaRes = await axios.post(
@@ -83,55 +84,75 @@ const Payments = () => {
         },
         { withCredentials: true }
       );
-
+  
+      //  If M-Pesa push fails immediately
       if (!mpesaRes.data.success) {
-        setError("Failed to process M-Pesa payment.");
         setLoading(false);
+        setError("M-Pesa payment failed to start. Please try again.");
+        setMessage("");
         return;
       }
-
-      const checkoutId = mpesaRes.data.data.CheckoutRequestID;
-
-      // 3️⃣ Poll for payment confirmation
+  
+      const checkoutId = mpesaRes.data.data?.CheckoutRequestID;
+      if (!checkoutId) {
+        setLoading(false);
+        setError("Missing payment reference. Please try again.");
+        setMessage("");
+        return;
+      }
+  
+      // 3️⃣ Poll for payment confirmation (only if STK push succeeded)
       setMessage("Waiting for payment confirmation...");
       let attempts = 0;
       const maxAttempts = 30;
-
+      let pollingActive = true;
+  
       const checkStatus = async () => {
+        if (!pollingActive) return;
+  
         try {
           const statusRes = await axios.get(
             `${backendUrl}/api/mpesa/status/${checkoutId}`
           );
           const status = statusRes.data.status;
-
+  
           if (status === "completed") {
-            setMessage("Payment successful!");
+            setMessage("✅ Payment successful!");
+            setError("");
+            pollingActive = false;
             setTimeout(() => navigate("/user/my-bookings"), 2500);
           } else if (status === "failed") {
-            setError("Payment failed. Please try again.");
+            pollingActive = false;
+            setError("❌ Payment failed. Please try again.");
+            setMessage("");
             setLoading(false);
           } else if (attempts < maxAttempts) {
             attempts++;
             setTimeout(checkStatus, 3000);
           } else {
-            setError("Payment timeout. Please try again.");
+            pollingActive = false;
+            setError("⚠️ Payment timeout. Please try again.");
+            setMessage("");
             setLoading(false);
           }
         } catch (err) {
           console.error("Polling error:", err);
+          pollingActive = false;
           setError("Error checking payment status.");
+          setMessage("");
           setLoading(false);
         }
       };
-
+  
       checkStatus();
     } catch (err) {
       console.error("M-Pesa Error:", err);
       setError("M-Pesa payment failed. Try again.");
+      setMessage("");
       setLoading(false);
     }
   };
-
+  
   // ✅ handle cash payment
   const handleCashPayment = async () => {
     try {

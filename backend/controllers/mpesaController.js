@@ -78,119 +78,85 @@ export const handleMpesa = async (req, res) => {
 export const handleCallback = async (req, res) => {
   try {
     const callbackData = req.body;
-  
-
     const stkCallback = callbackData?.Body?.stkCallback;
-    if (!stkCallback) {
-     
-      return res.status(400).send("Invalid callback payload");
-    }
+    if (!stkCallback) return res.status(400).send("Invalid callback payload");
 
     const transactionId = stkCallback.CheckoutRequestID;
     const resultCode = stkCallback.ResultCode;
     const resultDesc = stkCallback.ResultDesc;
 
-   
     const transaction = await mpesaTransactionsSchema.findOne({ transactionId });
-    if (!transaction) {
-     
-      return res.status(404).send("Transaction not found");
-    }
+    if (!transaction) return res.status(404).send("Transaction not found");
 
-    // Prevent overwriting successful payments
-    if (transaction.status === "completed") {
-      
+    if (transaction.status === "completed")
       return res.status(200).send("Already processed");
-    }
 
     let failureReason = "";
     let userMessage = "";
 
     switch (resultCode) {
       case 0:
-        // ✅ Success
+        // ✅ Payment success
         transaction.status = "completed";
         transaction.mpesaReceiptNumber = stkCallback.CallbackMetadata?.Item?.find(
           (i) => i.Name === "MpesaReceiptNumber"
         )?.Value;
         transaction.callbackData = stkCallback;
 
-       
-
-        // Update booking
+        // ✅ Mark booking as paid
         if (transaction.bookingId) {
           await Booking.updateOne(
             { _id: transaction.bookingId },
-            { $set: { is_paid: true, paymentMethod: "Mpesa" } }
+            {
+              $set: {
+                is_paid: true,
+                paymentMethod: "Mpesa",
+                status: "Waiting for Work",
+              },
+            }
           );
         }
-        break;
-
-      case 1037:
-        failureReason = "No response from the user.";
-        userMessage =
-          "The payment prompt timed out. Please retry your payment.";
-        break;
-
-      case 1032:
-        failureReason = "Request canceled by user.";
-        userMessage =
-          "You canceled the payment or it timed out. Please try again.";
-        break;
-
-      case 1:
-        failureReason = "Insufficient balance.";
-        userMessage =
-          "Insufficient funds on M-PESA. Please top up or use Fuliza.";
-        break;
-
-      case 2001:
-        failureReason = "Invalid initiator information.";
-        userMessage = "Incorrect M-PESA PIN or credentials. Please retry.";
-        break;
-
-      case 1019:
-        failureReason = "Transaction expired.";
-        userMessage = "Transaction expired. Please initiate payment again.";
-        break;
-
-      case 1001:
-        failureReason = "Duplicate session or subscriber locked.";
-        userMessage =
-          "You have another M-PESA session active. Please wait 2-3 minutes and try again.";
+        userMessage = "Payment completed successfully.";
         break;
 
       default:
-        failureReason = `Unknown error (code ${resultCode})`;
-        userMessage = resultDesc || "Transaction failed. Please try again.";
+        // ❌ Payment failed or canceled
+        transaction.status = "failed";
+        transaction.failureReason = resultDesc;
+        transaction.callbackData = stkCallback;
+
+        // 🔥 NEW: mark booking as failed
+        if (transaction.bookingId) {
+          await Booking.updateOne(
+            { _id: transaction.bookingId },
+            {
+              $set: {
+                is_paid: false,
+                status: "Payment Failed",
+              },
+            }
+          );
+        }
+
+        userMessage = resultDesc || "Payment failed. Please try again.";
+        failureReason = resultDesc;
         break;
     }
 
-    if (resultCode !== 0) {
-      console.warn(`⚠️ Payment failed (Code: ${resultCode}) — ${failureReason}`);
-      transaction.status = "failed";
-      transaction.failureReason = failureReason;
-      transaction.callbackData = stkCallback;
-    }
-
     await transaction.save();
-    console.log(
-      `💾 Transaction updated: ${transaction.transactionId} → ${transaction.status}`
-    );
 
     res.status(200).json({
       success: true,
-      message:
-        resultCode === 0
-          ? "Payment completed successfully."
-          : `Payment failed: ${failureReason}`,
-      userMessage,
+      status: transaction.status,
+      message: userMessage,
+      failureReason,
     });
   } catch (err) {
     console.error("❌ M-Pesa Callback Error:", err.message);
     res.status(500).send("Server Error");
   }
 };
+
 
 // 3️⃣ CHECK PAYMENT STATUS
 export const getPaymentStatus = async (req, res) => {

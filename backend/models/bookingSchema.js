@@ -20,13 +20,13 @@ const bookingSchema = new mongoose.Schema(
 
 
 bookingSchema.pre("save", function (next) {
+  if (this.isModified("status")) return next(); 
   if (this.is_paid) {
     this.status = "Waiting for Work";
   } else {
-    this.status = "Pending"; 
+    this.status = "Pending";
   }
   next();
 });
-
 const Booking = mongoose.model("Booking", bookingSchema);
 export default Booking;

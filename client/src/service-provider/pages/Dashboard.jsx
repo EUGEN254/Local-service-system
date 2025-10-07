@@ -37,8 +37,6 @@ const Dashboard = () => {
           `${backendUrl}/api/serviceprovider/mybookings`,
           { withCredentials: true }
         );
-        console.log("hey", data);
-
         if (data.success) setBookings(data.bookings);
       } catch (err) {
         console.error("Error fetching bookings:", err);

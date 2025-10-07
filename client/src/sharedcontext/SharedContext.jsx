@@ -63,7 +63,7 @@ const AppContextProvider = (props) => {
   };
 
   const addService = (service) => {
-    setServices((prev) => [service, ...prev]);
+    setServices((prev) => [service, ...prev]);//new service will appear on topp of the list
   };
 
   const removeService = (id) => {
