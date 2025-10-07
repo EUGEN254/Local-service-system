@@ -48,10 +48,11 @@ const MyBookings = () => {
       booking.serviceName?.toLowerCase().includes(search) ||
       booking.categoryName?.toLowerCase().includes(search);
 
-    const matchesStatus =
+      const matchesStatus =
       statusFilter === "all" ||
-      (statusFilter === "paid" && booking.is_paid) ||
-      (statusFilter === "pending" && !booking.is_paid);
+      (statusFilter === "paid" && booking.status === "Waiting for Work") ||
+      (statusFilter === "pending" && booking.status === "Pending") ||
+      (statusFilter === "failed" && booking.status === "Payment Failed");
 
     const serviceDate = new Date(booking.delivery_date);
     const matchesDate = !dateTo || serviceDate <= new Date(dateTo);
