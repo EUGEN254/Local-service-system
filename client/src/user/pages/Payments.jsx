@@ -13,7 +13,7 @@ const Payments = () => {
   // service passed from MyBookings or Service page
   const { service } = location.state || {};
   const displayService = service || {
-    serviceprovider: "N/A",
+    servicerprovider: "N/A",
     serviceName: "No Service Selected",
     category: "N/A",
     amount: 0,
