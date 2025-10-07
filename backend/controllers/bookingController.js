@@ -63,3 +63,21 @@ export const updatePaymentStatus = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to update payment status", error });
   }
 };
+
+
+export const updateFailedBooking = async (req, res) => {
+  try {
+    const booking = await Booking.findByIdAndUpdate(
+      req.params.id,
+      {
+        is_paid: req.body.is_paid,
+        status: req.body.status || (req.body.is_paid ? "Waiting for Work" : "Payment Failed"),
+      },
+      { new: true }
+    );
+    res.json({ success: true, booking });
+  } catch (err) {
+    console.error("Error updating booking:", err);
+    res.status(500).json({ success: false, message: "Failed to update booking" });
+  }
+});

@@ -49,29 +49,35 @@ const Payments = () => {
     try {
       setLoading(true);
       setError("");
-      setMessage("Creating booking...");
+      setMessage("Processing payment...");
   
-      // 1️⃣ Create booking first (unpaid)
-      const bookingRes = await axios.post(
-        `${backendUrl}/api/customer/create`,
-        {
-          serviceId: displayService._id || displayService.id,
-          servicerProvider: displayService.serviceProviderName,
-          serviceName: displayService.serviceName,
-          categoryName: displayService.category,
-          amount: displayService.amount,
-          address: formData.address,
-          city: formData.city,
-          delivery_date: formData.delivery_date,
-          paymentMethod: "Mpesa",
-          is_paid: false,
-        },
-        { withCredentials: true }
-      );
+      let bookingId = displayService._id || displayService.bookingId; // Existing booking if any
   
-      const bookingId = bookingRes.data.booking._id;
+      // 🧩 Step 1: Create booking only if it doesn't already exist
+      if (!bookingId) {
+        setMessage("Creating booking...");
+        const bookingRes = await axios.post(
+          `${backendUrl}/api/customer/create`,
+          {
+            serviceId: displayService._id || displayService.id,
+            servicerProvider: displayService.serviceProviderName,
+            serviceName: displayService.serviceName,
+            categoryName: displayService.category,
+            amount: displayService.amount,
+            address: formData.address,
+            city: formData.city,
+            delivery_date: formData.delivery_date,
+            paymentMethod: "Mpesa",
+            is_paid: false,
+          },
+          { withCredentials: true }
+        );
+        bookingId = bookingRes.data.booking._id;
+      } else {
+        console.log("♻️ Reusing existing booking:", bookingId);
+      }
   
-      // 2️⃣ Initiate M-Pesa payment
+      // 🧩 Step 2: Start M-Pesa STK push
       setMessage("Initiating M-Pesa STK push...");
       const mpesaRes = await axios.post(
         `${backendUrl}/api/mpesa/stkpush`,
@@ -80,15 +86,14 @@ const Payments = () => {
           phone: formData.phone,
           serviceId: displayService._id || displayService.id,
           serviceName: displayService.serviceName,
-          bookingId,
+          bookingId, // Use existing booking
         },
         { withCredentials: true }
       );
   
-      //  If M-Pesa push fails immediately
       if (!mpesaRes.data.success) {
         setLoading(false);
-        setError("M-Pesa payment failed to start. Please try again.");
+        setError("Failed to initiate M-Pesa payment.");
         setMessage("");
         return;
       }
@@ -101,7 +106,7 @@ const Payments = () => {
         return;
       }
   
-      // 3️⃣ Poll for payment confirmation (only if STK push succeeded)
+      // 🧩 Step 3: Poll for payment confirmation
       setMessage("Waiting for payment confirmation...");
       let attempts = 0;
       const maxAttempts = 30;
@@ -117,9 +122,16 @@ const Payments = () => {
           const status = statusRes.data.status;
   
           if (status === "completed") {
+            pollingActive = false;
             setMessage("✅ Payment successful!");
             setError("");
-            pollingActive = false;
+  
+            // 🧩 Mark booking as paid in backend
+            await axios.put(`${backendUrl}/api/customer/update-booking-status/${bookingId}`, {
+              is_paid: true,
+              status: "Waiting for Work",
+            }, { withCredentials: true });
+  
             setTimeout(() => navigate("/user/my-bookings"), 2500);
           } else if (status === "failed") {
             pollingActive = false;
@@ -152,6 +164,7 @@ const Payments = () => {
       setLoading(false);
     }
   };
+  
   
   // ✅ handle cash payment
   const handleCashPayment = async () => {
