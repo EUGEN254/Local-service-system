@@ -6,7 +6,7 @@ import Chat from "../models/Chat.js";
 const deleteAllMessages = async () => {
   try {
     // 🔒 Replace this with your actual MongoDB URI
-    const connectionString = "mongodb+srv://bitinyo:12345@cluster0.c6vd6s9.mongodb.net/mern-auth?retryWrites=true&w=majority";
+    const connectionString = "";
 
     console.log("Connecting with:", connectionString);
 
