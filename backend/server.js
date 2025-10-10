@@ -23,7 +23,7 @@ app.use(cookieParser());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 // Test endpoint
-app.use("/api/status", (req, res) => res.send("😁 SERVER IS LIVE"));
+app.use("/", (req, res) => res.send("😁 SERVER IS LIVE"));
 
 // Routes
 app.use("/api/user", userRouter);
