@@ -28,8 +28,6 @@ const MyBookings = () => {
           withCredentials: true,
         });
         console.log(data)
-     
-        
         if (data.success) {
           setBookings(data.bookings);
         }

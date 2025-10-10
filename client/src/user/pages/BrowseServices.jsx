@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { FaStar } from "react-icons/fa";
+import { FiMessageCircle } from "react-icons/fi";
 import { categories } from "../../assets/assets";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
@@ -7,16 +8,18 @@ import { ShareContext } from "../../sharedcontext/SharedContext";
 
 const BrowseServices = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const {backendUrl,currSymbol} = useContext(ShareContext);
+  const { backendUrl, currSymbol } = useContext(ShareContext);
   const [services, setServices] = useState([]);
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   // Fetch services from API
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const { data } = await axios.get(backendUrl + "/api/customer/services"); 
+        const { data } = await axios.get(backendUrl + "/api/customer/services");
+        console.log(data);
+
         if (data.success) {
           setServices(data.services);
         } else {
@@ -86,38 +89,60 @@ const BrowseServices = () => {
             return (
               <div
                 key={`${service._id}-${index}`}
-                className="border rounded-lg p-4 shadow hover:shadow-lg transition"
+                className="border rounded-xl p-5 shadow-sm hover:shadow-md transition bg-white flex flex-col justify-between"
               >
-                {/* Service Image */}
-                <div className="flex items-center mb-3">
+                {/* Service Header */}
+                <div className="flex items-center mb-4">
                   <img
                     src={service.image || "https://picsum.photos/150"}
                     alt={service.serviceName}
-                    className="w-12 h-12 rounded-full mr-3 object-cover"
+                    className="w-12 h-12 rounded-full mr-3 object-cover border border-gray-200"
                   />
                   <div>
-                    <h3 className="text-lg font-semibold">
-                     Service: {service.serviceName}
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {service.serviceName}
                     </h3>
                     <p className="text-sm text-gray-500">
                       Category: {service.category} <br />
-                      Service Provider: {service.serviceProviderName}
+                      Provider:{" "}
+                      <span className="font-medium text-gray-700">
+                        {service.serviceProviderName}
+                      </span>
                     </p>
                   </div>
                 </div>
 
                 {/* Service Details */}
-                <p className="text-sm mb-2">Price: {currSymbol} {service.amount}</p>
-                <div className="flex mb-2">{renderStars(randomRating)}</div>
+                <p className="text-sm text-gray-700 mb-2">
+                  Price:{" "}
+                  <span className="font-medium">
+                    {currSymbol}
+                    {service.amount}
+                  </span>
+                </p>
+                <div className="flex mb-4">{renderStars(randomRating)}</div>
 
-                <button
-                  onClick={() =>
-                    navigate("/user/payment", { state: { service } })
-                  }
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  Book Now
-                </button>
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-100">
+                  <button
+                    onClick={() =>
+                      navigate("/user/payment", { state: { service } })
+                    }
+                    className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
+                  >
+                    Book Now
+                  </button>
+
+                  <button
+                    onClick={() =>
+                      navigate("/user/chat", { state: { service } })
+                    }
+                    className="flex items-center gap-2 text-blue-500 hover:text-blue-600 transition font-medium"
+                  >
+                    <FiMessageCircle className="text-lg" />
+                    <span className="text-sm">Chat</span>
+                  </button>
+                </div>
               </div>
             );
           })

@@ -190,3 +190,50 @@ export const updateStatus = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+
+export const updateProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { name, email, phone, bio, address } = req.body;
+
+    // 🧩 Build the update object dynamically (only include provided fields)
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (email) updateData.email = email;
+    if (phone) updateData.phone = phone;
+    if (bio) updateData.bio = bio;
+    if (address) updateData.address = address;
+
+    // 🖼️ Handle Cloudinary image upload (if a new image is sent)
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "service_providers",
+      });
+      updateData.image = result.secure_url;
+    }
+
+    // 🧠 Update only provided fields
+    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+      new: true,
+      select: "-password", // never send password back
+    });
+
+    if (!updatedUser) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Service provider not found" });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Service provider profile updated successfully!",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error("Error updating service provider profile:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to update profile" });
+  }
+};

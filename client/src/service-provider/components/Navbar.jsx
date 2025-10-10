@@ -26,7 +26,7 @@ const Navbar = ({ onMenuClick }) => {
 
         <div className="hidden md:block">
           <img
-            src="https://picsum.photos/150"
+            src={user.image}
             alt="logo"
             className="w-10 h-10 rounded-full"
           />

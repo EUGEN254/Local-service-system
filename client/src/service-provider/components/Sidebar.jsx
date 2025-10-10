@@ -21,17 +21,23 @@ const navLinks = (logoutUser) => ({
     { name: "My Services", icon: <FaServicestack />, path: "my-services" },
     { name: "Inbox", icon: <FaInbox />, path: "inbox" },
     { name: "Analytics", icon: <FaChartLine />, path: "analytics" },
-     { name: "Notification", icon: <FaBell />, path: "notifications" },
+    { name: "Notification", icon: <FaBell />, path: "notifications" },
   ],
   other: [
     { name: "Help", icon: <FaQuestionCircle />, path: "help" },
     { name: "Settings", icon: <FaCog />, path: "settings" },
-    { name: "Logout", icon: <FaSignOutAlt />, danger: true, path: "/logout", onClick: logoutUser },
+    {
+      name: "Logout",
+      icon: <FaSignOutAlt />,
+      danger: true,
+      path: "/logout",
+      onClick: logoutUser,
+    },
   ],
 });
 
 const Sidebar = ({ onLinkClick }) => {
-  const { logoutUser } = useContext(ShareContext);
+  const { logoutUser, totalUnread } = useContext(ShareContext); // ✅ access unread count
   const links = navLinks(logoutUser);
 
   return (
@@ -58,20 +64,27 @@ const Sidebar = ({ onLinkClick }) => {
 
         <ul className="space-y-1 pl-4">
           {links.menu.map((link, index) => (
-            <li key={index}>
+            <li key={index} className="relative">
               <NavLink
                 to={link.path}
                 onClick={onLinkClick}
                 className={({ isActive }) =>
-                  `flex items-center gap-3 px-2 py-2 rounded-md transition cursor-pointer
-                  ${
+                  `flex items-center gap-3 px-2 py-2 rounded-md transition cursor-pointer relative ${
                     isActive
                       ? "bg-yellow-500 text-gray-900 font-semibold"
                       : "text-gray-700 hover:text-gray-900"
                   }`
                 }
               >
-                {link.icon} {link.name}
+                {link.icon}
+                <span>{link.name}</span>
+
+                {/* 🔴 Unread badge for Inbox */}
+                {link.name === "Inbox" && totalUnread > 0 && (
+                  <span className="absolute right-3 top-1 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
+                    {totalUnread > 99 ? "99+" : totalUnread}
+                  </span>
+                )}
               </NavLink>
             </li>
           ))}
@@ -91,8 +104,8 @@ const Sidebar = ({ onLinkClick }) => {
               {link.danger ? (
                 <button
                   onClick={() => {
-                    link.onClick(); // trigger logout
-                    onLinkClick?.(); // close sidebar if small screen
+                    link.onClick();
+                    onLinkClick?.();
                   }}
                   className="flex items-center gap-3 px-2 py-2 rounded-md transition cursor-pointer text-red-600 hover:bg-yellow-500 hover:text-gray-900 w-full text-left"
                 >
@@ -103,8 +116,7 @@ const Sidebar = ({ onLinkClick }) => {
                   to={link.path}
                   onClick={onLinkClick}
                   className={({ isActive }) =>
-                    `flex items-center gap-3 px-2 py-2 rounded-md transition cursor-pointer
-                    ${
+                    `flex items-center gap-3 px-2 py-2 rounded-md transition cursor-pointer ${
                       isActive
                         ? "bg-yellow-500 text-gray-900 font-semibold"
                         : "text-gray-700 hover:bg-yellow-500 hover:text-gray-900"

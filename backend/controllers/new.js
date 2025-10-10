@@ -1,50 +1,37 @@
-// import mongoose from "mongoose";
-// import Booking from "../models/bookingSchema.js";
-
-// const updateStatuses = async () => {
-//   try {
-//     // Hardcode the connection string for testing
-//     const connectionString =
-    
-//     console.log("Connecting with:", connectionString);
-//     // 
-//     mongoose.connection.on('connected', () => console.log('🤝🤝 Bravo database connected'));
-    
-//     await mongoose.connect(connectionString, {
-//       useNewUrlParser: true,
-//       useUnifiedTopology: true,
-//     });
-
-//     console.log("Connected to MongoDB successfully!");
-
-//     // Your update operation
-//     const result = await Booking.updateMany(
-//       {},
-//       [
-//         { 
-//           $set: { 
-//             status: { 
-//               $cond: {
-//                 if: "$is_paid",
-//                 then: "Waiting for Work",
-//                 else: "Pending"
-//               }
-//             } 
-//           } 
-//         }
-//       ]
-//     );
-
-//     console.log(`Updated ${result.modifiedCount} bookings successfully!`);
-    
-//   } catch (error) {
-//     console.error("Error:", error.message);
-//   } finally {
-//     await mongoose.disconnect();
-//     console.log("Disconnected from MongoDB");
-//   }
-// };
-
-// updateStatuses();
+// deleteAllMessages.js
+import mongoose from "mongoose";
+import Chat from "../models/Chat.js";
 
 
+const deleteAllMessages = async () => {
+  try {
+    // 🔒 Replace this with your actual MongoDB URI
+    const connectionString = ;
+
+    console.log("Connecting with:", connectionString);
+
+    mongoose.connection.on("connected", () =>
+      console.log("🤝 Connected to MongoDB successfully!")
+    );
+
+    await mongoose.connect(connectionString, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
+
+    console.log("✅ Connection established");
+
+    // 🧩 Delete all messages
+    const result = await Chat.deleteMany({});
+    console.log(`🗑️ Deleted ${result.deletedCount} messages successfully!`);
+
+  } catch (error) {
+    console.error("❌ Error deleting messages:", error.message);
+  } finally {
+    await mongoose.disconnect();
+    console.log("🔌 Disconnected from MongoDB");
+  }
+};
+
+// Run the function
+deleteAllMessages();

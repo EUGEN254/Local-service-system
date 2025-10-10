@@ -112,18 +112,32 @@ export const logoutUser = (req, res) => {
   res.json({ success: true, message: "Logged out successfully" });
 };
 
-export const getMe = async (req, res) => {
-  // `req.user` is set by `authMiddleware` after JWT verification
-  if (!req.user) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
-  }
+// controllers/userController.js
 
-  res.json({
-    success: true,
-    user: {
+export const getMe = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    // Return full safe user object (no password)
+    const safeUser = {
+      _id: req.user._id,
       name: req.user.name,
       email: req.user.email,
       role: req.user.role,
-    },
-  });
+      phone: req.user.phone || "",
+      address: req.user.address || "",
+      bio: req.user.bio || "",
+      image: req.user.image || "",
+      createdAt: req.user.createdAt,
+      updatedAt: req.user.updatedAt,
+    };
+
+    res.json({ success: true, user: safeUser });
+  } catch (error) {
+    console.error("Error in getMe:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
 };
+
