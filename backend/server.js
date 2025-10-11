@@ -56,10 +56,20 @@ export const io = new Server(server, {
   }
 });
 
+// Track if server is already running
+let serverStarted = false;
+
 // Initialize function
 async function initializeServer() {
+  // Prevent multiple server starts
+  if (serverStarted) {
+    console.log("ℹ️ Server already initialized, skipping...");
+    return;
+  }
+
   try {
     console.log("🚀 Initializing server...");
+    serverStarted = true;
 
     // -------------------- MONGODB & CLOUDINARY --------------------
     await connectDb();
@@ -211,19 +221,27 @@ async function initializeServer() {
     app.use("/api/chat", chatRouter);
 
     // -------------------- START SERVER --------------------
-    server.listen(port, () => {
-      console.log(`🚀 Server started on PORT: ${port}`);
-      console.log(`🔗 Upstash Redis: Connected`);
-      console.log(`🌐 CORS: ${allowedOrigins.join(', ')}`);
-    });
+    // Only start server if not in Vercel serverless environment
+    if (process.env.VERCEL !== "1") {
+      server.listen(port, () => {
+        console.log(`🚀 Server started on PORT: ${port}`);
+        console.log(`🔗 Upstash Redis: Connected`);
+        console.log(`🌐 CORS: ${allowedOrigins.join(', ')}`);
+      });
+    } else {
+      console.log("🚀 Server running on Vercel");
+    }
 
   } catch (error) {
     console.error("❌ Server initialization failed:", error);
-    process.exit(1);
+    serverStarted = false; // Reset flag on error
   }
 }
 
-// Start the server
-initializeServer();
+// For Vercel: Export the app for serverless functions
+export default app;
 
-export default server;
+// For local development: Initialize the server
+if (process.env.VERCEL !== "1") {
+  initializeServer();
+}
