@@ -6,7 +6,7 @@ import { assets } from "../../assets/assets.js";
 const ChatSidebar = ({ 
   selectedUser, 
   setSelectedUser, 
-  services, 
+  services = [], // Provide default value
   onRemoveService,
   onClearAll 
 }) => {
@@ -14,10 +14,10 @@ const ChatSidebar = ({
   const [showConfirmClear, setShowConfirmClear] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  if (!services || services.length === 0) return null;
-
-  // Filter services based on search term
+  // Filter services based on search term - ALWAYS call useMemo
   const filteredServices = useMemo(() => {
+    if (!services || services.length === 0) return [];
+    
     if (!searchTerm.trim()) return services;
 
     const term = searchTerm.toLowerCase().trim();
@@ -30,6 +30,23 @@ const ChatSidebar = ({
       );
     });
   }, [services, searchTerm]);
+
+  // Move the conditional return AFTER all hooks
+  if (!services || services.length === 0) {
+    return (
+      <div className="bg-white h-full border-r border-gray-200 p-5 rounded-tl-2xl rounded-bl-2xl flex items-center justify-center">
+        <div className="text-center">
+          <img 
+            src={assets.search_icon} 
+            alt="No conversations" 
+            className="w-16 h-16 opacity-30 mx-auto mb-3"
+          />
+          <p className="text-gray-400 text-sm">No conversations yet</p>
+          <p className="text-gray-400 text-xs mt-1">Your service providers will appear here</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleSelectUser = (service) => {
     const { serviceProvider } = service;
