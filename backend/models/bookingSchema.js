@@ -13,11 +13,11 @@ const bookingSchema = new mongoose.Schema(
     delivery_date: Date,
     is_paid: { type: Boolean, default: false },
     paymentMethod: { type: String, enum: ["Mpesa", "Cash"], default: "Mpesa" },
-    status: { type: String, default: "Pending" }, // <-- new status field
+    status: { type: String, default: "Pending" },
+    read: { type: Boolean, default: false }, 
   },
   { timestamps: true }
 );
-
 
 bookingSchema.pre("save", function (next) {
   if (this.isModified("status")) return next(); 
@@ -28,5 +28,6 @@ bookingSchema.pre("save", function (next) {
   }
   next();
 });
+
 const Booking = mongoose.model("Booking", bookingSchema);
 export default Booking;

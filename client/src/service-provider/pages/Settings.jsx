@@ -5,7 +5,7 @@ import axios from "axios";
 import { ShareContext } from "../../sharedcontext/SharedContext";
 
 const Settings = () => {
-  const {backendUrl,fetchCurrentUser} = useContext(ShareContext)
+  const { backendUrl, fetchCurrentUser, user } = useContext(ShareContext);
   const [previewImage, setPreviewImage] = useState(null);
 
   // Profile state
@@ -16,16 +16,6 @@ const Settings = () => {
     phone: "",
     bio: "",
     address: "",
-  });
-
-  // Notifications state
-  const [notifications, setNotifications] = useState({
-    newRequest: true,
-    requestUpdated: true,
-    earningsUpdated: true,
-    newMessage: true,
-    reviewReceived: false,
-    promotionOffers: false,
   });
 
   // Security state
@@ -40,15 +30,29 @@ const Settings = () => {
   const [appearance, setAppearance] = useState("light");
   const [activeSection, setActiveSection] = useState("profile");
   const [isLoading, setIsLoading] = useState(false);
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
 
- 
+  // Initialize profile data from user context
+  useEffect(() => {
+    if (user) {
+      setProfile({
+        image: null,
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        bio: user.bio || "",
+        address: user.address || "",
+      });
+      
+      // Set preview image if user has an image
+      if (user.image) {
+        setPreviewImage(user.image);
+      }
+    }
+  }, [user]);
 
   const handleProfileChange = (field, value) => {
     setProfile((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleCheckboxChange = (name) => {
-    setNotifications({ ...notifications, [name]: !notifications[name] });
   };
 
   const handleSecurityChange = (field, value) => {
@@ -72,8 +76,8 @@ const Settings = () => {
         formData.append("image", profile.image);
       }
 
-      const { data } = await axios.put(backendUrl +
-        "/api/serviceprovider/update-profile",
+      const { data } = await axios.put(
+        `${backendUrl}/api/serviceprovider/update-profile`,
         formData,
         {
           withCredentials: true,
@@ -96,29 +100,61 @@ const Settings = () => {
     }
   };
 
+  // ✅ Update password function
   const handleChangePassword = async (e) => {
     e.preventDefault();
+    
+    // Validation
+    if (!security.currentPassword || !security.newPassword || !security.confirmPassword) {
+      toast.error("Please fill in all password fields");
+      return;
+    }
+
+    if (security.newPassword.length < 6) {
+      toast.error("New password must be at least 6 characters long");
+      return;
+    }
+
     if (security.newPassword !== security.confirmPassword) {
       toast.error("New passwords don't match!");
       return;
     }
 
-    setIsLoading(true);
-    setTimeout(() => {
-      toast.success("Password changed successfully!");
-      setSecurity({
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: "",
-        twoFactorAuth: security.twoFactorAuth,
-      });
-      setIsLoading(false);
-    }, 1000);
+    setIsPasswordLoading(true);
+
+    try {
+      const { data } = await axios.put(
+        `${backendUrl}/api/user/update-password`,
+        {
+          currentPassword: security.currentPassword,
+          newPassword: security.newPassword,
+        },
+        {
+          withCredentials: true,
+        }
+      );
+
+      if (data.success) {
+        toast.success("Password changed successfully!");
+        // Reset form
+        setSecurity({
+          currentPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+          twoFactorAuth: security.twoFactorAuth,
+        });
+      }
+    } catch (err) {
+      console.error("Error updating password:", err);
+      const errorMessage = err.response?.data?.message || "Error updating password!";
+      toast.error(errorMessage);
+    } finally {
+      setIsPasswordLoading(false);
+    }
   };
 
   const menuItems = [
     { id: "profile", label: "Profile", icon: "👤" },
-    { id: "notifications", label: "Notifications", icon: "🔔" },
     { id: "security", label: "Security", icon: "🔒" },
     { id: "appearance", label: "Appearance", icon: "🎨" },
   ];
@@ -223,7 +259,6 @@ const Settings = () => {
                         handleProfileChange("name", e.target.value)
                       }
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
-                  
                     />
                   </div>
 
@@ -240,7 +275,6 @@ const Settings = () => {
                           handleProfileChange("email", e.target.value)
                         }
                         className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
-                    
                       />
                     </div>
                     <div>
@@ -284,7 +318,7 @@ const Settings = () => {
                       value={profile.address}
                       onChange={(e) =>
                         handleProfileChange("address", e.target.value)
-                      }
+                        }
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
                     />
                   </div>
@@ -308,92 +342,6 @@ const Settings = () => {
               </div>
             )}
 
-        
-            {/* Notifications Section */}
-            {activeSection === "notifications" && (
-              <div className="space-y-6">
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                    Notification Preferences
-                  </h2>
-                  <p className="text-gray-600 mb-6">
-                    Choose what notifications you want to receive
-                  </p>
-
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-800 mb-4">
-                        Service Notifications
-                      </h3>
-                      <div className="space-y-4">
-                        {Object.entries(notifications).map(([key, value]) => (
-                          <div
-                            key={key}
-                            className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0"
-                          >
-                            <div>
-                              <p className="font-medium text-gray-800 capitalize">
-                                {key.replace(/([A-Z])/g, " $1").toLowerCase()}
-                              </p>
-                              <p className="text-sm text-gray-600 mt-1">
-                                Get notified when{" "}
-                                {key.replace(/([A-Z])/g, " $1").toLowerCase()}
-                              </p>
-                            </div>
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input
-                                type="checkbox"
-                                checked={value}
-                                onChange={() => handleCheckboxChange(key)}
-                                className="sr-only"
-                              />
-                              <div
-                                className={`w-12 h-6 bg-gray-300 rounded-full peer-focus:ring-2 peer-focus:ring-yellow-500 peer-checked:bg-yellow-500 transition`}
-                              ></div>
-                              <div
-                                className={`dot absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-md transition transform ${
-                                  value ? "translate-x-6" : "translate-x-0"
-                                }`}
-                              ></div>
-                            </label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="pt-4 border-t border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <h3 className="text-lg font-medium text-gray-800">
-                            Email Notifications
-                          </h3>
-                          <p className="text-sm text-gray-600 mt-1">
-                            Receive notifications via email
-                          </p>
-                        </div>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={emailPush}
-                            onChange={() => setEmailPush(!emailPush)}
-                            className="sr-only"
-                          />
-                          <div
-                            className={`w-12 h-6 bg-gray-300 rounded-full peer-focus:ring-2 peer-focus:ring-yellow-500 peer-checked:bg-yellow-500 transition`}
-                          ></div>
-                          <div
-                            className={`dot absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-md transition transform ${
-                              emailPush ? "translate-x-6" : "translate-x-0"
-                            }`}
-                          ></div>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Security Section */}
             {activeSection === "security" && (
               <div className="space-y-6">
@@ -408,7 +356,7 @@ const Settings = () => {
                   <form onSubmit={handleChangePassword} className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Current Password
+                        Current Password *
                       </label>
                       <input
                         type="password"
@@ -420,12 +368,13 @@ const Settings = () => {
                           )
                         }
                         className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
+                        placeholder="Enter your current password"
                         required
                       />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        New Password
+                        New Password *
                       </label>
                       <input
                         type="password"
@@ -434,12 +383,17 @@ const Settings = () => {
                           handleSecurityChange("newPassword", e.target.value)
                         }
                         className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
+                        placeholder="Enter your new password (min 6 characters)"
+                        minLength={6}
                         required
                       />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Password must be at least 6 characters long
+                      </p>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Confirm New Password
+                        Confirm New Password *
                       </label>
                       <input
                         type="password"
@@ -451,51 +405,17 @@ const Settings = () => {
                           )
                         }
                         className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
+                        placeholder="Confirm your new password"
                         required
                       />
-                    </div>
-                    <div className="flex items-center justify-between pt-4">
-                      <div className="flex items-center space-x-3">
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={security.twoFactorAuth}
-                            onChange={() =>
-                              handleSecurityChange(
-                                "twoFactorAuth",
-                                !security.twoFactorAuth
-                              )
-                            }
-                            className="sr-only"
-                          />
-                          <div
-                            className={`w-12 h-6 bg-gray-300 rounded-full peer-focus:ring-2 peer-focus:ring-yellow-500 peer-checked:bg-yellow-500 transition`}
-                          ></div>
-                          <div
-                            className={`dot absolute left-1 top-1 w-4 h-4 bg-white rounded-full shadow-md transition transform ${
-                              security.twoFactorAuth
-                                ? "translate-x-6"
-                                : "translate-x-0"
-                            }`}
-                          ></div>
-                        </label>
-                        <div>
-                          <p className="font-medium text-gray-800">
-                            Two-Factor Authentication
-                          </p>
-                          <p className="text-sm text-gray-600">
-                            Add an extra layer of security
-                          </p>
-                        </div>
-                      </div>
                     </div>
                     <div className="flex justify-end pt-6">
                       <button
                         type="submit"
-                        disabled={isLoading}
+                        disabled={isPasswordLoading}
                         className="px-6 py-3 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {isLoading ? "Updating..." : "Update Password"}
+                        {isPasswordLoading ? "Updating..." : "Update Password"}
                       </button>
                     </div>
                   </form>
@@ -531,24 +451,6 @@ const Settings = () => {
                       <option value="system">System</option>
                     </select>
                   </div>
-
-                  <div className="flex items-center justify-between py-4 border-b border-gray-100">
-                    <div>
-                      <p className="font-medium text-gray-800">Language</p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Choose your preferred language
-                      </p>
-                    </div>
-                    <select
-                      className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent min-w-[120px]"
-                      defaultValue="english"
-                    >
-                      <option value="english">English</option>
-                      <option value="spanish">Spanish</option>
-                      <option value="french">French</option>
-                    </select>
-                  </div>
-
                   <div className="flex items-center justify-between py-4">
                     <div>
                       <p className="font-medium text-gray-800">Font Size</p>
@@ -576,6 +478,3 @@ const Settings = () => {
 };
 
 export default Settings;
-
-
-

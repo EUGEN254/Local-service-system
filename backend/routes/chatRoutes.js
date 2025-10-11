@@ -1,6 +1,7 @@
 import express from "express";
 import Chat from "../models/Chat.js";
-import Message from "../models/messages.js"; // ✅ Correct import (was missing)
+import Message from "../models/messages.js";
+import Booking from "../models/bookingSchema.js"; 
 import userAuth from "../middleware/userAuth.js";
 import { io } from "../server.js";
 import { v2 as cloudinary } from "cloudinary";
@@ -149,6 +150,7 @@ chatRouter.post("/send", userAuth, async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
+
 /* ===========================================================
    🔹 GET unread message counts (for badges / notifications)
 =========================================================== */
@@ -165,8 +167,6 @@ chatRouter.get("/unread-count", userAuth, async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-
-
 
 /* ===========================================================
    🔹 SEND IMAGE (upload to cloudinary + save message)
@@ -284,6 +284,109 @@ chatRouter.post("/mark-read", userAuth, async (req, res) => {
       success: false, 
       message: err.message 
     });
+  }
+});
+
+/* ===========================================================
+   🔹 BOOKING NOTIFICATION ENDPOINTS
+=========================================================== */
+
+// In chatRoutes.js - update the booking-notifications endpoint
+chatRouter.get("/booking-notifications", userAuth, async (req, res) => {
+  try {
+    // Find bookings for this provider by NAME
+    const notifications = await Booking.find({
+      providerName: req.user.name, // Use providerName field
+      createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+    })
+    .populate('customer', 'name email')
+    .sort({ createdAt: -1 });
+
+    const unreadCount = await Booking.countDocuments({
+      providerName: req.user.name,
+      read: false
+    });
+
+    // Format notifications
+    const formattedNotifications = notifications.map(booking => ({
+      _id: booking._id,
+      serviceName: booking.serviceName,
+      categoryName: booking.categoryName,
+      customerName: booking.customer?.name || 'Unknown Customer',
+      customerEmail: booking.customer?.email || '',
+      amount: booking.amount,
+      address: booking.address,
+      city: booking.city,
+      delivery_date: booking.delivery_date,
+      status: booking.status,
+      is_paid: booking.is_paid,
+      paymentMethod: booking.paymentMethod,
+      read: booking.read,
+      createdAt: booking.createdAt,
+      customerId: booking.customer?._id,
+      providerName: booking.providerName
+    }));
+
+    res.json({
+      success: true,
+      notifications: formattedNotifications,
+      unreadCount
+    });
+  } catch (error) {
+    console.error("❌ Error fetching booking notifications:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+/* ===========================================================
+   🔹 MARK single booking notification as read
+=========================================================== */
+chatRouter.post("/mark-notification-read", userAuth, async (req, res) => {
+  try {
+    const { notificationId } = req.body;
+    
+    if (!notificationId) {
+      return res.status(400).json({
+        success: false,
+        message: "Notification ID is required"
+      });
+    }
+
+    await Booking.findByIdAndUpdate(notificationId, { read: true });
+    
+    res.json({ 
+      success: true, 
+      message: "Notification marked as read" 
+    });
+  } catch (error) {
+    console.error("❌ Error marking notification as read:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/* ===========================================================
+   🔹 MARK ALL booking notifications as read
+=========================================================== */
+chatRouter.post("/mark-all-notifications-read", userAuth, async (req, res) => {
+  try {
+    const providerId = req.user._id;
+    
+    await Booking.updateMany(
+      { 
+        providerName: providerId, 
+        read: false 
+      },
+      { 
+        $set: { read: true } 
+      }
+    );
+    
+    res.json({ 
+      success: true, 
+      message: "All notifications marked as read" 
+    });
+  } catch (error) {
+    console.error("❌ Error marking all notifications as read:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 

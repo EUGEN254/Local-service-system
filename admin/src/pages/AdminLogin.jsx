@@ -13,7 +13,7 @@ const AdminLogin = () => {
     e.preventDefault();
 
     // Simple demo credentials — replace with backend authentication later
-    if (email === "bitinyoeugen@gmail.com" && password === "admin123") {
+    if (email === "bitinyoeugen@gmail.com" && password === "123") {
       localStorage.setItem("isAdminLoggedIn", "true");
       toast.success("Welcome back, Admin!");
       navigate("/admin");

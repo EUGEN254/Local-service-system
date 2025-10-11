@@ -7,10 +7,13 @@ import {
   FaChevronDown,
 } from "react-icons/fa";
 import { ShareContext } from "../../sharedcontext/SharedContext";
+import { assets } from "../../assets/assets";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = ({ onMenuClick }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const { user, logoutUser } = useContext(ShareContext);
+  const navigate = useNavigate()
+  const { user, logoutUser,totalUnread } = useContext(ShareContext);
 
   return (
     <div className="flex items-center justify-between m-1 mt-2 px-4 md:px-6 py-3 rounded-2xl bg-white shadow-md">
@@ -26,7 +29,7 @@ const Navbar = ({ onMenuClick }) => {
 
         <div className="hidden md:block">
           <img
-            src="https://picsum.photos/150"
+            src={assets.avatar_icon}
             alt="logo"
             className="w-10 h-10 rounded-full"
           />
@@ -59,10 +62,12 @@ const Navbar = ({ onMenuClick }) => {
         </button>
 
         {/* Notification bell */}
-        <div className="relative bg-gray-100 p-2 rounded-lg cursor-pointer">
+        <div 
+        onClick={()=>navigate('/user/chat')}
+        className="relative bg-gray-100 p-2 rounded-lg cursor-pointer">
           <FaBell className="text-gray-600 text-lg" />
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
-            3
+            {totalUnread}
           </span>
         </div>
 

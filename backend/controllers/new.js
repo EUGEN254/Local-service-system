@@ -1,12 +1,13 @@
 // deleteAllMessages.js
 import mongoose from "mongoose";
 import messages from "../models/messages.js";
+import Booking from "../models/bookingSchema.js";
 
 
 const deleteAllMessages = async () => {
   try {
     // 🔒 Replace this with your actual MongoDB URI
-    const connectionString = "";
+    const connectionString = "mongodb+srv://bitinyo:12345@cluster0.c6vd6s9.mongodb.net/mern-auth?retryWrites=true&w=majority&appName=Cluster0";
 
     console.log("Connecting with:", connectionString);
 
@@ -22,7 +23,7 @@ const deleteAllMessages = async () => {
     console.log("✅ Connection established");
 
     // 🧩 Delete all messages
-    const result = await messages.deleteMany({});
+    const result = await Booking.deleteMany({});
     console.log(`🗑️ Deleted ${result.deletedCount} messages successfully!`);
 
   } catch (error) {

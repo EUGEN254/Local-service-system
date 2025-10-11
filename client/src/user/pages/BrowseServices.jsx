@@ -126,7 +126,7 @@ const BrowseServices = () => {
                     onClick={() =>
                       navigate("/user/payment", { state: { service } })
                     }
-                    className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
+                    className="bg-yellow-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition"
                   >
                     Book Now
                   </button>

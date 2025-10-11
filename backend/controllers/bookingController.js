@@ -1,4 +1,5 @@
 import Booking from "../models/bookingSchema.js";
+import { io } from "../server.js";
 
 
 // Create a new booking (after payment or cash selection)
@@ -31,7 +32,38 @@ export const createBooking = async (req, res) => {
       delivery_date,
       is_paid: isPaid,
       paymentMethod,
+      read: false,
     });
+
+    // ✅ Populate customer details for socket emission
+    const populatedBooking = await Booking.findById(booking._id)
+      .populate('customer', 'name email');
+
+    // ✅ Emit socket event for real-time notification
+    if (io) {
+      const bookingData = {
+        _id: populatedBooking._id,
+        serviceName: populatedBooking.serviceName,
+        categoryName: populatedBooking.categoryName,
+        customerName: populatedBooking.customer?.name || 'Unknown Customer',
+        customerEmail: populatedBooking.customer?.email || '',
+        amount: populatedBooking.amount,
+        address: populatedBooking.address,
+        city: populatedBooking.city,
+        delivery_date: populatedBooking.delivery_date,
+        status: populatedBooking.status,
+        is_paid: populatedBooking.is_paid,
+        paymentMethod: populatedBooking.paymentMethod,
+        read: false,
+        createdAt: populatedBooking.createdAt,
+        providerName: populatedBooking.providerName, 
+        customerId: populatedBooking.customer?._id
+      };
+
+      // Emit the newBooking event
+      io.emit("newBooking", bookingData);
+      console.log(`🔔 Emitted newBooking event for provider: ${populatedBooking.providerName}`);
+    }
 
     res.status(201).json({ success: true, booking });
   } catch (error) {
@@ -39,7 +71,6 @@ export const createBooking = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to create booking", error });
   }
 };
-
 
 // Get all bookings for current user
 export const getUserBookings = async (req, res) => {

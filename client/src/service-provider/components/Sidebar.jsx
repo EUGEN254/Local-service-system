@@ -20,7 +20,7 @@ const navLinks = (logoutUser) => ({
     { name: "My Services", icon: <FaServicestack />, path: "my-services" },
     { name: "Inbox", icon: <FaInbox />, path: "inbox" },
     { name: "Analytics", icon: <FaChartLine />, path: "analytics" },
-    { name: "Notification", icon: <FaBell />, path: "notifications" },
+    { name: "Bookings Made", icon: <FaBell />, path: "notifications" },
   ],
   other: [
     { name: "Help", icon: <FaQuestionCircle />, path: "help" },
@@ -30,12 +30,14 @@ const navLinks = (logoutUser) => ({
 });
 
 const Sidebar = ({ onLinkClick }) => {
-  const { logoutUser, totalUnread } = useContext(ShareContext);
+  const { logoutUser, totalUnread, unreadBookingCount } = useContext(ShareContext);
   const location = useLocation();
   const links = navLinks(logoutUser);
 
   // ✅ Check if service provider is currently on the inbox page
   const isOnInboxPage = location.pathname.includes('/inbox');
+  // ✅ Check if service provider is currently on the notifications page
+  const isOnNotificationsPage = location.pathname.includes('/notifications');
 
   return (
     <div className="w-64 h-full bg-gray-100 shadow-md rounded-2xl m-0 md:m-3 flex flex-col p-4">
@@ -68,10 +70,18 @@ const Sidebar = ({ onLinkClick }) => {
               >
                 {link.icon}
                 <span>{link.name}</span>
-                {/* ✅ Only show unread count when NOT on inbox page */}
+                
+                {/* ✅ Show unread message count for Inbox (when NOT on inbox page) */}
                 {link.name === "Inbox" && totalUnread > 0 && !isOnInboxPage && (
-                  <span className="absolute right-3 top-1 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
+                  <span className="absolute right-3 top-1 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-5 h-5 flex items-center justify-center">
                     {totalUnread > 99 ? "99+" : totalUnread}
+                  </span>
+                )}
+                
+                {/* ✅ Show unread booking count for Bookings Made (when NOT on notifications page) */}
+                {link.name === "Bookings Made" && unreadBookingCount > 0 && !isOnNotificationsPage && (
+                  <span className="absolute right-3 top-1 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-5 h-5 flex items-center justify-center">
+                    {unreadBookingCount > 99 ? "99+" : unreadBookingCount}
                   </span>
                 )}
               </NavLink>

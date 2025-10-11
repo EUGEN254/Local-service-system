@@ -38,7 +38,7 @@ app.use("/api/status", (req, res) =>
 await connectDb();
 
 // -------------------- SOCKET.IO --------------------
-export const io = new Server(server, {
+const io = new Server(server, {
   cors: { origin: allowedOrigins, credentials: true },
 });
 
@@ -48,24 +48,28 @@ export const connectedUsers = {};
 io.on("connection", (socket) => {
   console.log("🟢 New socket connected:", socket.id);
 
-  // ---------------- JOIN USER ROOM ----------------
-  socket.on(
-    "joinUserRoom",
-    ({ userId, userName, userRole, roomProvider, serviceName, roomId }) => {
-      if (!userId) return;
+  // ---------------- JOIN USER ROOM (COMBINED FOR CHAT & NOTIFICATIONS) ----------------
+  socket.on("joinUserRoom", ({ userId, userName, userRole, roomProvider, serviceName, roomId }) => {
+    if (!userId) return;
 
-      if (!connectedUsers[userId]) connectedUsers[userId] = new Set();
-      connectedUsers[userId].add(socket.id);
+    if (!connectedUsers[userId]) connectedUsers[userId] = new Set();
+    connectedUsers[userId].add(socket.id);
 
+    // Join user's personal room for notifications (using userId)
+    socket.join(userId);
+    
+    // Also join chat room if provided
+    if (roomId) {
       socket.join(roomId);
-
       console.log(
         `${userRole} ${userName} (${userId}) joined room "${serviceName}" by ${roomProvider}. RoomID: ${roomId}`
       );
-
-      io.emit("onlineUsers", Object.keys(connectedUsers));
     }
-  );
+
+    console.log(`🔔 ${userRole} ${userName} (${userId}) joined notification room`);
+
+    io.emit("onlineUsers", Object.keys(connectedUsers));
+  });
 
   // ---------------- JOIN / LEAVE ROOMS ----------------
   socket.on("joinRoom", (roomId) => {
@@ -128,6 +132,31 @@ io.on("connection", (socket) => {
     }
   );
 
+  // ---------------- BOOKING EVENTS ----------------
+  socket.on("newBooking", (bookingData) => {
+    console.log("📦 Received newBooking event:", bookingData);
+    
+    // Emit to the specific service provider
+    if (bookingData.providerId) {
+      io.to(bookingData.providerId.toString()).emit("newBooking", bookingData);
+      console.log(`🔔 Emitted newBooking to provider: ${bookingData.providerId}`);
+    } else {
+      console.log("❌ No providerId in booking data");
+    }
+  });
+
+  socket.on("bookingStatusUpdate", (updateData) => {
+    console.log("📦 Booking status update:", updateData);
+    
+    // Emit to both customer and provider
+    if (updateData.customerId) {
+      io.to(updateData.customerId.toString()).emit("bookingStatusUpdate", updateData);
+    }
+    if (updateData.providerId) {
+      io.to(updateData.providerId.toString()).emit("bookingStatusUpdate", updateData);
+    }
+  });
+
   // ---------------- DISCONNECT ----------------
   socket.on("disconnect", () => {
     for (const userId in connectedUsers) {
@@ -145,6 +174,9 @@ app.use("/api/serviceprovider", serviceRouter);
 app.use("/api/customer", customerRouter);
 app.use("/api/mpesa", mpesaRouter);
 app.use("/api/chat", chatRouter);
+
+// -------------------- EXPORT IO FOR USE IN OTHER FILES --------------------
+export { io };
 
 // -------------------- START SERVER LOCALLY --------------------
 if (process.env.NODE_ENV !== "production") {

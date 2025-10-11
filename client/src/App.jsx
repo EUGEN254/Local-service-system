@@ -119,7 +119,6 @@ const App = () => {
           <Route path="browse-services" element={<BrowseServices />} />
           <Route path="my-bookings" element={<MyBookings />} />
           <Route path="payment" element={<Payments />} />
-          <Route path="notifications" element={<Notification />} />
           <Route path="chat" element={<Chat />} />
         </Route>
 

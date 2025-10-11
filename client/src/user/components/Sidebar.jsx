@@ -19,7 +19,6 @@ const navLinks = (logoutUser) => ({
     { name: "Browse Services", icon: <FaServicestack />, path: "browse-services" },
     { name: "My Bookings", icon: <FaBook />, path: "my-bookings" },
     { name: "Payments", icon: <FaDollarSign />, path: "payment" },
-    { name: "Notification", icon: <FaBell />, path: "notifications" },
     { name: "Chat", icon: <FaInbox />, path: "chat" },
   ],
   other: [

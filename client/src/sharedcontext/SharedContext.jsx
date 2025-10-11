@@ -7,6 +7,11 @@ import { io } from "socket.io-client";
 
 export const ShareContext = createContext();
 
+// Helper function to check if user is a service provider
+const isServiceProvider = (user) => {
+  return user && (user.role === "serviceprovider" || user.role === "service-provider");
+};
+
 const AppContextProvider = (props) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
@@ -25,6 +30,8 @@ const AppContextProvider = (props) => {
   // Unread messages
   const [unreadBySender, setUnreadBySender] = useState({});
   const [totalUnread, setTotalUnread] = useState(0);
+  const [bookingNotifications, setBookingNotifications] = useState([])
+  const [unreadBookingCount, setUnreadBookingCount] = useState(0)
 
   // ✅ ADDED: Messages state for all chats
   const [messages, setMessages] = useState({}); // { chatId: [messages] }
@@ -57,6 +64,61 @@ const AppContextProvider = (props) => {
     }
   };
 
+  // ---------------- FETCH BOOKING NOTIFICATIONS ----------------
+  const fetchBookingNotifications = async () => {
+    // FIXED: Use the helper function to check service provider role
+    if (!isServiceProvider(user)) return;
+
+    try {
+      const { data } = await axios.get(`${backendUrl}/api/chat/booking-notifications`, {
+        withCredentials: true,
+      });
+
+      if (data.success) {
+        setBookingNotifications(data.notifications);
+        setUnreadBookingCount(data.unreadCount);
+      }
+    } catch (err) {
+      console.error("Failed to fetch booking notifications:", err);
+    }
+  };
+
+  // ---------------- MARK BOOKING NOTIFICATION AS READ ----------------
+  const markBookingNotificationAsRead = async (notificationId) => {
+    try {
+      await axios.post(`${backendUrl}/api/chat/mark-notification-read`, 
+        { notificationId },
+        { withCredentials: true }
+      );
+
+      setBookingNotifications(prev => 
+        prev.map(notif => 
+          notif._id === notificationId ? { ...notif, read: true } : notif
+        )
+      );
+      setUnreadBookingCount(prev => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
+    }
+  };
+
+  // ---------------- MARK ALL NOTIFICATIONS AS READ ----------------
+  const markAllNotificationsAsRead = async () => {
+    try {
+      await axios.post(`${backendUrl}/api/chat/mark-all-notifications-read`, 
+        {},
+        { withCredentials: true }
+      );
+
+      setBookingNotifications(prev => 
+        prev.map(notif => ({ ...notif, read: true }))
+      );
+      setUnreadBookingCount(0);
+    } catch (err) {
+      console.error("Failed to mark all notifications as read:", err);
+    }
+  };
+
   // ---------------- SOCKET & REAL-TIME UPDATES ----------------
   useEffect(() => {
     if (!user) return;
@@ -85,6 +147,30 @@ const AppContextProvider = (props) => {
         });
         setTotalUnread((prev) => prev + 1);
       }
+    });
+
+    // FIXED: Updated newBooking socket handler with proper role checking
+    socket.current.on("newBooking", (bookingData) => {
+      // FIXED: Use helper function to check service provider role
+      const shouldReceiveNotification = isServiceProvider(user) && 
+        user.name?.trim().toLowerCase() === bookingData.providerName?.trim().toLowerCase();
+      
+      if (shouldReceiveNotification) {
+        
+        // Add new notification
+        setBookingNotifications(prev => {
+          const newNotifications = [bookingData, ...prev];
+          return newNotifications;
+        });
+        
+        setUnreadBookingCount(prev => {
+          const newCount = prev + 1;
+          return newCount;
+        });
+        
+        // Show toast notification
+        toast.info(`New booking: ${bookingData.serviceName} from ${bookingData.customerName}`);
+      } 
     });
 
     return () => {
@@ -131,6 +217,17 @@ const AppContextProvider = (props) => {
       if (showLoader) setTimeout(() => setAuthLoading(false), 150);
     }
   };
+
+  // Fetch notifications when user logs in
+  useEffect(() => {
+    if (isServiceProvider(user)) {
+      fetchBookingNotifications();
+      
+      // Set up interval to fetch notifications periodically
+      const interval = setInterval(fetchBookingNotifications, 30000); // Every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [user]);
 
   // ---------------- SERVICES ----------------
   const fetchServices = async () => {
@@ -220,12 +317,17 @@ const AppContextProvider = (props) => {
     onlineUsers,
     unreadBySender,
     totalUnread,
-    messages, // ✅ ADDED: Messages state
-    setMessages, // ✅ ADDED: Set messages function
+    messages, 
+    setMessages, 
     fetchUnreadCounts,
     markAsRead,
     setUnreadBySender,
     setTotalUnread,
+    bookingNotifications,
+    unreadBookingCount,
+    fetchBookingNotifications,
+    markBookingNotificationAsRead,
+    markAllNotificationsAsRead,
   };
 
   return <ShareContext.Provider value={value}>{props.children}</ShareContext.Provider>;
