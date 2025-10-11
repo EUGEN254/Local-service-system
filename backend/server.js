@@ -47,6 +47,15 @@ app.get("/api/status", (req, res) => {
   });
 });
 
+// Create io instance at top level so it can be exported
+export const io = new Server(server, {
+  cors: { 
+    origin: allowedOrigins, 
+    credentials: true,
+    methods: ["GET", "POST"]
+  }
+});
+
 // Initialize function
 async function initializeServer() {
   try {
@@ -71,15 +80,6 @@ async function initializeServer() {
     await redisClient.set("server_start_test", new Date().toISOString());
     const testResult = await redisClient.get("server_start_test");
     console.log("✅ Upstash Redis connected successfully!", testResult);
-
-    // -------------------- SOCKET.IO --------------------
-    const io = new Server(server, {
-      cors: { 
-        origin: allowedOrigins, 
-        credentials: true,
-        methods: ["GET", "POST"]
-      }
-    });
 
     console.log("✅ Socket.IO initialized!");
 
