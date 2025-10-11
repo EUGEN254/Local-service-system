@@ -186,6 +186,9 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
           createdAt: new Date(),
         };
 
+      
+      socket.current.emit("sendMessage", messagePayload);
+
         // Update context with image message
         setMessages(prev => ({
           ...prev,

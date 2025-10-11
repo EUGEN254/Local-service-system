@@ -13,11 +13,11 @@ const LandingPage = () => {
       title: "Home Cleaning"
     },
     {
-      url: "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&h=300&fit=crop",
+      url: "https://i.pinimg.com/736x/b5/bd/36/b5bd3645659070d20d9aa549d7d301b2.jpg",
       title: "Plumbing"
     },
     {
-      url: "https://images.unsplash.com/photo-1621905251184-0e6b9f5e4c52?w=400&h=300&fit=crop",
+      url: "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&h=300&fit=crop",
       title: "Electrical"
     },
     {

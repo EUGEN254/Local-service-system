@@ -3,7 +3,7 @@ import { ShareContext } from "../../sharedcontext/SharedContext";
 import { assets } from "../../assets/assets";
 
 const RightSidebar = ({ selectedUser }) => {
-  const { user, messages } = useContext(ShareContext);
+  const { user, messages, onlineUsers } = useContext(ShareContext);
   
   // Hide sidebar if no user selected
   if (!selectedUser) return null;
@@ -11,6 +11,9 @@ const RightSidebar = ({ selectedUser }) => {
   // Get current chat ID and messages
   const currentChatId = selectedUser ? [user._id, selectedUser._id].sort().join("_") : null;
   const chatMessages = currentChatId ? messages[currentChatId] || [] : [];
+
+  // ✅ Check if service provider is online
+  const isProviderOnline = selectedUser ? onlineUsers.includes(selectedUser._id.toString()) : false;
 
   // Filter messages that have images and extract unique images
   const sharedMedia = chatMessages
@@ -34,20 +37,34 @@ const RightSidebar = ({ selectedUser }) => {
     <div className={`hidden md:flex flex-col w-full bg-white border-l border-gray-200 overflow-y-auto rounded-tr-2xl rounded-br-2xl`}>
       {/* Profile Section */}
       <div className="flex flex-col items-center py-6 px-4 text-center">
-        <img
-          src={selectedUser?.image || selectedUser?.profilePic || assets.avatar_icon}
-          alt="User profile"
-          className="w-16 h-16 rounded-full object-cover shadow-md mb-3"
-        />
+        <div className="relative">
+          <img
+            src={selectedUser?.image || selectedUser?.profilePic || assets.avatar_icon}
+            alt="User profile"
+            className="w-16 h-16 rounded-full object-cover shadow-md mb-3"
+          />
+          {/* ✅ Online Status Indicator */}
+          <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
+            isProviderOnline ? "bg-green-500" : "bg-gray-400"
+          }`} />
+        </div>
 
         <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-green-500"></span>
           {selectedUser?.name || selectedUser?.fullName || "Unknown User"}
         </h2>
 
         {selectedUser?.email && (
           <p className="text-sm text-gray-500 mt-1">{selectedUser.email}</p>
         )}
+
+        {/* ✅ Online Status Text */}
+        <div className="flex items-center gap-2 mt-2">
+          <span className={`text-xs font-medium ${
+            isProviderOnline ? "text-green-500" : "text-gray-500"
+          }`}>
+            {isProviderOnline ? "Online" : "Offline"}
+          </span>
+        </div>
 
         {selectedUser?.bio && (
           <p className="text-sm text-gray-400 mt-1 italic">{selectedUser.bio}</p>

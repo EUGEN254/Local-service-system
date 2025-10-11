@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   FaTachometerAlt,
   FaServicestack,
@@ -31,7 +31,11 @@ const navLinks = (logoutUser) => ({
 
 const Sidebar = ({ onLinkClick }) => {
   const { logoutUser, totalUnread } = useContext(ShareContext);
+  const location = useLocation();
   const links = navLinks(logoutUser);
+
+  // ✅ Check if user is currently on the chat page
+  const isOnChatPage = location.pathname.includes('/chat');
 
   return (
     <div className="w-64 h-full bg-gray-100 shadow-md rounded-2xl m-0 md:m-3 flex flex-col p-4">
@@ -64,7 +68,8 @@ const Sidebar = ({ onLinkClick }) => {
               >
                 {link.icon}
                 <span>{link.name}</span>
-                {link.name === "Chat" && totalUnread > 0 && (
+                {/* ✅ Only show unread count when NOT on chat page */}
+                {link.name === "Chat" && totalUnread > 0 && !isOnChatPage && (
                   <span className="absolute right-3 top-1 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
                     {totalUnread > 99 ? "99+" : totalUnread}
                   </span>
