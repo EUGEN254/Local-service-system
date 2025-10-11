@@ -30,8 +30,7 @@ const SpRightSidebar = ({ selectedUser }) => {
       index === self.findIndex(m => m.url === media.url)
     );
 
-  console.log('SpRightSidebar - sharedMedia:', sharedMedia);
-
+ 
   const handleImageError = (e) => {
     // If image fails to load, show a placeholder
     e.target.src = assets.gallery_icon;

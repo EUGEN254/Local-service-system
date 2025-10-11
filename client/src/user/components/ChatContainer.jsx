@@ -235,7 +235,7 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
       <div className="flex items-center gap-3 py-3 px-5 border-b border-gray-300 bg-white rounded-t-2xl">
         <div className="relative">
           <img
-            src={selectedUser?.image || assets.profile_martin}
+            src={selectedUser?.image || assets.avatar_icon}
             alt="profile"
             className="w-9 h-9 rounded-full object-cover"
           />

@@ -18,8 +18,6 @@ const BrowseServices = () => {
     const fetchServices = async () => {
       try {
         const { data } = await axios.get(backendUrl + "/api/customer/services");
-        console.log(data);
-
         if (data.success) {
           setServices(data.services);
         } else {
