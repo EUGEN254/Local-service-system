@@ -3,6 +3,8 @@ import Chat from "../models/Chat.js";
 import Message from "../models/messages.js"; // ✅ Correct import (was missing)
 import userAuth from "../middleware/userAuth.js";
 import { io } from "../server.js";
+import { v2 as cloudinary } from "cloudinary";
+import upload from "../middleware/uploadMiddleware.js";
 
 const chatRouter = express.Router();
 
@@ -161,6 +163,127 @@ chatRouter.get("/unread-count", userAuth, async (req, res) => {
   } catch (err) {
     console.error("❌ Error getting unread counts:", err);
     res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+
+
+/* ===========================================================
+   🔹 SEND IMAGE (upload to cloudinary + save message)
+=========================================================== */
+chatRouter.post("/send-image", userAuth, upload.single("image"), async (req, res) => {
+  try {
+    const { sender, receiver, roomId, messageId, text } = req.body;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Image file is required",
+      });
+    }
+
+    // Upload image to Cloudinary using req.file.path
+    const result = await cloudinary.uploader.upload(req.file.path, { 
+      folder: "chat_images" 
+    });
+
+    // Find or create chat
+    let chat = await Chat.findOne({
+      participants: { $all: [sender, receiver] },
+    });
+
+    if (!chat) {
+      chat = new Chat({
+        participants: [sender, receiver],
+        messages: [],
+      });
+    }
+
+    // Create message with image
+    const message = {
+      messageId,
+      sender: req.user._id,
+      receiver: receiver,
+      text: text || "📷 Image",
+      image: result.secure_url,
+      createdAt: new Date(),
+      isRead: false,
+    };
+
+    // Save message for unread tracking
+    await Message.create(message);
+
+    // Push to chat document
+    chat.messages.push({
+      messageId,
+      sender: req.user._id,
+      text: text || "📷 Image",
+      image: result.secure_url,
+      createdAt: message.createdAt,
+    });
+
+    chat.updatedAt = new Date();
+    await chat.save();
+
+    await chat.populate("participants", "name email image");
+
+    // Emit message in real-time
+    if (roomId && io) {
+      io.to(roomId).emit("receiveMessage", message);
+    }
+
+    res.json({ 
+      success: true, 
+      message,
+      imageUrl: result.secure_url 
+    });
+
+  } catch (err) {
+    console.error("❌ Error in send-image:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: err.message 
+    });
+  }
+});
+
+/* ===========================================================
+   🔹 MARK MESSAGES AS READ
+=========================================================== */
+chatRouter.post("/mark-read", userAuth, async (req, res) => {
+  try {
+    const { senderId } = req.body;
+
+    if (!senderId) {
+      return res.status(400).json({
+        success: false,
+        message: "Sender ID is required",
+      });
+    }
+
+    // Mark all unread messages from this sender as read
+    await Message.updateMany(
+      { 
+        sender: senderId, 
+        receiver: req.user._id, 
+        isRead: false 
+      },
+      { 
+        $set: { isRead: true } 
+      }
+    );
+
+    res.json({ 
+      success: true, 
+      message: "Messages marked as read" 
+    });
+
+  } catch (err) {
+    console.error("❌ Error marking messages as read:", err);
+    res.status(500).json({ 
+      success: false, 
+      message: err.message 
+    });
   }
 });
 

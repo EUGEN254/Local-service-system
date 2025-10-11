@@ -1,6 +1,6 @@
 // deleteAllMessages.js
 import mongoose from "mongoose";
-import Chat from "../models/Chat.js";
+import messages from "../models/messages.js";
 
 
 const deleteAllMessages = async () => {
@@ -22,7 +22,7 @@ const deleteAllMessages = async () => {
     console.log("✅ Connection established");
 
     // 🧩 Delete all messages
-    const result = await Chat.deleteMany({});
+    const result = await messages.deleteMany({});
     console.log(`🗑️ Deleted ${result.deletedCount} messages successfully!`);
 
   } catch (error) {

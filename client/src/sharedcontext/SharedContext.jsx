@@ -1,3 +1,4 @@
+// sharedcontext/SharedContext.jsx
 import { createContext, useEffect, useState, useRef } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
@@ -9,53 +10,99 @@ export const ShareContext = createContext();
 const AppContextProvider = (props) => {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
-  const [services, setServices] = useState([]);
-  const [loadingServices, setLoadingServices] = useState(false);
   const currSymbol = "KES";
-
-  const [unreadBySender, setUnreadBySender] = useState({});
-  const [totalUnread, setTotalUnread] = useState(0);
 
   const cachedUser = localStorage.getItem("user");
   const [user, setUser] = useState(cachedUser ? JSON.parse(cachedUser) : null);
   const [authLoading, setAuthLoading] = useState(false);
 
+  const [services, setServices] = useState([]);
+  const [loadingServices, setLoadingServices] = useState(false);
+
+  // Online users
+  const [onlineUsers, setOnlineUsers] = useState([]);
+
+  // Unread messages
+  const [unreadBySender, setUnreadBySender] = useState({});
+  const [totalUnread, setTotalUnread] = useState(0);
+
+  // ✅ ADDED: Messages state for all chats
+  const [messages, setMessages] = useState({}); // { chatId: [messages] }
+
   const socket = useRef();
 
-  // ---------------- SOCKET ----------------
-  useEffect(() => {
-    if (user) {
-      socket.current = io(backendUrl, { withCredentials: true });
+  // ---------------- FETCH UNREAD COUNTS ----------------
+  const fetchUnreadCounts = async () => {
+    if (!user) return;
 
-      // Join user room
-      socket.current.emit("joinUserRoom", {
-        userId: user._id,
-        userName: user.name,
-        userRole: user.role,
+    try {
+      const { data } = await axios.get(`${backendUrl}/api/chat/unread-count`, {
+        withCredentials: true,
       });
 
-      // Listen for online users
-      socket.current.on("onlineUsers", (users) => {
-        console.log("Online users updated:", users);
-      });
+      if (data.success) {
+        const countsMap = {};
+        let total = 0;
 
-      // Listen for new messages
-      socket.current.on("receiveMessage", (message) => {
-        if (message.receiver === user._id) {
-          // Increment unread counts
-          setUnreadBySender((prev) => {
-            const newCount = (prev[message.sender] || 0) + 1;
-            return { ...prev, [message.sender]: newCount };
-          });
+        data.unreadCounts.forEach((entry) => {
+          countsMap[entry._id] = entry.count;
+          total += entry.count;
+        });
 
-          setTotalUnread((prev) => prev + 1);
-        }
-      });
-
-      return () => {
-        socket.current.disconnect();
-      };
+        setUnreadBySender(countsMap);
+        setTotalUnread(total);
+      }
+    } catch (err) {
+      console.error("Failed to fetch unread counts:", err.message);
     }
+  };
+
+  // ---------------- SOCKET & REAL-TIME UPDATES ----------------
+  useEffect(() => {
+    if (!user) return;
+
+    socket.current = io(backendUrl, { withCredentials: true });
+
+    // Join main user room
+    socket.current.emit("joinUserRoom", {
+      userId: user._id,
+      userName: user.name,
+      userRole: user.role,
+    });
+
+    // Listen for online users
+    socket.current.on("onlineUsers", (users) => {
+      setOnlineUsers(users.map((id) => id.toString()));
+    });
+
+    // Listen for new messages
+    socket.current.on("receiveMessage", (message) => {
+      if (message.receiver === user._id) {
+        // Update unread counts immediately when new message arrives
+        setUnreadBySender((prev) => {
+          const newCount = (prev[message.sender] || 0) + 1;
+          return { ...prev, [message.sender]: newCount };
+        });
+        setTotalUnread((prev) => prev + 1);
+      }
+    });
+
+    return () => {
+      socket.current.disconnect();
+    };
+  }, [user]);
+
+  // ---------------- PERIODIC UNREAD COUNT FETCHING ----------------
+  useEffect(() => {
+    if (!user) return;
+
+    // Fetch immediately
+    fetchUnreadCounts();
+
+    // Then fetch every 10 seconds (like SpChatSidebar)
+    const interval = setInterval(fetchUnreadCounts, 10000);
+    
+    return () => clearInterval(interval);
   }, [user]);
 
   // ---------------- AUTH & USER ----------------
@@ -105,6 +152,31 @@ const AppContextProvider = (props) => {
   const removeService = (id) =>
     setServices((prev) => prev.filter((s) => s._id !== id));
 
+  // ---------------- MARK AS READ ----------------
+  const markAsRead = async (senderId) => {
+    if (!user || !senderId) return;
+
+    try {
+      // Update local state immediately
+      setUnreadBySender(prev => {
+        const newCounts = { ...prev };
+        if (newCounts[senderId]) {
+          setTotalUnread(prevTotal => prevTotal - newCounts[senderId]);
+          delete newCounts[senderId];
+        }
+        return newCounts;
+      });
+
+      // Call API to mark as read
+      await axios.post(`${backendUrl}/api/chat/mark-read`, 
+        { senderId },
+        { withCredentials: true }
+      );
+    } catch (err) {
+      console.error("Failed to mark messages as read:", err);
+    }
+  };
+
   // ---------------- LOGOUT ----------------
   const logoutUser = async () => {
     try {
@@ -124,34 +196,6 @@ const AppContextProvider = (props) => {
       setTimeout(() => setAuthLoading(false), 150);
     }
   };
-
-  // ---------------- FETCH UNREAD COUNTS ----------------
-  const fetchUnreadCounts = async () => {
-    try {
-      if (!user) return;
-      const { data } = await axios.get(`${backendUrl}/api/chat/unread-count`, {
-        withCredentials: true,
-      });
-      if (data.success) {
-        const countsMap = {};
-        let total = 0;
-
-        data.unreadCounts.forEach((entry) => {
-          countsMap[entry._id] = entry.count;
-          total += entry.count;
-        });
-
-        setUnreadBySender(countsMap);
-        setTotalUnread(total);
-      }
-    } catch (err) {
-      console.error("Failed to fetch unread counts:", err.message);
-    }
-  };
-
-  useEffect(() => {
-    if (user) fetchUnreadCounts();
-  }, [user]);
 
   // ---------------- VERIFY SESSION ----------------
   useEffect(() => {
@@ -173,9 +217,15 @@ const AppContextProvider = (props) => {
     removeService,
     currSymbol,
     socket,
+    onlineUsers,
     unreadBySender,
     totalUnread,
+    messages, // ✅ ADDED: Messages state
+    setMessages, // ✅ ADDED: Set messages function
     fetchUnreadCounts,
+    markAsRead,
+    setUnreadBySender,
+    setTotalUnread,
   };
 
   return <ShareContext.Provider value={value}>{props.children}</ShareContext.Provider>;

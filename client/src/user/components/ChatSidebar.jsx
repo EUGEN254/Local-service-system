@@ -1,51 +1,10 @@
-import React, { useContext, useState, useEffect } from "react";
-import { assets } from "../../assets/assets.js";
-import { useNavigate } from "react-router-dom";
+// components/chat/ChatSidebar.jsx
+import React, { useContext } from "react";
 import { ShareContext } from "../../sharedcontext/SharedContext.jsx";
-import axios from "axios";
+import { assets } from "../../assets/assets.js";
 
 const ChatSidebar = ({ selectedUser, setSelectedUser, services }) => {
-  const navigate = useNavigate();
-  const { user, socket, backendUrl } = useContext(ShareContext);
-
-  const [onlineUsers, setOnlineUsers] = useState([]);
-  const [unreadCounts, setUnreadCounts] = useState({}); // ✅ unread badge data
-
-  // ---------------- Listen for online users ----------------
-  useEffect(() => {
-    if (!socket.current) return;
-
-    const handleOnlineUsers = (userIds) => setOnlineUsers(userIds);
-    socket.current.on("onlineUsers", handleOnlineUsers);
-
-    return () => socket.current.off("onlineUsers", handleOnlineUsers);
-  }, []);
-
-  // ---------------- Fetch unread counts ----------------
-  useEffect(() => {
-    const fetchUnreadCounts = async () => {
-      try {
-        const { data } = await axios.get(`${backendUrl}/api/chat/unread-count`, {
-          withCredentials: true,
-        });
-        if (data.success) {
-          const counts = {};
-          data.unreadCounts.forEach((u) => {
-            counts[u._id] = u.count;
-          });
-          setUnreadCounts(counts);
-        }
-      } catch (err) {
-        console.error("❌ Error fetching unread counts:", err);
-      }
-    };
-
-    fetchUnreadCounts();
-
-    // Optional: refresh every 10 seconds
-    const interval = setInterval(fetchUnreadCounts, 10000);
-    return () => clearInterval(interval);
-  }, [backendUrl]);
+  const { user, socket, onlineUsers, unreadBySender, markAsRead } = useContext(ShareContext);
 
   if (!services || services.length === 0) return null;
 
@@ -66,8 +25,8 @@ const ChatSidebar = ({ selectedUser, setSelectedUser, services }) => {
       });
     }
 
-    // ✅ Clear unread count for this provider once opened
-    setUnreadCounts((prev) => ({ ...prev, [serviceProvider._id]: 0 }));
+    // ✅ Mark messages as read when selecting the user
+    markAsRead(serviceProvider._id);
   };
 
   return (
@@ -97,7 +56,7 @@ const ChatSidebar = ({ selectedUser, setSelectedUser, services }) => {
         {services.map((service) => {
           const { serviceProvider } = service;
           const isOnline = onlineUsers.includes(serviceProvider._id);
-          const unread = unreadCounts[serviceProvider._id] || 0;
+          const unread = unreadBySender[serviceProvider._id] || 0;
 
           return (
             <div
@@ -119,16 +78,12 @@ const ChatSidebar = ({ selectedUser, setSelectedUser, services }) => {
               <div className="flex flex-col">
                 <p className="text-gray-800 text-sm font-medium">{serviceProvider.name}</p>
                 <span className="text-xs text-gray-500">{serviceProvider.email}</span>
-                <span
-                  className={`text-xs ${
-                    isOnline ? "text-green-500" : "text-gray-400"
-                  }`}
-                >
+                <span className={`text-xs ${isOnline ? "text-green-500" : "text-gray-400"}`}>
                   {isOnline ? "Online" : "Offline"}
                 </span>
               </div>
 
-              {/* 🔴 Unread Badge */}
+              {/* 🔴 Unread Badge - Now updates in real-time */}
               {unread > 0 && (
                 <span className="absolute right-3 top-3 bg-red-500 text-white text-xs font-semibold rounded-full px-2 py-0.5">
                   {unread}
