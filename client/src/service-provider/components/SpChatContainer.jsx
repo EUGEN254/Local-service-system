@@ -406,7 +406,7 @@ const SpChatContainer = ({ selectedUser, setSelectedUser }) => {
             className={`flex-1 p-2 rounded-full border outline-none ${
               isOnline ? "border-gray-300" : "border-gray-400 bg-gray-100"
             } ${showPreview ? 'opacity-50' : ''}`}
-            disabled={!isOnline || uploading || showPreview}
+            
           />
 
           <button
