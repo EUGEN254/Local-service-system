@@ -7,7 +7,7 @@ import Booking from "../models/bookingSchema.js";
 const deleteAllMessages = async () => {
   try {
     // 🔒 Replace this with your actual MongoDB URI
-    const connectionString = "mongodb+srv://bitinyo:12345@cluster0.c6vd6s9.mongodb.net/mern-auth?retryWrites=true&w=majority&appName=Cluster0";
+    const connectionString = "";
 
     console.log("Connecting with:", connectionString);
 
