@@ -10,11 +10,11 @@ import Notifications from "./pages/Notifications";
 import BookingsAndTransaction from "./pages/BookingsAndTransaction";
 import Analytics from "./pages/Analytics";
 import Home from "./pages/Home";
-import NotFound from "../../client/src/sharedcomponent/NotFound";
 import ServiceCategories from "./pages/ServiceCategories";
 import ServiceProvider from "./pages/ServiceProvider";
 import UserManagement from "./pages/UserManagement";
 import AdminLogin from "./pages/AdminLogin";
+import NotFound from "./componets/NotFound";
 
 // ✅ Enhanced Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
