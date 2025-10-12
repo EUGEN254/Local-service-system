@@ -14,7 +14,9 @@ import {
   updateUserStatus,
   updateUser,
   deleteUser,
-  createUser
+  createUser,
+  getAllBookings,
+  updateProfile,
 } from "../controllers/adminControllers.js";
 import { getBookings, getBookingStats, getTransactions, updateBookingStatus } from "../controllers/adminBookingsController.js";
 
@@ -27,6 +29,7 @@ adminRouter.put("/update-provider/:id", userAuth, adminAuth, upload.single("imag
 adminRouter.post("/create-provider", userAuth, adminAuth, upload.single("image"), createProvider);
 adminRouter.delete("/delete-provider/:id", userAuth, adminAuth, deleteProvider);
 
+
 // User Management Routes
 adminRouter.get("/customers", userAuth, adminAuth, getCustomers);
 adminRouter.get("/admins", userAuth, adminAuth, getAdmins);
@@ -34,6 +37,8 @@ adminRouter.put("/update-user-status", userAuth, adminAuth, updateUserStatus);
 adminRouter.put("/update-user/:id", userAuth, adminAuth, upload.single("image"), updateUser);
 adminRouter.delete("/delete-user/:id", userAuth, adminAuth, deleteUser);
 adminRouter.post("/create-user", userAuth, adminAuth, upload.single("image"), createUser);
+adminRouter.put("/update-profile", userAuth, upload.single("image"), updateProfile);
+
 
 
 
@@ -41,5 +46,6 @@ adminRouter.get("/bookings",userAuth, adminAuth, getBookings);
 adminRouter.get("/transactions",userAuth, adminAuth, getTransactions);
 adminRouter.put("/bookings/:id/status",userAuth, adminAuth, updateBookingStatus);
 adminRouter.get("/bookings-stats",userAuth, adminAuth, getBookingStats);
+adminRouter.get("/all-bookings", userAuth, adminAuth, getAllBookings);
 
 export default adminRouter;

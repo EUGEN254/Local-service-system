@@ -45,17 +45,28 @@ export const AdminProvider = ({ children }) => {
 
   // Admin authentication states
   const cachedUser = localStorage.getItem("adminUser");
-  const [admin, setAdmin] = useState(cachedUser ? JSON.parse(cachedUser) : null);
+  const [admin, setAdmin] = useState(
+    cachedUser ? JSON.parse(cachedUser) : null
+  );
   const [verified, setIsVerified] = useState(false);
   const [loadingAdmin, setLoadingAdmin] = useState(true);
   const navigate = useNavigate();
+
+  // admin notification
+  const [notifications, setNotifications] = useState([]);
+const [unreadCount, setUnreadCount] = useState(0);
+const [loadingNotifications, setLoadingNotifications] = useState(false);
+
+  // get all bookings
+  const [allBookings, setAllBookings] = useState([]);
+  const [loadingAllBookings, setLoadingAllBookings] = useState(false);
 
   // Fetch current admin on component mount
   useEffect(() => {
     const initializeAdmin = async () => {
       const isAdminLoggedIn = localStorage.getItem("isAdminLoggedIn");
       const adminUser = localStorage.getItem("adminUser");
-      
+
       // If we have cached data, verify it with the backend
       if (isAdminLoggedIn && adminUser) {
         await fetchCurrentAdmin();
@@ -74,30 +85,29 @@ export const AdminProvider = ({ children }) => {
       // Clear state first
       setAdmin(null);
       setIsVerified(false);
-      
+
       // Clear localStorage
       localStorage.removeItem("isAdminLoggedIn");
       localStorage.removeItem("adminUser");
       localStorage.removeItem("role");
-      
+
       // Call backend logout
       await axios.post(
         `${backendUrl}/api/user/logoutAdmin`,
         {},
         { withCredentials: true }
       );
-      
+
       // Show success message
       toast.success("Logged out successfully");
-      
+
       // Navigate to login page
       navigate("/", { replace: true });
-      
     } catch (err) {
       console.log("Logout error:", err);
       // Even if backend call fails, still clear frontend and redirect
       navigate("/", { replace: true });
-    } 
+    }
   };
 
   const fetchCurrentAdmin = async () => {
@@ -162,7 +172,11 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
-  const updateVerificationStatus = async (userId, status, rejectionReason = "") => {
+  const updateVerificationStatus = async (
+    userId,
+    status,
+    rejectionReason = ""
+  ) => {
     try {
       const { data } = await axios.put(
         `${backendUrl}/api/admin/update-verification`,
@@ -182,7 +196,8 @@ export const AdminProvider = ({ children }) => {
                       ...provider.serviceProviderInfo?.idVerification,
                       status,
                       verifiedAt: status === "verified" ? new Date() : null,
-                      rejectionReason: status === "rejected" ? rejectionReason : "",
+                      rejectionReason:
+                        status === "rejected" ? rejectionReason : "",
                     },
                     isVerified: status === "verified",
                   },
@@ -215,7 +230,9 @@ export const AdminProvider = ({ children }) => {
       if (data.success) {
         setServiceProviders((prev) =>
           prev.map((provider) =>
-            provider._id === providerId ? { ...provider, ...data.user } : provider
+            provider._id === providerId
+              ? { ...provider, ...data.user }
+              : provider
           )
         );
         toast.success("Provider updated successfully!");
@@ -669,6 +686,32 @@ export const AdminProvider = ({ children }) => {
     }
   };
 
+  // Add this function
+  const fetchAllBookings = async (filters = {}) => {
+    setLoadingAllBookings(true);
+    try {
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) params.append(key, value);
+      });
+
+      const { data } = await axios.get(
+        `${backendUrl}/api/admin/all-bookings?${params}`,
+        { withCredentials: true }
+      );
+
+      if (data.success) {
+        setAllBookings(data.bookings);
+        return data;
+      }
+    } catch (err) {
+      console.error("Failed to fetch all bookings:", err);
+      toast.error("Failed to load bookings");
+    } finally {
+      setLoadingAllBookings(false);
+    }
+  };
+
   // ---------------- UTILITY FUNCTIONS ----------------
 
   const refreshProviders = () => {
@@ -680,7 +723,94 @@ export const AdminProvider = ({ children }) => {
     fetchAdmins();
   };
 
-  
+  // Add these functions
+const fetchNotifications = async (filters = {}) => {
+  setLoadingNotifications(true);
+  try {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value) params.append(key, value);
+    });
+
+    const { data } = await axios.get(
+      `${backendUrl}/api/notifications?${params}`,
+      { withCredentials: true }
+    );
+
+    if (data.success) {
+      setNotifications(data.notifications);
+      setUnreadCount(data.unreadCount);
+      return data;
+    }
+  } catch (err) {
+    console.error("Failed to fetch notifications:", err);
+  } finally {
+    setLoadingNotifications(false);
+  }
+};
+
+const fetchUnreadCount = async () => {
+  try {
+    const { data } = await axios.get(
+      `${backendUrl}/api/notifications/unread-count`,
+      { withCredentials: true }
+    );
+
+    if (data.success) {
+      setUnreadCount(data.unreadCount);
+      return data.unreadCount;
+    }
+  } catch (err) {
+    console.error("Failed to fetch unread count:", err);
+  }
+};
+
+const markNotificationAsRead = async (notificationId) => {
+  try {
+    const { data } = await axios.put(
+      `${backendUrl}/api/notifications/mark-read/${notificationId}`,
+      {},
+      { withCredentials: true }
+    );
+
+    if (data.success) {
+      setNotifications(prev =>
+        prev.map(n => n._id === notificationId ? { ...n, read: true } : n)
+      );
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      return true;
+    }
+  } catch (err) {
+    console.error("Failed to mark notification as read:", err);
+  }
+  return false;
+};
+
+const markAllNotificationsAsRead = async () => {
+  try {
+    const { data } = await axios.put(
+      `${backendUrl}/api/notifications/mark-all-read`,
+      {},
+      { withCredentials: true }
+    );
+
+    if (data.success) {
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+      return true;
+    }
+  } catch (err) {
+    console.error("Failed to mark all notifications as read:", err);
+  }
+  return false;
+};
+
+useEffect(()=>{
+  if(admin){
+    fetchUnreadCount()
+  }
+},[])
+
 
   const value = {
     backendUrl,
@@ -738,12 +868,25 @@ export const AdminProvider = ({ children }) => {
     loadingTransactions,
     updatingBooking,
     bookingStats,
+    allBookings,
+    fetchAllBookings,
+    loadingAllBookings,
 
     // Bookings & Transactions Functions
     fetchBookings,
     fetchTransactions,
     updateBookingStatus,
     fetchBookingStats,
+
+
+    // Notifications
+  notifications,
+  unreadCount,
+  loadingNotifications,
+  fetchNotifications,
+  fetchUnreadCount,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
   };
 
   return (

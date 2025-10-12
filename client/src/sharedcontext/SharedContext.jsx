@@ -27,6 +27,8 @@ const AppContextProvider = (props) => {
 
   const [services, setServices] = useState([]);
   const [loadingServices, setLoadingServices] = useState(false);
+  const[categories,setCategories] = useState([])
+   const [showCustomCategory, setShowCustomCategory] = useState(false);
 
   // Online users
   const [onlineUsers, setOnlineUsers] = useState([]);
@@ -324,16 +326,39 @@ const AppContextProvider = (props) => {
     }
   };
 
+  // Add this function to fetch categories
+  const fetchCategories = async () => {
+    try {
+      const { data } = await axios.get(`${backendUrl}/api/categories`, {
+        withCredentials: true,
+      });
+      if (data.success) {
+        setCategories(data.categories);
+      }
+    } catch (err) {
+      console.error("Failed to fetch categories:", err);
+      toast.error("Failed to load categories");
+    }
+  };
+
+
   // ---------------- VERIFY SESSION ----------------
   useEffect(() => {
     fetchCurrentUser(false);
   }, []);
 
+  useEffect(()=> {
+    fetchCategories()
+  },[])
+
   const value = {
     backendUrl,
     user,
     setUser,
+    fetchCategories,
+    categories,
     fetchCurrentUser,
+    showCustomCategory,
     logoutUser,
     authLoading,
     setAuthLoading,

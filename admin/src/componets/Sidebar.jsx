@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import {
   FaTachometerAlt,
   FaDollarSign,
@@ -31,8 +31,11 @@ const navLinks =(logoutAdmin)=>({
 });
 
 const Sidebar = ({ onLinkClick }) => {
-  const { logoutAdmin } = useContext(AdminContext);
+  const { logoutAdmin,unreadCount } = useContext(AdminContext);
   const links = navLinks(logoutAdmin);
+  const location = useLocation()
+
+   const isOnNotificationsPage = location.pathname.includes('/admin/notifications');
   return (
     <div className="w-64 h-full bg-gray-100 shadow-md rounded-2xl m-0 md:m-3 flex flex-col p-4">
       {/* Logo + Title */}
@@ -57,7 +60,7 @@ const Sidebar = ({ onLinkClick }) => {
 
         <ul className="space-y-1 pl-4">
           {links.menu.map((link, index) => (
-            <li key={index}>
+            <li key={index} className="relative">
               <NavLink
                 to={link.path}
                 onClick={onLinkClick}
@@ -72,6 +75,12 @@ const Sidebar = ({ onLinkClick }) => {
                 }
               >
                 {link.icon} {link.name}
+
+                {link.name === "Notification" && unreadCount > 0 && !isOnNotificationsPage && (
+                  <span className="absolute right-3 top-2 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-5 h-5 flex items-center justify-center">
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
               </NavLink>
             </li>
           ))}

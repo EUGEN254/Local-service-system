@@ -1,4 +1,8 @@
 import React, { useState } from 'react';
+import { useContext } from 'react';
+import { ShareContext } from '../../sharedcontext/SharedContext';
+import axios from 'axios'
+import { toast } from "react-toastify";
 
 const Help = () => {
   const [activeTab, setActiveTab] = useState('faq');
@@ -6,6 +10,7 @@ const Help = () => {
   const [message, setMessage] = useState('');
   const [subject, setSubject] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const {backendUrl} = useContext(ShareContext)
 
   const faqCategories = {
     general: [
@@ -53,6 +58,7 @@ const Help = () => {
   };
 
   const contactCategories = [
+    { value: 'general', label: 'General Inquiry' },
     { value: 'technical', label: 'Technical Issue' },
     { value: 'account', label: 'Account Problem' },
     { value: 'payment', label: 'Payment Issue' },
@@ -174,20 +180,31 @@ const Help = () => {
   const handleSubmitTicket = async (e) => {
     e.preventDefault();
     if (!subject || !message) {
-      alert('Please fill in all fields');
+      toast.error('Please fill in all fields');
       return;
     }
     
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      alert('Help ticket submitted successfully! Our team will contact you within 2 hours.');
-      setSubject('');
-      setMessage('');
-      setSelectedCategory('general');
+      const { data } = await axios.post(
+        `${backendUrl}/api/support/submit`,
+        {
+          category: selectedCategory,
+          subject,
+          message
+        },
+        { withCredentials: true }
+      );
+  
+      if (data.success) {
+        toast.success('Help ticket submitted successfully! Our team will contact you within 2 hours.');
+        setSubject('');
+        setMessage('');
+        setSelectedCategory('general');
+      }
     } catch (error) {
-      alert('Failed to submit ticket. Please try again.');
+      console.error('Failed to submit ticket:', error);
+      toast.error(error.response?.data?.message || 'Failed to submit ticket. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

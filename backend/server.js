@@ -15,6 +15,8 @@ import Chat from "./models/Chat.js";
 import { Server } from "socket.io";
 import adminRouter from "./routes/adminRoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
+import notificationRouter from "./routes/notificationRoutes.js";
+import supportRouter from "./routes/supportRoutes.js";
 
 // -------------------- EXPRESS + HTTP --------------------
 const app = express();
@@ -179,6 +181,9 @@ app.use("/api/mpesa", mpesaRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/admin", adminRouter);
 app.use("/api/categories", categoryRouter);
+app.use("/api/notifications", notificationRouter);
+app.use("/api/support", supportRouter);
+
 
 
 

@@ -8,10 +8,30 @@ import {
 } from "react-icons/fa";
 import { AdminContext } from "../context/AdminContext";
 import { assets } from "../assets/assets";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = ({ onMenuClick }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const { logoutAdmin, admin, loadingAdmin } = useContext(AdminContext);
+  const { 
+    logoutAdmin, 
+    admin, 
+    loadingAdmin,
+    unreadCount,
+    fetchUnreadCount 
+  } = useContext(AdminContext);
+
+  const navigate = useNavigate();
+
+  // Refresh unread count periodically
+  useEffect(() => {
+    if (admin) {
+      fetchUnreadCount();
+      
+      // Refresh every 30 seconds
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [admin]);
 
   // Show loading state while admin data is being fetched
   if (loadingAdmin) {
@@ -49,7 +69,7 @@ const Navbar = ({ onMenuClick }) => {
 
         <div className="hidden md:block">
           <img
-            src={assets.avatar_icon}
+            src={admin?.image || assets.avatar_icon}
             alt="logo"
             className="w-10 h-10 rounded-full"
           />
@@ -82,17 +102,21 @@ const Navbar = ({ onMenuClick }) => {
         </button>
 
         {/* Notification bell */}
-        <div className="relative bg-gray-100 p-2 rounded-lg cursor-pointer">
+        <div 
+        onClick={()=>navigate('/admin/notifications')}
+        className="relative bg-gray-100 p-2 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
           <FaBell className="text-gray-600 text-lg" />
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
-            3
-          </span>
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-medium">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
         </div>
 
         {/* User circle with dropdown */}
         <div className="relative cursor-pointer">
           <div
-            className="flex items-center gap-1 bg-gray-100 px-3 py-2 rounded-full"
+            className="flex items-center gap-1 bg-gray-100 px-3 py-2 rounded-full hover:bg-gray-200 transition-colors"
             onClick={() => setDropdownOpen(!dropdownOpen)}
           >
             <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center font-semibold text-sm">

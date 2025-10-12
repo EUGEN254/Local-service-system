@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
-import { assets, categories } from "../../assets/assets";
+import { assets } from "../../assets/assets";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { ShareContext } from "../../sharedcontext/SharedContext";
@@ -14,10 +14,12 @@ const MyServices = () => {
     removeService,
     verified,
     user,
+    categories,
+    fetchCategories,
   } = useContext(ShareContext);
 
   const [form, setForm] = useState({
-    category: categories[0],
+    category: "",
     serviceName: "",
     amount: "",
     status: "Active",
@@ -31,6 +33,7 @@ const MyServices = () => {
     open: false,
     serviceId: null,
   });
+  const [showCustomCategory, setShowCustomCategory] = useState(false);
 
   // id document verification
   const [formId, setFormId] = useState({
@@ -76,12 +79,31 @@ const MyServices = () => {
 
   useEffect(() => {
     fetchServices();
-  }, []);
+    // Set initial category when categories are loaded
+    if (categories.length > 0 && !form.category) {
+      setForm(prev => ({ ...prev, category: categories[0].name }));
+    }
+  }, [categories]);
 
   // --- Handlers for Add Service ---
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+
+    if (name === "category") {
+      if (value === "custom") {
+        setShowCustomCategory(true);
+        setForm((prev) => ({ ...prev, [name]: "" }));
+      } else {
+        setShowCustomCategory(false);
+        setForm((prev) => ({ ...prev, [name]: value }));
+      }
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleCustomCategoryChange = (e) => {
+    setForm(prev => ({ ...prev, category: e.target.value }));
   };
 
   const handleImageChange = (e) => {
@@ -99,6 +121,10 @@ const MyServices = () => {
     e.preventDefault();
     if (!form.serviceName || !form.amount || !form.image) {
       return toast.info("Service name, amount, and image are required");
+    }
+
+    if (!form.category) {
+      return toast.info("Please select or enter a category");
     }
 
     const formData = new FormData();
@@ -124,13 +150,14 @@ const MyServices = () => {
       addService(data.service);
       toast.success("Service added successfully!");
       setForm({
-        category: categories[0],
+        category: categories.length > 0 ? categories[0].name : "",
         serviceName: "",
         amount: "",
         status: "Active",
         image: null,
         imagePreview: null,
       });
+      setShowCustomCategory(false);
     } catch (err) {
       toast.error(err.message);
     } finally {
@@ -296,6 +323,10 @@ const MyServices = () => {
     }
   };
 
+   useEffect(()=> {
+      fetchCategories()
+    },[])
+
   return (
     <div className="space-y-6 p-4 sm:p-6 h-[calc(100vh-4rem)] overflow-y-auto">
       <h1 className="text-xl font-semibold text-gray-800">My Services</h1>
@@ -308,22 +339,43 @@ const MyServices = () => {
           onSubmit={handleAddService}
         >
           {/* Category */}
-          <div>
+          <div className="space-y-2">
             <label className="text-sm font-medium text-gray-700 block mb-1">
               Category
             </label>
+
+            {/* Main Category Select */}
             <select
               name="category"
-              value={form.category}
+              value={showCustomCategory ? "custom" : form.category}
               onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-2"
             >
-              {categories.map((cat, idx) => (
-                <option key={idx} value={cat}>
-                  {cat}
+              {/* Existing categories */}
+              {categories.map((cat) => (
+                <option key={cat._id} value={cat.name}>
+                  {cat.name}
                 </option>
               ))}
+              {/* Custom category option */}
+              <option value="custom">+ Add Custom Category</option>
             </select>
+
+            {/* Custom Category Input - Only shows when "Add Custom Category" is selected */}
+            {showCustomCategory && (
+              <div className="mt-2">
+                <input
+                  type="text"
+                  value={form.category}
+                  onChange={handleCustomCategoryChange}
+                  placeholder="Enter your custom category"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Type your custom category name
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Service Name */}
@@ -733,9 +785,9 @@ const MyServices = () => {
                   onChange={handleEditChange}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
                 >
-                  {categories.map((cat, idx) => (
-                    <option key={idx} value={cat}>
-                      {cat}
+                  {categories.map((cat) => (
+                    <option key={cat._id} value={cat.name}>
+                      {cat.name}
                     </option>
                   ))}
                 </select>
@@ -847,8 +899,6 @@ const MyServices = () => {
           </div>
         </div>
       )}
-
-      {}
     </div>
   );
 };

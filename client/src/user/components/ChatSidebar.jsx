@@ -196,7 +196,7 @@ const ChatSidebar = ({
                   }`}
               >
                 <img
-                  src={serviceProvider?.image || assets.avatar_icon}
+                  src={serviceProvider.image || assets.avatar_icon}
                   alt="profile"
                   className="w-10 h-10 rounded-full object-cover border border-gray-200"
                 />
