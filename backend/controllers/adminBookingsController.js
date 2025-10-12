@@ -6,8 +6,6 @@ import mpesaTransactionsSchema from "../models/mpesaTransactionsSchema.js";
 // Get all bookings with customer details
 export const getBookings = async (req, res) => {
   try {
-    console.log('Fetching bookings for admin:', req.user._id);
-    
     const {
       page = 1,
       limit = 10,
@@ -72,7 +70,6 @@ export const getBookings = async (req, res) => {
 // Get all transactions
 export const getTransactions = async (req, res) => {
   try {
-    console.log('Fetching transactions for admin:', req.user._id);
     
     const {
       page = 1,

@@ -1,48 +1,65 @@
-// scripts/createAdmin.js
+
+
+
+// scripts/deleteAllBookings.js
 import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
 import dotenv from 'dotenv';
 
 // Load environment variables
 dotenv.config();
 
-// Import User model (adjust path as needed)
-import User from '../models/userSchema.js'; // Adjust path to your userSchema
+// Import Booking model (adjust path as needed)
+import Booking from '../models/bookingSchema.js'; // Adjust path to your bookingSchema
 
-const createAdminUser = async () => {
+const deleteAllBookings = async () => {
   try {
     // Connect to MongoDB
-    await mongoose.connect('');
+    await mongoose.connect(process.env.MONGODB_URI || '');
     console.log('Connected to MongoDB');
 
-    // Check if admin already exists
-    const existingAdmin = await User.findOne({ email: 'bitinyoeuge@gmail.com' });
-    if (existingAdmin) {
-      console.log('Admin user already exists:', existingAdmin.email);
+    // Confirm before deletion (safety measure)
+    const bookingCount = await Booking.countDocuments();
+    console.log(`📊 Found ${bookingCount} bookings in the database`);
+    
+    if (bookingCount === 0) {
+      console.log('✅ No bookings found to delete.');
       await mongoose.disconnect();
       return;
     }
 
-    // Create admin user
-    const hashedPassword = await bcrypt.hash('123', 10); // Change this password!
+    // Optional: Add confirmation prompt for safety
+    console.log('🚨 WARNING: This will permanently delete ALL bookings!');
+    console.log('Type "DELETE ALL" to confirm:');
     
-    const adminUser = new User({
-      name: 'System Administrator',
-      email: 'bitinyoeuge@gmail.com', 
-      password: hashedPassword,
-      role: 'admin',
-      phone: '+254115418682', // Change this!
-      bio: 'System Administrator Account'
+    // For a more interactive version, you could use readline
+    // For now, we'll proceed with deletion - uncomment the confirmation if needed
+    
+    // Uncomment below for interactive confirmation:
+    /*
+    const readline = require('readline').createInterface({
+      input: process.stdin,
+      output: process.stdout
     });
 
-    await adminUser.save();
-    console.log('✅ Admin user created successfully!');
-    console.log('Email: admin@example.com'); // Change this!
-    console.log('Password: admin123'); // Change this!
-    console.log('⚠️  IMPORTANT: Change the email and password immediately!');
+    const confirmation = await new Promise(resolve => {
+      readline.question('Type "DELETE ALL" to confirm: ', resolve);
+    });
+    
+    if (confirmation !== 'DELETE ALL') {
+      console.log('❌ Deletion cancelled.');
+      readline.close();
+      await mongoose.disconnect();
+      return;
+    }
+    readline.close();
+    */
+
+    // Delete all bookings
+    const result = await Booking.deleteMany({});
+    console.log(`✅ Successfully deleted ${result.deletedCount} bookings!`);
 
   } catch (error) {
-    console.error('❌ Error creating admin user:', error);
+    console.error('❌ Error deleting bookings:', error);
   } finally {
     await mongoose.disconnect();
     console.log('Disconnected from MongoDB');
@@ -50,4 +67,65 @@ const createAdminUser = async () => {
 };
 
 // Run the script
-createAdminUser();
+deleteAllBookings();
+
+
+
+
+
+
+
+
+// // scripts/createAdmin.js
+// import mongoose from 'mongoose';
+// import bcrypt from 'bcryptjs';
+// import dotenv from 'dotenv';
+
+// // Load environment variables
+// dotenv.config();
+
+// // Import User model (adjust path as needed)
+// import User from '../models/userSchema.js'; // Adjust path to your userSchema
+
+// const createAdminUser = async () => {
+//   try {
+//     // Connect to MongoDB
+//     await mongoose.connect('');
+//     console.log('Connected to MongoDB');
+
+//     // Check if admin already exists
+//     const existingAdmin = await User.findOne({ email: 'bitinyoeuge@gmail.com' });
+//     if (existingAdmin) {
+//       console.log('Admin user already exists:', existingAdmin.email);
+//       await mongoose.disconnect();
+//       return;
+//     }
+
+//     // Create admin user
+//     const hashedPassword = await bcrypt.hash('123', 10); // Change this password!
+    
+//     const adminUser = new User({
+//       name: 'Eugen Bitinyo',
+//       email: 'bitinyoeuge@gmail.com', 
+//       password: hashedPassword,
+//       role: 'admin',
+//       phone: '+254115418682', // Change this!
+//       bio: 'System Administrator Account'
+//     });
+
+//     await adminUser.save();
+//     console.log('✅ Admin user created successfully!');
+//     console.log('Email: bitinyoeuge@gmail.com'); // Change this!
+//     console.log('Password: 123'); // Change this!
+//     console.log('⚠️  IMPORTANT: Change the email and password immediately!');
+
+//   } catch (error) {
+//     console.error('❌ Error creating admin user:', error);
+//   } finally {
+//     await mongoose.disconnect();
+//     console.log('Disconnected from MongoDB');
+//   }
+// };
+
+// // Run the script
+// createAdminUser();

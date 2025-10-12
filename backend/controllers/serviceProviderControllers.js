@@ -68,9 +68,6 @@ export const getProviderBookings = async (req, res) => {
 };
 
 
-
-
-
 export const getCustomerDetails = async (req, res) => {
   try {
     const customerId = req.params.customerId;

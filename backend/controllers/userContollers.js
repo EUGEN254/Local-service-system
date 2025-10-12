@@ -1,7 +1,8 @@
 import User from "../models/userSchema.js";
 import generateToken from "../utils/generateToken.js";
 import bcrypt from "bcryptjs";
-import{v2 as cloudinary} from 'cloudinary'
+import { v2 as cloudinary } from "cloudinary";
+import { createNotification } from "./notificationController.js";
 
 export const registerUser = async (req, res) => {
   const { name, email, password, role } = req.body;
@@ -31,6 +32,52 @@ export const registerUser = async (req, res) => {
     role,
   });
 
+  // ✅ Create welcome notification for the new user
+  await createNotification(user._id, {
+    title: "Welcome to Local Services System! 🎉",
+    message: `Welcome ${name}! Your ${role} account has been created successfully. ${getRoleSpecificMessage(
+      role
+    )}`,
+    type: "system",
+    category: "System",
+    priority: "high",
+  });
+
+  // ✅ Create admin notification for new user registration
+  const adminUsers = await User.find({ role: "admin" });
+  for (const admin of adminUsers) {
+    await createNotification(admin._id, {
+      title: "New User Registration",
+      message: `New ${role} registered: ${name} (${email})`,
+      type: "user",
+      category: "User",
+      priority: "medium",
+    });
+  }
+
+  // ✅ If user is a service provider, create verification notification
+  if (role === "service-provider") {
+    await createNotification(user._id, {
+      title: "Service Provider Account Created",
+      message:
+        "Your service provider account is pending verification. Please submit your ID documents to start accepting bookings.",
+      type: "verification",
+      category: "Verification",
+      priority: "high",
+    });
+
+    // Notify admins about new service provider
+    for (const admin of adminUsers) {
+      await createNotification(admin._id, {
+        title: "New Service Provider Registered",
+        message: `New service provider ${name} needs verification.`,
+        type: "verification",
+        category: "Verification",
+        priority: "medium",
+      });
+    }
+  }
+
   // Generate JWT token with role
   const token = generateToken(user);
 
@@ -39,22 +86,33 @@ export const registerUser = async (req, res) => {
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
   });
-  
 
   res.status(201).json({
     success: true,
     message: "User registered successfully",
-    user: { 
-      id: user._id, // Add this
-      name: user.name, 
-      email: user.email, 
-      role: user.role 
+    user: {
+      id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
     },
   });
 };
 
+const getRoleSpecificMessage = (role) => {
+  switch (role) {
+    case "customer":
+      return "Start exploring services in your area and book your first service today!";
+    case "service-provider":
+      return "Complete your profile and get verified to start accepting service requests.";
+    case "admin":
+      return "You have access to the admin dashboard to manage the platform.";
+    default:
+      return "Start using our platform to find or provide services.";
+  }
+};
 
- export const loginUser = async (req, res) => {
+export const loginUser = async (req, res) => {
   const { email, password, role } = req.body;
 
   if (!email || !password || !role) {
@@ -65,7 +123,9 @@ export const registerUser = async (req, res) => {
   }
 
   // 🔹 Find user by email and role
-  const user = await User.findOne({ email, role }).select("name email password role status").lean();
+  const user = await User.findOne({ email, role })
+    .select("name email password role status")
+    .lean();
 
   if (!user) {
     // Check if email exists with another role
@@ -90,8 +150,6 @@ export const registerUser = async (req, res) => {
       message: "Your account is inactive. Please contact the administrator.",
     });
   }
-
-  
 
   // 🔹 Check password
   const isMatch = await bcrypt.compare(password, user.password);
@@ -130,7 +188,9 @@ export const loginAdmin = async (req, res) => {
   }
 
   // 🔹 Find user by email and role
-  const user = await User.findOne({ email, role }).select("name email password role").lean();
+  const user = await User.findOne({ email, role })
+    .select("name email password role")
+    .lean();
 
   if (!user) {
     // Check if email exists with another role
@@ -201,9 +261,11 @@ export const getMe = async (req, res) => {
     }
 
     // Get fresh user data from database with serviceProviderInfo
-    const user = await User.findById(req.user._id).select('-password');
+    const user = await User.findById(req.user._id).select("-password");
     if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
     }
 
     // Return full safe user object (no password)
@@ -220,8 +282,10 @@ export const getMe = async (req, res) => {
       updatedAt: user.updatedAt,
       // ✅ Add verification status and rejection reason
       isVerified: user.serviceProviderInfo?.isVerified || false,
-      verificationStatus: user.serviceProviderInfo?.idVerification?.status || "not-submitted",
-      rejectionReason: user.serviceProviderInfo?.idVerification?.rejectionReason || "" // ✅ Add this
+      verificationStatus:
+        user.serviceProviderInfo?.idVerification?.status || "not-submitted",
+      rejectionReason:
+        user.serviceProviderInfo?.idVerification?.rejectionReason || "", // ✅ Add this
     };
 
     res.json({ success: true, user: safeUser });
@@ -231,7 +295,6 @@ export const getMe = async (req, res) => {
   }
 };
 
-// controllers/userControllers.js - Add this function
 export const updatePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -240,32 +303,35 @@ export const updatePassword = async (req, res) => {
     if (!currentPassword || !newPassword) {
       return res.status(400).json({
         success: false,
-        message: "Current password and new password are required"
+        message: "Current password and new password are required",
       });
     }
 
     if (newPassword.length < 6) {
       return res.status(400).json({
         success: false,
-        message: "New password must be at least 6 characters long"
+        message: "New password must be at least 6 characters long",
       });
     }
 
     // Find user by ID
-    const user = await User.findById(userId).select('+password');
+    const user = await User.findById(userId).select("+password");
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found"
+        message: "User not found",
       });
     }
 
     // Verify current password
-    const isCurrentPasswordValid = await bcrypt.compare(currentPassword, user.password);
+    const isCurrentPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
     if (!isCurrentPasswordValid) {
       return res.status(400).json({
         success: false,
-        message: "Current password is incorrect"
+        message: "Current password is incorrect",
       });
     }
 
@@ -276,16 +342,36 @@ export const updatePassword = async (req, res) => {
     user.password = hashedNewPassword;
     await user.save();
 
-    res.json({
-      success: true,
-      message: "Password updated successfully"
+    // ✅ Create password change notification
+    await createNotification(userId, {
+      title: "Password Changed Successfully 🔒",
+      message:
+        "Your account password has been updated successfully. If you didn't make this change, please contact support immediately.",
+      type: "system",
+      category: "System",
+      priority: "high", // High priority for security-related events
     });
 
+    res.json({
+      success: true,
+      message: "Password updated successfully",
+    });
   } catch (error) {
     console.error("Error updating password:", error);
+
+    // ✅ Create error notification for security awareness
+    await createNotification(userId, {
+      title: "Password Update Failed",
+      message:
+        "There was an error while trying to update your password. Please try again.",
+      type: "system",
+      category: "System",
+      priority: "medium",
+    });
+
     res.status(500).json({
       success: false,
-      message: "Server error while updating password"
+      message: "Server error while updating password",
     });
   }
 };
@@ -298,10 +384,10 @@ export const submitIdVerification = async (req, res) => {
     const { phonenumber, idType, idNumber } = req.body;
 
     // Check if user is a service provider
-    if (req.user.role !== 'service-provider') {
+    if (req.user.role !== "service-provider") {
       return res.status(403).json({
         success: false,
-        message: "Only service providers can submit ID verification"
+        message: "Only service providers can submit ID verification",
       });
     }
 
@@ -309,7 +395,7 @@ export const submitIdVerification = async (req, res) => {
     if (!phonenumber) {
       return res.status(400).json({
         success: false,
-        message: "Phone number is required"
+        message: "Phone number is required",
       });
     }
 
@@ -317,7 +403,7 @@ export const submitIdVerification = async (req, res) => {
     if (!req.files || !req.files.frontImage || !req.files.backImage) {
       return res.status(400).json({
         success: false,
-        message: "Both front and back ID images are required"
+        message: "Both front and back ID images are required",
       });
     }
 
@@ -325,18 +411,30 @@ export const submitIdVerification = async (req, res) => {
     const backImageFile = req.files.backImage[0];
 
     // Validate file types
-    const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
-    if (!allowedMimeTypes.includes(frontImageFile.mimetype) || !allowedMimeTypes.includes(backImageFile.mimetype)) {
+    const allowedMimeTypes = [
+      "image/jpeg",
+      "image/png",
+      "image/jpg",
+      "application/pdf",
+    ];
+    if (
+      !allowedMimeTypes.includes(frontImageFile.mimetype) ||
+      !allowedMimeTypes.includes(backImageFile.mimetype)
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Only JPG, PNG, and PDF files are allowed"
+        message: "Only JPG, PNG, and PDF files are allowed",
       });
     }
 
     // Upload images to Cloudinary
     const [frontImageResult, backImageResult] = await Promise.all([
-      cloudinary.uploader.upload(frontImageFile.path, { folder: "id-verification" }),
-      cloudinary.uploader.upload(backImageFile.path, { folder: "id-verification" })
+      cloudinary.uploader.upload(frontImageFile.path, {
+        folder: "id-verification",
+      }),
+      cloudinary.uploader.upload(backImageFile.path, {
+        folder: "id-verification",
+      }),
     ]);
 
     // Find user
@@ -344,7 +442,7 @@ export const submitIdVerification = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found"
+        message: "User not found",
       });
     }
 
@@ -357,10 +455,13 @@ export const submitIdVerification = async (req, res) => {
         completedJobs: 0,
         services: [],
         idVerification: {
-          status: "not-submitted"
-        }
+          status: "not-submitted",
+        },
       };
     }
+
+    // Store old status for comparison
+    const oldStatus = user.serviceProviderInfo.idVerification.status;
 
     // Update user data
     user.phone = phonenumber;
@@ -371,23 +472,55 @@ export const submitIdVerification = async (req, res) => {
       idBackImage: backImageResult.secure_url,
       idType: idType || "national-id",
       idNumber: idNumber || "",
-      cloudinaryFrontId: frontImageResult.public_id, // Store public_id for future management
-      cloudinaryBackId: backImageResult.public_id    // Store public_id for future management
+      cloudinaryFrontId: frontImageResult.public_id,
+      cloudinaryBackId: backImageResult.public_id,
     };
 
     await user.save();
 
+    // ✅ Create notification for the SERVICE PROVIDER
+    await createNotification(userId, {
+      title: "ID Verification Submitted Successfully 📄",
+      message: "Your ID documents have been submitted for verification. Our admin team will review them within 24-48 hours. You'll be notified once verified.",
+      type: "verification",
+      category: "Verification",
+      priority: "high"
+    });
+
+    // ✅ Create notification for ALL ADMINS about new verification request
+    const adminUsers = await User.find({ role: "admin" });
+    for (const admin of adminUsers) {
+      await createNotification(admin._id, {
+        title: "New ID Verification Request",
+        message: `Service provider ${user.name} (${user.email}) has submitted ID documents for verification.`,
+        type: "verification",
+        category: "Verification",
+        priority: "medium",
+        actionUrl: `/admin/service-providers` // Link to review the provider
+      });
+    }
+
     res.status(200).json({
       success: true,
       message: "ID verification submitted successfully! Awaiting admin approval.",
-      verificationStatus: "pending"
+      verificationStatus: "pending",
     });
 
   } catch (error) {
     console.error("Error submitting ID verification:", error);
+    
+    // ✅ Create error notification for the user
+    await createNotification(userId, {
+      title: "ID Verification Failed",
+      message: "There was an error submitting your ID documents. Please try again.",
+      type: "verification",
+      category: "Verification",
+      priority: "high"
+    });
+
     res.status(500).json({
       success: false,
-      message: "Server error while submitting ID verification"
+      message: "Server error while submitting ID verification",
     });
   }
 };
@@ -398,10 +531,10 @@ export const getIdVerificationStatus = async (req, res) => {
     const userId = req.user._id;
 
     // Check if user is a service provider
-    if (req.user.role !== 'service-provider') {
+    if (req.user.role !== "service-provider") {
       return res.status(403).json({
         success: false,
-        message: "Only service providers can check verification status"
+        message: "Only service providers can check verification status",
       });
     }
 
@@ -409,7 +542,7 @@ export const getIdVerificationStatus = async (req, res) => {
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "User not found"
+        message: "User not found",
       });
     }
 
@@ -418,7 +551,7 @@ export const getIdVerificationStatus = async (req, res) => {
       return res.json({
         success: true,
         verificationStatus: "not-submitted",
-        message: "No ID verification submitted yet"
+        message: "No ID verification submitted yet",
       });
     }
 
@@ -433,14 +566,13 @@ export const getIdVerificationStatus = async (req, res) => {
       rejectionReason: verificationInfo.rejectionReason,
       // Optionally include image URLs if needed
       hasFrontImage: !!verificationInfo.idFrontImage,
-      hasBackImage: !!verificationInfo.idBackImage
+      hasBackImage: !!verificationInfo.idBackImage,
     });
-
   } catch (error) {
     console.error("Error getting verification status:", error);
     res.status(500).json({
       success: false,
-      message: "Server error while fetching verification status"
+      message: "Server error while fetching verification status",
     });
   }
 };
