@@ -1,10 +1,61 @@
-import React, { useState } from "react";
-import { Outlet } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
+import axios from "axios";
 import Sidebar from "../componets/Sidebar";
 import Navbar from "../componets/Navbar";
 
 const Home = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
+  // ADMIN AUTH PROTECTION 
+  useEffect(() => {
+    const checkAdminAuth = async () => {
+      const isAdminLoggedIn = localStorage.getItem("isAdminLoggedIn");
+      const adminUser = localStorage.getItem("adminUser");
+      
+      if (!isAdminLoggedIn || !adminUser) {
+        navigate("/admin/login");
+        return;
+      }
+
+      try {
+        // Verify with backend that user is still authenticated and is admin
+        const { data } = await axios.get(`${backendUrl}/api/user/me`, {
+          withCredentials: true,
+        });
+
+        if (!data.success || data.user.role !== "admin") {
+          localStorage.removeItem("isAdminLoggedIn");
+          localStorage.removeItem("adminUser");
+          navigate("/admin/login");
+          toast.error("Admin access required");
+        } else {
+          // Auth is valid, continue
+          setLoading(false);
+        }
+      } catch (err) {
+        localStorage.removeItem("isAdminLoggedIn");
+        localStorage.removeItem("adminUser");
+        navigate("/admin/login");
+        toast.error("Session expired. Please login again.");
+      }
+    };
+
+    checkAdminAuth();
+  }, [navigate, backendUrl]);
+
+  // Show loading spinner while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-100">

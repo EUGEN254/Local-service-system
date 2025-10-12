@@ -1,5 +1,11 @@
 // assets.js
 import { FaClipboardList, FaCogs, FaDollarSign } from "react-icons/fa";
+import avatar_icon from './avatar_icon.png'
+
+export const assets = {
+    avatar_icon,
+}
+
 
 // Service Providers
 export const serviceProviders = [

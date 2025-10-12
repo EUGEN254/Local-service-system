@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import { NavLink } from "react-router-dom";
 import {
   FaTachometerAlt,
@@ -11,9 +11,10 @@ import {
   FaSignOutAlt,
   FaBell,
 } from "react-icons/fa";
+import { AdminContext } from "../context/AdminContext";
 
 // Define nav links with relative paths for nested routes
-const navLinks = {
+const navLinks =(logoutAdmin)=>({
   menu: [
     { name: "Dashboard", icon: <FaTachometerAlt />, path: "dashboard" },
     { name: "Bookings", icon: <FaDollarSign />, path: "payment" }, // Fixed path to match your route
@@ -25,11 +26,13 @@ const navLinks = {
   ],
   other: [
     { name: "Settings", icon: <FaCog />, path: "settings" },
-    { name: "Logout", icon: <FaSignOutAlt />, danger: true, path: "/logout" },
+    { name: "Logout", icon: <FaSignOutAlt />, danger: true, path: "/logout",onClick:logoutAdmin },
   ],
-};
+});
 
 const Sidebar = ({ onLinkClick }) => {
+  const { logoutAdmin } = useContext(AdminContext);
+  const links = navLinks(logoutAdmin);
   return (
     <div className="w-64 h-full bg-gray-100 shadow-md rounded-2xl m-0 md:m-3 flex flex-col p-4">
       {/* Logo + Title */}
@@ -53,7 +56,7 @@ const Sidebar = ({ onLinkClick }) => {
         </div>
 
         <ul className="space-y-1 pl-4">
-          {navLinks.menu.map((link, index) => (
+          {links.menu.map((link, index) => (
             <li key={index}>
               <NavLink
                 to={link.path}
@@ -83,14 +86,13 @@ const Sidebar = ({ onLinkClick }) => {
         </div>
 
         <ul className="space-y-1 pl-4">
-          {navLinks.other.map((link, index) => (
+          {links.other.map((link, index) => (
             <li key={index}>
               {link.danger ? (
                 <button
                   onClick={() => {
-                    // Add your logout logic here
-                    console.log("Logout clicked");
-                    onLinkClick?.(); // close sidebar if small screen
+                    link.onClick();
+                    onLinkClick?.();
                   }}
                   className="flex items-center gap-3 px-2 py-2 rounded-md transition cursor-pointer text-red-600 hover:bg-yellow-500 hover:text-gray-900 w-full text-left"
                 >

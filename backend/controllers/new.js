@@ -1,38 +1,53 @@
-// deleteAllMessages.js
-import mongoose from "mongoose";
-import messages from "../models/messages.js";
-import Booking from "../models/bookingSchema.js";
+// scripts/createAdmin.js
+import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
+import dotenv from 'dotenv';
 
+// Load environment variables
+dotenv.config();
 
-const deleteAllMessages = async () => {
+// Import User model (adjust path as needed)
+import User from '../models/userSchema.js'; // Adjust path to your userSchema
+
+const createAdminUser = async () => {
   try {
-    // 🔒 Replace this with your actual MongoDB URI
-    const connectionString = "";
+    // Connect to MongoDB
+    await mongoose.connect('');
+    console.log('Connected to MongoDB');
 
-    console.log("Connecting with:", connectionString);
+    // Check if admin already exists
+    const existingAdmin = await User.findOne({ email: 'bitinyoeuge@gmail.com' });
+    if (existingAdmin) {
+      console.log('Admin user already exists:', existingAdmin.email);
+      await mongoose.disconnect();
+      return;
+    }
 
-    mongoose.connection.on("connected", () =>
-      console.log("🤝 Connected to MongoDB successfully!")
-    );
-
-    await mongoose.connect(connectionString, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
+    // Create admin user
+    const hashedPassword = await bcrypt.hash('123', 10); // Change this password!
+    
+    const adminUser = new User({
+      name: 'System Administrator',
+      email: 'bitinyoeuge@gmail.com', 
+      password: hashedPassword,
+      role: 'admin',
+      phone: '+254115418682', // Change this!
+      bio: 'System Administrator Account'
     });
 
-    console.log("✅ Connection established");
-
-    // 🧩 Delete all messages
-    const result = await Booking.deleteMany({});
-    console.log(`🗑️ Deleted ${result.deletedCount} messages successfully!`);
+    await adminUser.save();
+    console.log('✅ Admin user created successfully!');
+    console.log('Email: admin@example.com'); // Change this!
+    console.log('Password: admin123'); // Change this!
+    console.log('⚠️  IMPORTANT: Change the email and password immediately!');
 
   } catch (error) {
-    console.error("❌ Error deleting messages:", error.message);
+    console.error('❌ Error creating admin user:', error);
   } finally {
     await mongoose.disconnect();
-    console.log("🔌 Disconnected from MongoDB");
+    console.log('Disconnected from MongoDB');
   }
 };
 
-// Run the function
-deleteAllMessages();
+// Run the script
+createAdminUser();

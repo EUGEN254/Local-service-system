@@ -16,10 +16,29 @@ import ServiceProvider from "./pages/ServiceProvider";
 import UserManagement from "./pages/UserManagement";
 import AdminLogin from "./pages/AdminLogin";
 
-// ✅ Protected Route Wrapper
+// ✅ Enhanced Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
   const isLoggedIn = localStorage.getItem("isAdminLoggedIn") === "true";
-  return isLoggedIn ? children : <Navigate to="/" replace />;
+  const adminUser = localStorage.getItem("adminUser");
+  
+  // Check both localStorage and if admin user data exists
+  if (!isLoggedIn || !adminUser) {
+    return <Navigate to="/" replace />;
+  }
+  
+  return children;
+};
+
+// ✅ Public Route (redirect to admin if already logged in)
+const PublicRoute = ({ children }) => {
+  const isLoggedIn = localStorage.getItem("isAdminLoggedIn") === "true";
+  const adminUser = localStorage.getItem("adminUser");
+  
+  if (isLoggedIn && adminUser) {
+    return <Navigate to="/admin" replace />;
+  }
+  
+  return children;
 };
 
 const App = () => {
@@ -37,8 +56,15 @@ const App = () => {
       />
 
       <Routes>
-        {/* Default route shows Admin Login */}
-        <Route path="/" element={<AdminLogin />} />
+        {/* Public route - redirects to admin if already logged in */}
+        <Route 
+          path="/" 
+          element={
+            <PublicRoute>
+              <AdminLogin />
+            </PublicRoute>
+          } 
+        />
 
         {/* Protected admin routes */}
         <Route
@@ -49,7 +75,7 @@ const App = () => {
             </ProtectedRoute>
           }
         >
-          <Route index element={<Dashboard />} />
+          <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="profile" element={<Profile />} />
           <Route path="settings" element={<Settings />} />

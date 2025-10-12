@@ -7,7 +7,7 @@ import {
   FaChevronDown,
 } from "react-icons/fa";
 import { ShareContext } from "../../sharedcontext/SharedContext";
-import { assets } from "../../assets/assets";
+import { assets } from "../../assets/assets.js";
 import { useNavigate } from "react-router-dom";
 
 const Navbar = ({ onMenuClick }) => {

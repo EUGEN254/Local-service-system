@@ -13,6 +13,8 @@ import mpesaRouter from "./routes/mpesaRoutes.js";
 import chatRouter from "./routes/chatRoutes.js";
 import Chat from "./models/Chat.js";
 import { Server } from "socket.io";
+import adminRouter from "./routes/adminRoutes.js";
+import categoryRouter from "./routes/categoryRoutes.js";
 
 // -------------------- EXPRESS + HTTP --------------------
 const app = express();
@@ -23,6 +25,7 @@ const port = process.env.PORT || 4000;
 connectCloudinary();
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:5174",
   "https://local-service-system.vercel.app",
 ];
 app.use(express.json({ limit: "4mb" }));
@@ -174,6 +177,10 @@ app.use("/api/serviceprovider", serviceRouter);
 app.use("/api/customer", customerRouter);
 app.use("/api/mpesa", mpesaRouter);
 app.use("/api/chat", chatRouter);
+app.use("/api/admin", adminRouter);
+app.use("/api/categories", categoryRouter);
+
+
 
 // -------------------- EXPORT IO FOR USE IN OTHER FILES --------------------
 export { io };

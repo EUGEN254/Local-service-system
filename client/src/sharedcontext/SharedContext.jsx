@@ -9,7 +9,10 @@ export const ShareContext = createContext();
 
 // Helper function to check if user is a service provider
 const isServiceProvider = (user) => {
-  return user && (user.role === "serviceprovider" || user.role === "service-provider");
+  return (
+    user &&
+    (user.role === "serviceprovider" || user.role === "service-provider")
+  );
 };
 
 const AppContextProvider = (props) => {
@@ -20,6 +23,7 @@ const AppContextProvider = (props) => {
   const cachedUser = localStorage.getItem("user");
   const [user, setUser] = useState(cachedUser ? JSON.parse(cachedUser) : null);
   const [authLoading, setAuthLoading] = useState(false);
+  const [verified, setIsVerified] = useState(false);
 
   const [services, setServices] = useState([]);
   const [loadingServices, setLoadingServices] = useState(false);
@@ -30,8 +34,8 @@ const AppContextProvider = (props) => {
   // Unread messages
   const [unreadBySender, setUnreadBySender] = useState({});
   const [totalUnread, setTotalUnread] = useState(0);
-  const [bookingNotifications, setBookingNotifications] = useState([])
-  const [unreadBookingCount, setUnreadBookingCount] = useState(0)
+  const [bookingNotifications, setBookingNotifications] = useState([]);
+  const [unreadBookingCount, setUnreadBookingCount] = useState(0);
 
   // ✅ ADDED: Messages state for all chats
   const [messages, setMessages] = useState({}); // { chatId: [messages] }
@@ -70,9 +74,12 @@ const AppContextProvider = (props) => {
     if (!isServiceProvider(user)) return;
 
     try {
-      const { data } = await axios.get(`${backendUrl}/api/chat/booking-notifications`, {
-        withCredentials: true,
-      });
+      const { data } = await axios.get(
+        `${backendUrl}/api/chat/booking-notifications`,
+        {
+          withCredentials: true,
+        }
+      );
 
       if (data.success) {
         setBookingNotifications(data.notifications);
@@ -86,17 +93,18 @@ const AppContextProvider = (props) => {
   // ---------------- MARK BOOKING NOTIFICATION AS READ ----------------
   const markBookingNotificationAsRead = async (notificationId) => {
     try {
-      await axios.post(`${backendUrl}/api/chat/mark-notification-read`, 
+      await axios.post(
+        `${backendUrl}/api/chat/mark-notification-read`,
         { notificationId },
         { withCredentials: true }
       );
 
-      setBookingNotifications(prev => 
-        prev.map(notif => 
+      setBookingNotifications((prev) =>
+        prev.map((notif) =>
           notif._id === notificationId ? { ...notif, read: true } : notif
         )
       );
-      setUnreadBookingCount(prev => Math.max(0, prev - 1));
+      setUnreadBookingCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
       console.error("Failed to mark notification as read:", err);
     }
@@ -105,13 +113,14 @@ const AppContextProvider = (props) => {
   // ---------------- MARK ALL NOTIFICATIONS AS READ ----------------
   const markAllNotificationsAsRead = async () => {
     try {
-      await axios.post(`${backendUrl}/api/chat/mark-all-notifications-read`, 
+      await axios.post(
+        `${backendUrl}/api/chat/mark-all-notifications-read`,
         {},
         { withCredentials: true }
       );
 
-      setBookingNotifications(prev => 
-        prev.map(notif => ({ ...notif, read: true }))
+      setBookingNotifications((prev) =>
+        prev.map((notif) => ({ ...notif, read: true }))
       );
       setUnreadBookingCount(0);
     } catch (err) {
@@ -152,25 +161,28 @@ const AppContextProvider = (props) => {
     // FIXED: Updated newBooking socket handler with proper role checking
     socket.current.on("newBooking", (bookingData) => {
       // FIXED: Use helper function to check service provider role
-      const shouldReceiveNotification = isServiceProvider(user) && 
-        user.name?.trim().toLowerCase() === bookingData.providerName?.trim().toLowerCase();
-      
+      const shouldReceiveNotification =
+        isServiceProvider(user) &&
+        user.name?.trim().toLowerCase() ===
+          bookingData.providerName?.trim().toLowerCase();
+
       if (shouldReceiveNotification) {
-        
         // Add new notification
-        setBookingNotifications(prev => {
+        setBookingNotifications((prev) => {
           const newNotifications = [bookingData, ...prev];
           return newNotifications;
         });
-        
-        setUnreadBookingCount(prev => {
+
+        setUnreadBookingCount((prev) => {
           const newCount = prev + 1;
           return newCount;
         });
-        
+
         // Show toast notification
-        toast.info(`New booking: ${bookingData.serviceName} from ${bookingData.customerName}`);
-      } 
+        toast.info(
+          `New booking: ${bookingData.serviceName} from ${bookingData.customerName}`
+        );
+      }
     });
 
     return () => {
@@ -187,7 +199,7 @@ const AppContextProvider = (props) => {
 
     // Then fetch every 10 seconds (like SpChatSidebar)
     const interval = setInterval(fetchUnreadCounts, 10000);
-    
+
     return () => clearInterval(interval);
   }, [user]);
 
@@ -202,15 +214,28 @@ const AppContextProvider = (props) => {
 
       if (data.success && data.user) {
         setUser(data.user);
+
+        // ✅ Set verified status based on the user data from backend
+        const isUserVerified = data.user.isVerified === true;
+        setIsVerified(isUserVerified);
+
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("role", data.user.role);
+
+        console.log("User verification status:", {
+          isVerified: isUserVerified,
+          verificationStatus: data.user.verificationStatus,
+          rejectionReason: data.user.rejectionReason,
+        });
       } else {
         setUser(null);
+        setIsVerified(false);
         localStorage.removeItem("user");
         localStorage.removeItem("role");
       }
     } catch (err) {
       setUser(null);
+      setIsVerified(false);
       localStorage.removeItem("user");
       localStorage.removeItem("role");
     } finally {
@@ -222,7 +247,7 @@ const AppContextProvider = (props) => {
   useEffect(() => {
     if (isServiceProvider(user)) {
       fetchBookingNotifications();
-      
+
       // Set up interval to fetch notifications periodically
       const interval = setInterval(fetchBookingNotifications, 30000); // Every 30 seconds
       return () => clearInterval(interval);
@@ -255,17 +280,18 @@ const AppContextProvider = (props) => {
 
     try {
       // Update local state immediately
-      setUnreadBySender(prev => {
+      setUnreadBySender((prev) => {
         const newCounts = { ...prev };
         if (newCounts[senderId]) {
-          setTotalUnread(prevTotal => prevTotal - newCounts[senderId]);
+          setTotalUnread((prevTotal) => prevTotal - newCounts[senderId]);
           delete newCounts[senderId];
         }
         return newCounts;
       });
 
       // Call API to mark as read
-      await axios.post(`${backendUrl}/api/chat/mark-read`, 
+      await axios.post(
+        `${backendUrl}/api/chat/mark-read`,
         { senderId },
         { withCredentials: true }
       );
@@ -284,7 +310,11 @@ const AppContextProvider = (props) => {
 
       socket.current?.disconnect();
 
-      await axios.post(`${backendUrl}/api/user/logout`, {}, { withCredentials: true });
+      await axios.post(
+        `${backendUrl}/api/user/logout`,
+        {},
+        { withCredentials: true }
+      );
       navigate("/", { replace: true });
       setTimeout(() => toast.success("Logged out successfully"), 100);
     } catch (err) {
@@ -310,6 +340,7 @@ const AppContextProvider = (props) => {
     services,
     loadingServices,
     fetchServices,
+    verified,
     addService,
     removeService,
     currSymbol,
@@ -317,8 +348,8 @@ const AppContextProvider = (props) => {
     onlineUsers,
     unreadBySender,
     totalUnread,
-    messages, 
-    setMessages, 
+    messages,
+    setMessages,
     fetchUnreadCounts,
     markAsRead,
     setUnreadBySender,
@@ -330,7 +361,11 @@ const AppContextProvider = (props) => {
     markAllNotificationsAsRead,
   };
 
-  return <ShareContext.Provider value={value}>{props.children}</ShareContext.Provider>;
+  return (
+    <ShareContext.Provider value={value}>
+      {props.children}
+    </ShareContext.Provider>
+  );
 };
 
 export default AppContextProvider;
