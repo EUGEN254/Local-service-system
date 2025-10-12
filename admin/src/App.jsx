@@ -4,7 +4,6 @@ import "react-toastify/dist/ReactToastify.css";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Dashboard from "./pages/Dashboard";
-import Profile from "./pages/Profile";
 import Settings from "./pages/Settings";
 import Notifications from "./pages/Notifications";
 import BookingsAndTransaction from "./pages/BookingsAndTransaction";
@@ -77,7 +76,6 @@ const App = () => {
         >
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
-          <Route path="profile" element={<Profile />} />
           <Route path="settings" element={<Settings />} />
           <Route path="analytics" element={<Analytics />} />
           <Route path="payment" element={<BookingsAndTransaction />} />
