@@ -28,6 +28,7 @@ connectCloudinary();
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
+  "https://admin-lss.vercel.app",
   "https://local-service-system.vercel.app",
 ];
 app.use(express.json({ limit: "4mb" }));
