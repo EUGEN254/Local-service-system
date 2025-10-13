@@ -53,7 +53,7 @@ const Payments = () => {
       setError("");
       setMessage("Processing payment...");
   
-      // Detect if we’re paying for an existing booking
+      // Detect if we're paying for an existing booking
       let bookingId = displayService._id;
       const isExistingBooking = displayService.status && displayService._id;
   
@@ -410,11 +410,17 @@ const Payments = () => {
         <div className="bg-white p-6 rounded-lg shadow-md md:h-[50vh]">
           <h3 className="text-xl font-semibold mb-4">Booking Summary</h3>
           <div className="flex items-center mb-4">
-            <img
-              src={displayService.image}
-              alt={displayService.serviceName}
-              className="w-20 h-20 rounded-full mr-4 object-cover"
-            />
+            {displayService.image ? (
+              <img
+                src={displayService.image}
+                alt={displayService.serviceName}
+                className="w-20 h-20 rounded-full mr-4 object-cover"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-full mr-4 bg-gray-200 flex items-center justify-center">
+                <span className="text-gray-500 text-xs">No Image</span>
+              </div>
+            )}
             <div>
               <h4 className="text-lg font-semibold">
                 {displayService.serviceName}

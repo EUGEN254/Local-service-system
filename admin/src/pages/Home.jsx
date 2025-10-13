@@ -7,7 +7,6 @@ import Navbar from "../componets/Navbar";
 
 const Home = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -33,9 +32,6 @@ const Home = () => {
           localStorage.removeItem("adminUser");
           navigate("/admin/login");
           toast.error("Admin access required");
-        } else {
-          // Auth is valid, continue
-          setLoading(false);
         }
       } catch (err) {
         localStorage.removeItem("isAdminLoggedIn");
@@ -48,14 +44,7 @@ const Home = () => {
     checkAdminAuth();
   }, [navigate, backendUrl]);
 
-  // Show loading spinner while checking auth
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-100">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
-      </div>
-    );
-  }
+ 
 
   return (
     <div className="flex min-h-screen bg-gray-100">

@@ -31,8 +31,6 @@ const Notifications = () => {
         `${backendUrl}/api/notifications?category=${activeCategory === "All" ? "" : activeCategory}`,
         { withCredentials: true }
       );
-      console.log(data);
-      
 
       if (data.success) {
         setNotifications(data.notifications);

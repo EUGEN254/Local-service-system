@@ -515,14 +515,14 @@ const Analytics = () => {
         </div>
       </div>
 
-      {/* Enhanced Summary Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+      {/* Enhanced Summary Cards Grid with Horizontal Scroll on Small Screens */}
+      <div className="flex gap-4 overflow-x-auto pb-4 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 md:overflow-visible">
         {summaryCards.map((card, idx) => {
           const Icon = card.icon;
           return (
             <div 
               key={idx} 
-              className={`${card.bgColor} flex flex-col justify-between p-4 rounded-xl shadow-lg text-white transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer min-h-[120px]`}
+              className={`${card.bgColor} flex-shrink-0 flex flex-col justify-between p-4 rounded-xl shadow-lg text-white transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer min-h-[120px] min-w-[200px] md:min-w-0`}
             >
               <div className="flex justify-between items-start">
                 <div>

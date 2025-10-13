@@ -35,13 +35,10 @@ const Notification = () => {
   const buttonRefs = useRef({});
 
   useEffect(() => {
-    console.log("📱 Notification component mounted");
     fetchBookingNotifications();
   }, []);
 
-  useEffect(() => {
-    console.log("🔄 bookingNotifications updated:", bookingNotifications);
-  }, [bookingNotifications, unreadBookingCount]);
+  
 
   // Close modal when clicking outside
   useEffect(() => {
@@ -103,18 +100,27 @@ const Notification = () => {
         setSelectedCustomer(data.customer);
         setModalType('customer');
         
-        // Positioning logic - SAME AS DASHBOARD
+        // Improved positioning logic for mobile
         const button = buttonRefs.current[index];
         if (button) {
           const rect = button.getBoundingClientRect();
           const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-          const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
           const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
           
-          setModalPosition({
-            top: rect.top + scrollTop - 10,
-            right: viewportWidth - rect.right - scrollLeft,
-          });
+          // Calculate modal position with mobile consideration
+          let top = rect.top + scrollTop - 10;
+          let right = viewportWidth - rect.right;
+          
+          // Ensure modal stays within viewport on mobile
+          if (viewportWidth < 768) { // Mobile screens
+            // Center the modal horizontally on mobile
+            right = Math.max(10, (viewportWidth - 320) / 2); // 320 is modal width
+            // Adjust top position to ensure modal is visible
+            top = Math.min(top, viewportHeight - 300); // Prevent modal from going off bottom
+          }
+          
+          setModalPosition({ top, right });
         }
 
         setModalOpen(true);
@@ -128,18 +134,27 @@ const Notification = () => {
     setSelectedSchedule(notification);
     setModalType('schedule');
     
-    // Positioning logic for schedule button - SAME AS DASHBOARD
+    // Improved positioning logic for mobile
     const button = buttonRefs.current[`schedule-${index}`];
     if (button) {
       const rect = button.getBoundingClientRect();
       const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-      const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
       const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
       
-      setModalPosition({
-        top: rect.top + scrollTop - 10,
-        right: viewportWidth - rect.right - scrollLeft,
-      });
+      // Calculate modal position with mobile consideration
+      let top = rect.top + scrollTop - 10;
+      let right = viewportWidth - rect.right;
+      
+      // Ensure modal stays within viewport on mobile
+      if (viewportWidth < 768) { // Mobile screens
+        // Center the modal horizontally on mobile
+        right = Math.max(10, (viewportWidth - 320) / 2); // 320 is modal width
+        // Adjust top position to ensure modal is visible
+        top = Math.min(top, viewportHeight - 300); // Prevent modal from going off bottom
+      }
+      
+      setModalPosition({ top, right });
     }
 
     setModalOpen(true);
@@ -284,10 +299,10 @@ const Notification = () => {
         </div>
       )}
 
-      {/* Customer Modal - POSITIONED EXACTLY LIKE DASHBOARD */}
+      {/* Customer Modal - IMPROVED FOR MOBILE */}
       {modalOpen && modalType === 'customer' && selectedCustomer && (
         <div
-          className="notification-modal fixed z-50 bg-white rounded-lg shadow-2xl border border-gray-300 w-80 max-w-sm p-4 animate-fade-in"
+          className="notification-modal fixed z-50 bg-white rounded-lg shadow-2xl border border-gray-300 w-80 max-w-[90vw] p-4 animate-fade-in"
           style={{
             top: `${modalPosition.top}px`,
             right: `${modalPosition.right}px`,
@@ -337,10 +352,10 @@ const Notification = () => {
         </div>
       )}
 
-      {/* Schedule Modal - POSITIONED EXACTLY LIKE DASHBOARD */}
+      {/* Schedule Modal - IMPROVED FOR MOBILE */}
       {modalOpen && modalType === 'schedule' && selectedSchedule && (
         <div
-          className="notification-modal fixed z-50 bg-white rounded-lg shadow-2xl border border-gray-300 w-80 max-w-sm p-4 animate-fade-in"
+          className="notification-modal fixed z-50 bg-white rounded-lg shadow-2xl border border-gray-300 w-80 max-w-[90vw] p-4 animate-fade-in"
           style={{
             top: `${modalPosition.top}px`,
             right: `${modalPosition.right}px`,
@@ -412,22 +427,24 @@ const Notification = () => {
         </div>
       )}
 
-      {/* Add fade-in animation - SAME AS DASHBOARD */}
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-10px) translateY(-100%);
+      {/* Fixed JSX warning by using style tag without jsx attribute */}
+      <style>
+        {`
+          @keyframes fade-in {
+            from {
+              opacity: 0;
+              transform: translateY(-10px) translateY(-100%);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0) translateY(-100%);
+            }
           }
-          to {
-            opacity: 1;
-            transform: translateY(0) translateY(-100%);
+          .animate-fade-in {
+            animation: fade-in 0.2s ease-out;
           }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.2s ease-out;
-        }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };

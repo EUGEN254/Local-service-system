@@ -42,6 +42,7 @@ export const AdminProvider = ({ children }) => {
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [updatingBooking, setUpdatingBooking] = useState(false);
   const [bookingStats, setBookingStats] = useState(null);
+  const [authLoading, setAuthLoading] = useState(false);
 
   // Admin authentication states
   const cachedUser = localStorage.getItem("adminUser");
@@ -49,40 +50,23 @@ export const AdminProvider = ({ children }) => {
     cachedUser ? JSON.parse(cachedUser) : null
   );
   const [verified, setIsVerified] = useState(false);
-  const [loadingAdmin, setLoadingAdmin] = useState(true);
   const navigate = useNavigate();
 
   // admin notification
   const [notifications, setNotifications] = useState([]);
-const [unreadCount, setUnreadCount] = useState(0);
-const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
 
   // get all bookings
   const [allBookings, setAllBookings] = useState([]);
   const [loadingAllBookings, setLoadingAllBookings] = useState(false);
 
-  // Fetch current admin on component mount
-  useEffect(() => {
-    const initializeAdmin = async () => {
-      const isAdminLoggedIn = localStorage.getItem("isAdminLoggedIn");
-      const adminUser = localStorage.getItem("adminUser");
-
-      // If we have cached data, verify it with the backend
-      if (isAdminLoggedIn && adminUser) {
-        await fetchCurrentAdmin();
-      } else {
-        setLoadingAdmin(false);
-      }
-    };
-
-    initializeAdmin();
-  }, []);
-
+  
   // ---------------- AUTH FUNCTIONS ----------------
-
   const logoutAdmin = async () => {
     try {
       // Clear state first
+      setAuthLoading(true);
       setAdmin(null);
       setIsVerified(false);
 
@@ -107,32 +91,28 @@ const [loadingNotifications, setLoadingNotifications] = useState(false);
       console.log("Logout error:", err);
       // Even if backend call fails, still clear frontend and redirect
       navigate("/", { replace: true });
+    }finally{
+      setTimeout(() => setAuthLoading(false), 150);
     }
   };
 
-  const fetchCurrentAdmin = async () => {
-    setLoadingAdmin(true);
+  const fetchCurrentAdmin = async (showLoader = true) => {
     try {
+      if (showLoader) setAuthLoading(true);
       const { data } = await axios.get(`${backendUrl}/api/user/me`, {
         withCredentials: true,
       });
-
+  
       if (data.success && data.user) {
         setAdmin(data.user);
-
+  
         // ✅ Set verified status based on the user data from backend
         const isUserVerified = data.user.isVerified === true;
         setIsVerified(isUserVerified);
-
+  
         localStorage.setItem("adminUser", JSON.stringify(data.user));
         localStorage.setItem("role", data.user.role);
         localStorage.setItem("isAdminLoggedIn", "true");
-
-        console.log("User verification status:", {
-          isVerified: isUserVerified,
-          verificationStatus: data.user.verificationStatus,
-          rejectionReason: data.user.rejectionReason,
-        });
       } else {
         setAdmin(null);
         setIsVerified(false);
@@ -148,7 +128,7 @@ const [loadingNotifications, setLoadingNotifications] = useState(false);
       localStorage.removeItem("role");
       localStorage.removeItem("isAdminLoggedIn");
     } finally {
-      setLoadingAdmin(false);
+      if (showLoader) setTimeout(() => setAuthLoading(false), 150);
     }
   };
 
@@ -724,101 +704,100 @@ const [loadingNotifications, setLoadingNotifications] = useState(false);
   };
 
   // Add these functions
-const fetchNotifications = async (filters = {}) => {
-  setLoadingNotifications(true);
-  try {
-    const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) params.append(key, value);
-    });
+  const fetchNotifications = async (filters = {}) => {
+    setLoadingNotifications(true);
+    try {
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) params.append(key, value);
+      });
 
-    const { data } = await axios.get(
-      `${backendUrl}/api/notifications?${params}`,
-      { withCredentials: true }
-    );
-
-    if (data.success) {
-      setNotifications(data.notifications);
-      setUnreadCount(data.unreadCount);
-      return data;
-    }
-  } catch (err) {
-    console.error("Failed to fetch notifications:", err);
-  } finally {
-    setLoadingNotifications(false);
-  }
-};
-
-const fetchUnreadCount = async () => {
-  try {
-    const { data } = await axios.get(
-      `${backendUrl}/api/notifications/unread-count`,
-      { withCredentials: true }
-    );
-
-    if (data.success) {
-      setUnreadCount(data.unreadCount);
-      return data.unreadCount;
-    }
-  } catch (err) {
-    console.error("Failed to fetch unread count:", err);
-  }
-};
-
-const markNotificationAsRead = async (notificationId) => {
-  try {
-    const { data } = await axios.put(
-      `${backendUrl}/api/notifications/mark-read/${notificationId}`,
-      {},
-      { withCredentials: true }
-    );
-
-    if (data.success) {
-      setNotifications(prev =>
-        prev.map(n => n._id === notificationId ? { ...n, read: true } : n)
+      const { data } = await axios.get(
+        `${backendUrl}/api/notifications?${params}`,
+        { withCredentials: true }
       );
-      setUnreadCount(prev => Math.max(0, prev - 1));
-      return true;
+
+      if (data.success) {
+        setNotifications(data.notifications);
+        setUnreadCount(data.unreadCount);
+        return data;
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err);
+    } finally {
+      setLoadingNotifications(false);
     }
-  } catch (err) {
-    console.error("Failed to mark notification as read:", err);
-  }
-  return false;
-};
+  };
 
-const markAllNotificationsAsRead = async () => {
-  try {
-    const { data } = await axios.put(
-      `${backendUrl}/api/notifications/mark-all-read`,
-      {},
-      { withCredentials: true }
-    );
+  const fetchUnreadCount = async () => {
+    try {
+      const { data } = await axios.get(
+        `${backendUrl}/api/notifications/unread-count`,
+        { withCredentials: true }
+      );
 
-    if (data.success) {
-      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-      setUnreadCount(0);
-      return true;
+      if (data.success) {
+        setUnreadCount(data.unreadCount);
+        return data.unreadCount;
+      }
+    } catch (err) {
+      console.error("Failed to fetch unread count:", err);
     }
-  } catch (err) {
-    console.error("Failed to mark all notifications as read:", err);
-  }
-  return false;
-};
+  };
 
-useEffect(()=>{
-  if(admin){
-    fetchUnreadCount()
-  }
-},[])
+  const markNotificationAsRead = async (notificationId) => {
+    try {
+      const { data } = await axios.put(
+        `${backendUrl}/api/notifications/mark-read/${notificationId}`,
+        {},
+        { withCredentials: true }
+      );
 
+      if (data.success) {
+        setNotifications((prev) =>
+          prev.map((n) => (n._id === notificationId ? { ...n, read: true } : n))
+        );
+        setUnreadCount((prev) => Math.max(0, prev - 1));
+        return true;
+      }
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
+    }
+    return false;
+  };
+
+  const markAllNotificationsAsRead = async () => {
+    try {
+      const { data } = await axios.put(
+        `${backendUrl}/api/notifications/mark-all-read`,
+        {},
+        { withCredentials: true }
+      );
+
+      if (data.success) {
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+        setUnreadCount(0);
+        return true;
+      }
+    } catch (err) {
+      console.error("Failed to mark all notifications as read:", err);
+    }
+    return false;
+  };
+
+  useEffect(() => {
+    if (admin) {
+      fetchUnreadCount();
+    }
+  }, []);
 
   const value = {
     backendUrl,
     logoutAdmin,
     admin,
-    loadingAdmin,
     verified,
     fetchCurrentAdmin,
+    authLoading,
 
     // Service Provider States
     serviceProviders,
@@ -878,15 +857,14 @@ useEffect(()=>{
     updateBookingStatus,
     fetchBookingStats,
 
-
     // Notifications
-  notifications,
-  unreadCount,
-  loadingNotifications,
-  fetchNotifications,
-  fetchUnreadCount,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
+    notifications,
+    unreadCount,
+    loadingNotifications,
+    fetchNotifications,
+    fetchUnreadCount,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
   };
 
   return (

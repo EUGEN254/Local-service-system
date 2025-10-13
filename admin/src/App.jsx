@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useContext } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { Routes, Route, Navigate } from "react-router-dom";
@@ -14,6 +14,7 @@ import ServiceProvider from "./pages/ServiceProvider";
 import UserManagement from "./pages/UserManagement";
 import AdminLogin from "./pages/AdminLogin";
 import NotFound from "./componets/NotFound";
+import { AdminContext } from "./context/AdminContext";
 
 // ✅ Enhanced Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
@@ -41,6 +42,19 @@ const PublicRoute = ({ children }) => {
 };
 
 const App = () => {
+  const { authLoading } = useContext(AdminContext);
+
+
+  if (authLoading) {
+    // Return a full-screen loader while checking auth (prevents flicker)
+    return (
+      <div className="flex justify-center items-center min-h-screen bg-gray-900 text-white">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-yellow-400"></div>
+        <span className="ml-3 text-lg">Loading...</span>
+      </div>
+    );
+  }
+
   return (
     <>
       <ToastContainer

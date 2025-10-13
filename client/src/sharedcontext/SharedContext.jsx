@@ -223,12 +223,7 @@ const AppContextProvider = (props) => {
 
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("role", data.user.role);
-
-        console.log("User verification status:", {
-          isVerified: isUserVerified,
-          verificationStatus: data.user.verificationStatus,
-          rejectionReason: data.user.rejectionReason,
-        });
+        
       } else {
         setUser(null);
         setIsVerified(false);

@@ -596,22 +596,24 @@ const Dashboard = () => {
         </div>
       )}
 
-      {/* Add fade-in animation */}
-      <style jsx>{`
-        @keyframes fade-in {
-          from {
-            opacity: 0;
-            transform: translateY(-10px) translateY(-100%);
+      {/* Fixed JSX warning by using style tag without jsx attribute */}
+      <style>
+        {`
+          @keyframes fade-in {
+            from {
+              opacity: 0;
+              transform: translateY(-10px) translateY(-100%);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0) translateY(-100%);
+            }
           }
-          to {
-            opacity: 1;
-            transform: translateY(0) translateY(-100%);
+          .animate-fade-in {
+            animation: fade-in 0.2s ease-out;
           }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.2s ease-out;
-        }
-      `}</style>
+        `}
+      </style>
     </div>
   );
 };
