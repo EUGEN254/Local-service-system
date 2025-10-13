@@ -1,4 +1,5 @@
 import Booking from "../models/bookingSchema.js";
+import plumbingServiceSchema from "../models/plumbingServiceSchema.js";
 import User from "../models/userSchema.js";
 import { io } from "../server.js";
 import { createNotification } from "./notificationController.js";
@@ -137,6 +138,38 @@ export const getUserBookings = async (req, res) => {
   } catch (error) {
     console.error("Fetch bookings error:", error);
     res.status(500).json({ success: false, message: "Failed to fetch bookings", error });
+  }
+};
+
+export const getServiceProviderDetails = async (req, res) => {
+  try {
+    const { serviceId } = req.params;
+    
+    // Find the service to get the serviceProvider ID
+    const service = await plumbingServiceSchema.findById(serviceId);
+    
+    if (!service) {
+      return res.status(404).json({ success: false, message: "Service not found" });
+    }
+
+    // Get service provider details from User collection
+    const serviceProvider = await User.findById(service.serviceProvider)
+      .select('name email phone address bio image');
+
+    if (!serviceProvider) {
+      return res.status(404).json({ success: false, message: "Service provider not found" });
+    }
+
+    // Create response with both service and provider details
+    const responseData = {
+      service: service,
+      serviceProvider: serviceProvider
+    };
+
+    res.status(200).json({ success: true, data: responseData });
+  } catch (error) {
+    console.error("Get service provider details error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 // Update payment status (after M-Pesa callback or confirmation)

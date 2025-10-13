@@ -97,8 +97,6 @@ export const getCustomerDetails = async (req, res) => {
 };
 
 
-
-
 export const getServiceDetails = async (req, res) => {
   try {
     const { serviceId } = req.params;
@@ -108,7 +106,17 @@ export const getServiceDetails = async (req, res) => {
       return res.status(404).json({ success: false, message: "Service not found" });
     }
 
-    res.status(200).json({ success: true, service });
+    // Get service provider details from User collection
+    const serviceProvider = await User.findById(service.serviceProvider)
+      .select('name email phone address bio');
+
+    // Create response with both service and provider details
+    const responseData = {
+      service: service,
+      serviceProvider: serviceProvider || null
+    };
+
+    res.status(200).json({ success: true, data: responseData });
   } catch (error) {
     console.error("Get service details error:", error);
     res.status(500).json({ success: false, message: "Server error" });

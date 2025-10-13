@@ -1,4 +1,4 @@
-import React, { useState,useContext } from 'react';
+import React, { useState, useContext } from 'react';
 import { ShareContext } from '../../sharedcontext/SharedContext';
 import axios from 'axios'
 import { toast } from "react-toastify";
@@ -84,17 +84,17 @@ const Help = () => {
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Help & Support</h1>
         <p className="text-gray-600 mt-2">Get help with your account, services, and technical issues</p>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+        {/* Quick Stats - Horizontal scroll on small screens */}
+        <div className="flex overflow-x-auto pb-4 mt-4 space-x-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:overflow-visible sm:space-x-0">
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center min-w-[180px] sm:min-w-0 flex-shrink-0">
             <div className="text-2xl font-bold text-blue-600">24/7</div>
             <div className="text-sm text-gray-600">Support Available</div>
           </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center min-w-[180px] sm:min-w-0 flex-shrink-0">
             <div className="text-2xl font-bold text-green-600">2h</div>
             <div className="text-sm text-gray-600">Average Response Time</div>
           </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center min-w-[180px] sm:min-w-0 flex-shrink-0">
             <div className="text-2xl font-bold text-purple-600">98%</div>
             <div className="text-sm text-gray-600">Issues Resolved</div>
           </div>
@@ -104,7 +104,7 @@ const Help = () => {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <div className="flex-1 overflow-y-auto">
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 min-h-[400px]"> {/* Increased min-height */}
 
             {/* Tabs */}
             <div className="border-b border-gray-200 mb-4">
@@ -129,12 +129,12 @@ const Help = () => {
               {/* FAQ Tab */}
               {activeTab === 'faq' && (
                 <div className="space-y-4">
-                  <div className="flex flex-wrap gap-2 mb-4">
+                  <div className="flex overflow-x-auto pb-2 space-x-2">
                     {Object.keys(faqCategories).map((category) => (
                       <button
                         key={category}
                         onClick={() => setSelectedCategory(category)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium capitalize ${
+                        className={`px-4 py-2 rounded-full text-sm font-medium capitalize whitespace-nowrap flex-shrink-0 ${
                           selectedCategory === category
                             ? 'bg-yellow-500 text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -158,7 +158,7 @@ const Help = () => {
 
               {/* Contact Tab */}
               {activeTab === 'contact' && (
-                <div className="max-w-2xl">
+                <div className="w-full">
                   <h2 className="text-xl font-semibold mb-4">Contact Admin Support</h2>
                   <form onSubmit={handleSubmitTicket} className="space-y-4">
                     <div>
@@ -226,18 +226,18 @@ const Help = () => {
         </div>
       </div>
 
-      {/* Quick Help Cards */}
+      {/* Quick Help Cards - Adjusted for small screens */}
       <div className="flex-shrink-0 mt-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-9">
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">📞</div>
-            <h3 className="font-semibold text-gray-800 mb-1">Call Support</h3>
-            <p className="text-gray-600 text-sm">+1 (555) 123-HELP</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center w-full">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">📞</div>
+            <h3 className="font-semibold text-gray-800 mb-1 text-sm sm:text-base">Call Support</h3>
+            <p className="text-gray-600 text-xs sm:text-sm">+1 (555) 123-HELP</p>
           </div>
-          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">✉️</div>
-            <h3 className="font-semibold text-gray-800 mb-1">Email Support</h3>
-            <p className="text-gray-600 text-sm">support@localservice.com</p>
+          <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center w-full">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">✉️</div>
+            <h3 className="font-semibold text-gray-800 mb-1 text-sm sm:text-base">Email Support</h3>
+            <p className="text-gray-600 text-xs sm:text-sm">support@localservice.com</p>
           </div>
         </div>
       </div>

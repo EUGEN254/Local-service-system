@@ -71,11 +71,27 @@ const ChatSidebar = ({
 
   const handleRemoveService = (e, serviceId) => {
     e.stopPropagation(); // Prevent triggering the select user
+    
+    // Find the service being removed to get the serviceProvider ID
+    const serviceToRemove = services.find(service => service._id === serviceId);
+    
+    //Mark messages as read before removing the service
+    if (serviceToRemove && serviceToRemove.serviceProvider) {
+      markAsRead(serviceToRemove.serviceProvider._id);
+    }
+    
     onRemoveService(serviceId);
   };
 
   const handleClearAll = () => {
     if (services.length > 0) {
+      // ✅ Mark ALL conversations as read before clearing
+      services.forEach(service => {
+        const { serviceProvider } = service;
+        if (serviceProvider && serviceProvider._id) {
+          markAsRead(serviceProvider._id);
+        }
+      });
       setShowConfirmClear(true);
     }
   };
@@ -84,6 +100,7 @@ const ChatSidebar = ({
     onClearAll();
     setShowConfirmClear(false);
     setSearchTerm(""); // Clear search when clearing all
+    setSelectedUser(null); // Clear selected user
   };
 
   const handleSearchChange = (e) => {
