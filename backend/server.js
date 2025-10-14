@@ -140,20 +140,13 @@ io.on("connection", (socket) => {
 
   // ---------------- BOOKING EVENTS ----------------
   socket.on("newBooking", (bookingData) => {
-    console.log("📦 Received newBooking event:", bookingData);
-    
     // Emit to the specific service provider
     if (bookingData.providerId) {
       io.to(bookingData.providerId.toString()).emit("newBooking", bookingData);
-      console.log(`🔔 Emitted newBooking to provider: ${bookingData.providerId}`);
-    } else {
-      console.log("❌ No providerId in booking data");
-    }
+    } 
   });
 
   socket.on("bookingStatusUpdate", (updateData) => {
-    console.log("📦 Booking status update:", updateData);
-    
     // Emit to both customer and provider
     if (updateData.customerId) {
       io.to(updateData.customerId.toString()).emit("bookingStatusUpdate", updateData);

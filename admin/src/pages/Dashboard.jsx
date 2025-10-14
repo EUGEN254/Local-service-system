@@ -30,6 +30,7 @@ const Dashboard = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
   const [timeFilter, setTimeFilter] = useState("Monthly");
+  const [activeTab, setActiveTab] = useState("overview");
 
   const {
     customers,
@@ -264,296 +265,329 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Dynamic Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
-        {dynamicSummaryCards.map((card, idx) => {
-          const Icon = card.icon;
-          return (
-            <div
-              key={idx}
-              className={`bg-gradient-to-br ${card.gradient} rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer overflow-hidden`}
+      {/* Navigation Tabs */}
+      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-2">
+        <div className="flex flex-wrap gap-2">
+          {[
+            { id: "overview", label: "Overview", icon: "fas fa-chart-pie" },
+            { id: "bookings", label: "Bookings", icon: "fas fa-calendar" },
+            { id: "customers", label: "Customers", icon: "fas fa-users" },
+            { id: "providers", label: "Service Providers", icon: "fas fa-tools" },
+            { id: "transactions", label: "Transactions", icon: "fas fa-money-bill" },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-all duration-200 ${
+                activeTab === tab.id
+                  ? "bg-blue-500 text-white shadow-md"
+                  : "text-gray-600 hover:bg-gray-100"
+              }`}
             >
-              <div className="p-5 text-white">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-sm font-medium opacity-90">{card.title}</p>
-                    <p className="text-2xl font-bold mt-2">{card.count}</p>
-                    <p className="text-xs opacity-80 mt-1">{card.description}</p>
-                  </div>
-                  <div className="p-2 bg-white bg-opacity-20 rounded-xl">
-                    <Icon />
-                  </div>
-                </div>
-                <div className="mt-3 w-full bg-white bg-opacity-20 rounded-full h-1">
-                  <div 
-                    className="bg-white rounded-full h-1 transition-all duration-1000" 
-                    style={{ 
-                      width: `${Math.min((card.count / (summaryStats.totalBookings || 1)) * 100, 100)}%` 
-                    }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+              <i className={`${tab.icon} text-sm`}></i>
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Analytics Chart Section */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800">Booking Analytics</h2>
-              <p className="text-gray-600 text-sm mt-1">Visual overview of booking trends and performance</p>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 flex-wrap">
-                {[
-                  { color: "#10B981", label: "Completed" },
-                  { color: "#EF4444", label: "Cancelled" },
-                  { color: "#3B82F6", label: "In Progress" },
-                  { color: "#F59E0B", label: "Pending" }
-                ].map((item, idx) => (
-                  <div key={idx} className="flex items-center gap-1">
-                    {dotStyle(item.color)}
-                    <span className="text-xs font-medium text-gray-600">{item.label}</span>
+      {/* Overview Tab Content */}
+      {activeTab === "overview" && (
+        <>
+          {/* Dynamic Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+            {dynamicSummaryCards.map((card, idx) => {
+              const Icon = card.icon;
+              return (
+                <div
+                  key={idx}
+                  className={`bg-gradient-to-br ${card.gradient} rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer overflow-hidden`}
+                >
+                  <div className="p-5 text-white">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm font-medium opacity-90">{card.title}</p>
+                        <p className="text-2xl font-bold mt-2">{card.count}</p>
+                        <p className="text-xs opacity-80 mt-1">{card.description}</p>
+                      </div>
+                      <div className="p-2 bg-white bg-opacity-20 rounded-xl">
+                        <Icon />
+                      </div>
+                    </div>
+                    <div className="mt-3 w-full bg-white bg-opacity-20 rounded-full h-1">
+                      <div 
+                        className="bg-white rounded-full h-1 transition-all duration-1000" 
+                        style={{ 
+                          width: `${Math.min((card.count / (summaryStats.totalBookings || 1)) * 100, 100)}%` 
+                        }}
+                      ></div>
+                    </div>
                   </div>
-                ))}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Analytics Chart Section */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+            <div className="p-6 border-b border-gray-100">
+              <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-800">Booking Analytics</h2>
+                  <p className="text-gray-600 text-sm mt-1">Visual overview of booking trends and performance</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {[
+                      { color: "#10B981", label: "Completed" },
+                      { color: "#EF4444", label: "Cancelled" },
+                      { color: "#3B82F6", label: "In Progress" },
+                      { color: "#F59E0B", label: "Pending" }
+                    ].map((item, idx) => (
+                      <div key={idx} className="flex items-center gap-1">
+                        {dotStyle(item.color)}
+                        <span className="text-xs font-medium text-gray-600">{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <select
+                    value={timeFilter}
+                    onChange={(e) => setTimeFilter(e.target.value)}
+                    className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
+                  >
+                    <option value="Monthly">Monthly View</option>
+                    <option value="Weekly">Weekly View</option>
+                  </select>
+                </div>
               </div>
-              <select
-                value={timeFilter}
-                onChange={(e) => setTimeFilter(e.target.value)}
-                className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm"
-              >
-                <option value="Monthly">Monthly View</option>
-                <option value="Weekly">Weekly View</option>
-              </select>
+            </div>
+            
+            <div className="p-6">
+              <div className="w-full h-80">
+                {chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={chartData}
+                      margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                      <XAxis 
+                        dataKey={timeFilter === "Monthly" ? "month" : "week"} 
+                        tick={{ fill: '#6B7280' }}
+                        axisLine={{ stroke: '#E5E7EB' }}
+                      />
+                      <YAxis 
+                        tick={{ fill: '#6B7280' }}
+                        axisLine={{ stroke: '#E5E7EB' }}
+                      />
+                      <Tooltip 
+                        contentStyle={{ 
+                          borderRadius: '12px', 
+                          border: '1px solid #E5E7EB',
+                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                        }}
+                      />
+                      <Bar dataKey="Completed" fill="#10B981" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Cancelled" fill="#EF4444" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="In Progress" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="Pending" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-3">
+                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
+                      <i className="fas fa-chart-bar text-2xl text-gray-400"></i>
+                    </div>
+                    <p className="text-lg font-medium">{loadingAllBookings ? "Loading booking data..." : "No booking data available"}</p>
+                    <p className="text-sm text-gray-400">Data will appear here once bookings are made</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
-        
-        <div className="p-6">
-          <div className="w-full h-80">
-            {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={chartData}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+        </>
+      )}
+
+      {/* Bookings Tab Content */}
+      {activeTab === "bookings" && (
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <div className="p-6 border-b border-gray-100">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+              <div>
+                <h2 className="text-xl font-semibold text-gray-800">Booking Management</h2>
+                <p className="text-gray-600 text-sm mt-1">Manage and monitor all service bookings</p>
+              </div>
+              <div className="flex items-center gap-3 flex-wrap">
+                <select
+                  className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm min-w-[120px]"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey={timeFilter === "Monthly" ? "month" : "week"} 
-                    tick={{ fill: '#6B7280' }}
-                    axisLine={{ stroke: '#E5E7EB' }}
-                  />
-                  <YAxis 
-                    tick={{ fill: '#6B7280' }}
-                    axisLine={{ stroke: '#E5E7EB' }}
-                  />
-                  <Tooltip 
-                    contentStyle={{ 
-                      borderRadius: '12px', 
-                      border: '1px solid #E5E7EB',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                  <Bar dataKey="Completed" fill="#10B981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Cancelled" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="In Progress" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="Pending" fill="#F59E0B" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+                  <option value="">All Status</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Confirmed">Confirmed</option>
+                  <option value="In Progress">In Progress</option>
+                  <option value="Completed">Completed</option>
+                  <option value="Cancelled">Cancelled</option>
+                </select>
+                <select
+                  className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm min-w-[120px]"
+                  value={paymentFilter}
+                  onChange={(e) => setPaymentFilter(e.target.value)}
+                >
+                  <option value="">All Payment</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Unpaid">Unpaid</option>
+                </select>
+                <button
+                  onClick={fetchAllBookings}
+                  className="px-4 py-2 bg-blue-500 text-white text-sm rounded-xl hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-2"
+                >
+                  <i className="fas fa-sync-alt text-xs"></i>
+                  Refresh
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            {loadingAllBookings ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
+                <p className="text-gray-500">Loading bookings data...</p>
+              </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-full text-gray-500 space-y-3">
-                <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-                  <i className="fas fa-chart-bar text-2xl text-gray-400"></i>
-                </div>
-                <p className="text-lg font-medium">{loadingAllBookings ? "Loading booking data..." : "No booking data available"}</p>
-                <p className="text-sm text-gray-400">Data will appear here once bookings are made</p>
+              <div className="overflow-y-auto max-h-96">
+                <table className="w-full min-w-[1000px]">
+                  <thead className="bg-gray-50 sticky top-0 z-10">
+                    <tr>
+                      {["No", "Customer", "Provider", "Service", "Amount", "Status", "Payment", "Location", "Date", "Action"].map((header) => (
+                        <th key={header} className="p-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200">
+                          {header}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {allBookings
+                      .filter(
+                        (booking) =>
+                          (statusFilter === "" || booking.status === statusFilter) &&
+                          (paymentFilter === "" ||
+                            (paymentFilter === "Paid" && booking.is_paid) ||
+                            (paymentFilter === "Unpaid" && !booking.is_paid))
+                      )
+                      .map((booking, idx) => (
+                        <tr key={booking._id} className="hover:bg-gray-50 transition-colors">
+                          <td className="p-4 text-sm text-gray-900 font-medium">{idx + 1}</td>
+                          <td className="p-4 text-sm">
+                            <div>
+                              <div className="font-medium text-gray-900">{booking.customer?.name || "N/A"}</div>
+                              <div className="text-xs text-gray-500">{booking.customer?.phone || "N/A"}</div>
+                            </div>
+                          </td>
+                          <td className="p-4 text-sm text-gray-900">{booking.providerName || "N/A"}</td>
+                          <td className="p-4 text-sm">
+                            <div className="text-gray-900">{booking.serviceName}</div>
+                            {booking.categoryName && (
+                              <div className="text-xs text-gray-500">{booking.categoryName}</div>
+                            )}
+                          </td>
+                          <td className="p-4 text-sm font-semibold text-gray-900">
+                            KSh {booking.amount?.toLocaleString() || "0"}
+                          </td>
+                          <td className="p-4 text-sm">
+                            <span
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                                booking.status === "Completed"
+                                  ? "bg-green-100 text-green-800"
+                                  : booking.status === "Cancelled"
+                                  ? "bg-red-100 text-red-800"
+                                  : booking.status === "In Progress"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : booking.status === "Confirmed"
+                                  ? "bg-purple-100 text-purple-800"
+                                  : "bg-yellow-100 text-yellow-800"
+                              }`}
+                            >
+                              {booking.status}
+                            </span>
+                          </td>
+                          <td className="p-4 text-sm">
+                            <span
+                              className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                                booking.is_paid
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
+                              }`}
+                            >
+                              {booking.is_paid ? "Paid" : "Unpaid"}
+                            </span>
+                          </td>
+                          <td className="p-4 text-sm">
+                            <div className="text-gray-900">{booking.address || "N/A"}</div>
+                            {booking.city && (
+                              <div className="text-xs text-gray-500">{booking.city}</div>
+                            )}
+                          </td>
+                          <td className="p-4 text-sm text-gray-900">
+                            {new Date(booking.delivery_date || booking.createdAt).toLocaleDateString()}
+                          </td>
+                          <td className="p-4">
+                            <button
+                              onClick={() => {
+                                /* Add view details functionality */
+                              }}
+                              className="py-2 px-4 rounded-xl bg-yellow-500 text-white text-sm hover:bg-yellow-600 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 shadow-sm"
+                            >
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+                {allBookings.filter(
+                  (booking) =>
+                    (statusFilter === "" || booking.status === statusFilter) &&
+                    (paymentFilter === "" ||
+                      (paymentFilter === "Paid" && booking.is_paid) ||
+                      (paymentFilter === "Unpaid" && !booking.is_paid))
+                ).length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+                    <i className="fas fa-inbox text-4xl mb-3 text-gray-300"></i>
+                    <p className="text-lg font-medium">No bookings found</p>
+                    <p className="text-sm">Try adjusting your filters</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Upcoming Requests Table */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-        <div className="p-6 border-b border-gray-100">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800">Booking Management</h2>
-              <p className="text-gray-600 text-sm mt-1">Manage and monitor all service bookings</p>
-            </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <select
-                className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm min-w-[120px]"
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="">All Status</option>
-                <option value="Pending">Pending</option>
-                <option value="Confirmed">Confirmed</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-              </select>
-              <select
-                className="border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm min-w-[120px]"
-                value={paymentFilter}
-                onChange={(e) => setPaymentFilter(e.target.value)}
-              >
-                <option value="">All Payment</option>
-                <option value="Paid">Paid</option>
-                <option value="Unpaid">Unpaid</option>
-              </select>
-              <button
-                onClick={fetchAllBookings}
-                className="px-4 py-2 bg-blue-500 text-white text-sm rounded-xl hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-2"
-              >
-                <i className="fas fa-sync-alt text-xs"></i>
-                Refresh
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          {loadingAllBookings ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
-              <p className="text-gray-500">Loading bookings data...</p>
-            </div>
-          ) : (
-            <div className="overflow-y-auto max-h-96">
-              <table className="w-full min-w-[1000px]">
-                <thead className="bg-gray-50 sticky top-0 z-10">
-                  <tr>
-                    {["No", "Customer", "Provider", "Service", "Amount", "Status", "Payment", "Location", "Date", "Action"].map((header) => (
-                      <th key={header} className="p-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200">
-                        {header}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {allBookings
-                    .filter(
-                      (booking) =>
-                        (statusFilter === "" || booking.status === statusFilter) &&
-                        (paymentFilter === "" ||
-                          (paymentFilter === "Paid" && booking.is_paid) ||
-                          (paymentFilter === "Unpaid" && !booking.is_paid))
-                    )
-                    .map((booking, idx) => (
-                      <tr key={booking._id} className="hover:bg-gray-50 transition-colors">
-                        <td className="p-4 text-sm text-gray-900 font-medium">{idx + 1}</td>
-                        <td className="p-4 text-sm">
-                          <div>
-                            <div className="font-medium text-gray-900">{booking.customer?.name || "N/A"}</div>
-                            <div className="text-xs text-gray-500">{booking.customer?.phone || "N/A"}</div>
-                          </div>
-                        </td>
-                        <td className="p-4 text-sm text-gray-900">{booking.providerName || "N/A"}</td>
-                        <td className="p-4 text-sm">
-                          <div className="text-gray-900">{booking.serviceName}</div>
-                          {booking.categoryName && (
-                            <div className="text-xs text-gray-500">{booking.categoryName}</div>
-                          )}
-                        </td>
-                        <td className="p-4 text-sm font-semibold text-gray-900">
-                          KSh {booking.amount?.toLocaleString() || "0"}
-                        </td>
-                        <td className="p-4 text-sm">
-                          <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                              booking.status === "Completed"
-                                ? "bg-green-100 text-green-800"
-                                : booking.status === "Cancelled"
-                                ? "bg-red-100 text-red-800"
-                                : booking.status === "In Progress"
-                                ? "bg-blue-100 text-blue-800"
-                                : booking.status === "Confirmed"
-                                ? "bg-purple-100 text-purple-800"
-                                : "bg-yellow-100 text-yellow-800"
-                            }`}
-                          >
-                            {booking.status}
-                          </span>
-                        </td>
-                        <td className="p-4 text-sm">
-                          <span
-                            className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
-                              booking.is_paid
-                                ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
-                            }`}
-                          >
-                            {booking.is_paid ? "Paid" : "Unpaid"}
-                          </span>
-                        </td>
-                        <td className="p-4 text-sm">
-                          <div className="text-gray-900">{booking.address || "N/A"}</div>
-                          {booking.city && (
-                            <div className="text-xs text-gray-500">{booking.city}</div>
-                          )}
-                        </td>
-                        <td className="p-4 text-sm text-gray-900">
-                          {new Date(booking.delivery_date || booking.createdAt).toLocaleDateString()}
-                        </td>
-                        <td className="p-4">
-                          <button
-                            onClick={() => {
-                              /* Add view details functionality */
-                            }}
-                            className="py-2 px-4 rounded-xl bg-yellow-500 text-white text-sm hover:bg-yellow-600 transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-400 shadow-sm"
-                          >
-                            View Details
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
-              {allBookings.filter(
-                (booking) =>
-                  (statusFilter === "" || booking.status === statusFilter) &&
-                  (paymentFilter === "" ||
-                    (paymentFilter === "Paid" && booking.is_paid) ||
-                    (paymentFilter === "Unpaid" && !booking.is_paid))
-              ).length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-gray-500">
-                  <i className="fas fa-inbox text-4xl mb-3 text-gray-300"></i>
-                  <p className="text-lg font-medium">No bookings found</p>
-                  <p className="text-sm">Try adjusting your filters</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Bookings & Transactions Section */}
-      <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
-        <BookingsAndTransactions />
-      </div>
-
-      {/* Users & Service Providers Overview */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        {/* Customers Section */}
+      {/* Customers Tab Content */}
+      {activeTab === "customers" && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-semibold text-gray-800">Customer Management</h2>
-                <p className="text-gray-600 text-sm mt-1">Manage registered customers</p>
+                <p className="text-gray-600 text-sm mt-1">Manage registered customers and their information</p>
               </div>
-              <button
-                onClick={fetchCustomers}
-                className="px-4 py-2 bg-blue-500 text-white text-sm rounded-xl hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-2"
-              >
-                <i className="fas fa-sync-alt text-xs"></i>
-                Refresh
-              </button>
+              <div className="flex items-center gap-3">
+                <button className="px-4 py-2 bg-green-500 text-white text-sm rounded-xl hover:bg-green-600 transition-colors shadow-sm flex items-center gap-2">
+                  <i className="fas fa-plus text-xs"></i>
+                  Add Customer
+                </button>
+                <button
+                  onClick={fetchCustomers}
+                  className="px-4 py-2 bg-blue-500 text-white text-sm rounded-xl hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-2"
+                >
+                  <i className="fas fa-sync-alt text-xs"></i>
+                  Refresh
+                </button>
+              </div>
             </div>
           </div>
 
@@ -567,12 +601,13 @@ const Dashboard = () => {
               <div className="flex flex-col items-center justify-center py-12 text-gray-500">
                 <i className="fas fa-users text-4xl mb-3 text-gray-300"></i>
                 <p className="text-lg font-medium">No customers found</p>
+                <p className="text-sm">Start by adding your first customer</p>
               </div>
             ) : (
-              <table className="w-full min-w-[600px]">
+              <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    {["No", "Name", "Email", "Phone", "Status", "Action"].map((header) => (
+                    {["No", "Name", "Email", "Phone", "Join Date", "Status", "Actions"].map((header) => (
                       <th key={header} className="p-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200">
                         {header}
                       </th>
@@ -583,9 +618,22 @@ const Dashboard = () => {
                   {customers.map((customer, idx) => (
                     <tr key={customer._id} className="hover:bg-gray-50 transition-colors">
                       <td className="p-4 text-sm text-gray-900 font-medium">{idx + 1}</td>
-                      <td className="p-4 text-sm text-gray-900">{customer.name || "N/A"}</td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                            {customer.name?.charAt(0) || "C"}
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900">{customer.name || "N/A"}</div>
+                            <div className="text-xs text-gray-500">Customer ID: {customer._id?.slice(-8)}</div>
+                          </div>
+                        </div>
+                      </td>
                       <td className="p-4 text-sm text-gray-900">{customer.email}</td>
                       <td className="p-4 text-sm text-gray-900">{customer.phone || "N/A"}</td>
+                      <td className="p-4 text-sm text-gray-900">
+                        {customer.createdAt ? new Date(customer.createdAt).toLocaleDateString() : "N/A"}
+                      </td>
                       <td className="p-4 text-sm">
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -600,9 +648,14 @@ const Dashboard = () => {
                         </span>
                       </td>
                       <td className="p-4">
-                        <button className="py-2 px-4 rounded-xl bg-blue-500 text-white text-sm hover:bg-blue-600 transition-colors shadow-sm">
-                          View Profile
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button className="py-2 px-4 rounded-xl bg-blue-500 text-white text-sm hover:bg-blue-600 transition-colors shadow-sm">
+                            View
+                          </button>
+                          <button className="py-2 px-4 rounded-xl bg-yellow-500 text-white text-sm hover:bg-yellow-600 transition-colors shadow-sm">
+                            Edit
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -611,22 +664,30 @@ const Dashboard = () => {
             )}
           </div>
         </div>
+      )}
 
-        {/* Service Providers Section */}
+      {/* Service Providers Tab Content */}
+      {activeTab === "providers" && (
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
           <div className="p-6 border-b border-gray-100">
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-semibold text-gray-800">Service Provider Management</h2>
-                <p className="text-gray-600 text-sm mt-1">Manage service providers and verification</p>
+                <p className="text-gray-600 text-sm mt-1">Manage service providers and verification status</p>
               </div>
-              <button
-                onClick={fetchServiceProviders}
-                className="px-4 py-2 bg-blue-500 text-white text-sm rounded-xl hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-2"
-              >
-                <i className="fas fa-sync-alt text-xs"></i>
-                Refresh
-              </button>
+              <div className="flex items-center gap-3">
+                <button className="px-4 py-2 bg-green-500 text-white text-sm rounded-xl hover:bg-green-600 transition-colors shadow-sm flex items-center gap-2">
+                  <i className="fas fa-plus text-xs"></i>
+                  Add Provider
+                </button>
+                <button
+                  onClick={fetchServiceProviders}
+                  className="px-4 py-2 bg-blue-500 text-white text-sm rounded-xl hover:bg-blue-600 transition-colors shadow-sm flex items-center gap-2"
+                >
+                  <i className="fas fa-sync-alt text-xs"></i>
+                  Refresh
+                </button>
+              </div>
             </div>
           </div>
 
@@ -640,12 +701,13 @@ const Dashboard = () => {
               <div className="flex flex-col items-center justify-center py-12 text-gray-500">
                 <i className="fas fa-tools text-4xl mb-3 text-gray-300"></i>
                 <p className="text-lg font-medium">No service providers found</p>
+                <p className="text-sm">Start by adding your first service provider</p>
               </div>
             ) : (
-              <table className="w-full min-w-[600px]">
+              <table className="w-full">
                 <thead className="bg-gray-50">
                   <tr>
-                    {["No", "Name", "Email", "Phone", "Status", "Verified", "Action"].map((header) => (
+                    {["No", "Provider", "Contact", "Services", "Verification", "Status", "Actions"].map((header) => (
                       <th key={header} className="p-4 text-left text-sm font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200">
                         {header}
                       </th>
@@ -656,9 +718,37 @@ const Dashboard = () => {
                   {contextServiceProviders.map((provider, idx) => (
                     <tr key={provider._id} className="hover:bg-gray-50 transition-colors">
                       <td className="p-4 text-sm text-gray-900 font-medium">{idx + 1}</td>
-                      <td className="p-4 text-sm text-gray-900">{provider.name || "N/A"}</td>
-                      <td className="p-4 text-sm text-gray-900">{provider.email}</td>
-                      <td className="p-4 text-sm text-gray-900">{provider.phone || "N/A"}</td>
+                      <td className="p-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                            {provider.name?.charAt(0) || "P"}
+                          </div>
+                          <div>
+                            <div className="font-medium text-gray-900">{provider.name || "N/A"}</div>
+                            <div className="text-xs text-gray-500">ID: {provider._id?.slice(-8)}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="p-4 text-sm">
+                        <div className="text-gray-900">{provider.email}</div>
+                        <div className="text-xs text-gray-500">{provider.phone || "No phone"}</div>
+                      </td>
+                      <td className="p-4 text-sm text-gray-900">
+                        {provider.services?.length > 0 
+                          ? `${provider.services.length} services` 
+                          : "No services"}
+                      </td>
+                      <td className="p-4 text-sm">
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            provider.isVerified
+                              ? "bg-green-100 text-green-800"
+                              : "bg-yellow-100 text-yellow-800"
+                          }`}
+                        >
+                          {provider.isVerified ? "Verified" : "Pending"}
+                        </span>
+                      </td>
                       <td className="p-4 text-sm">
                         <span
                           className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -672,21 +762,20 @@ const Dashboard = () => {
                           {provider.status || "active"}
                         </span>
                       </td>
-                      <td className="p-4 text-sm">
-                        <span
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            provider.isVerified
-                              ? "bg-green-100 text-green-800"
-                              : "bg-yellow-100 text-yellow-800"
-                          }`}
-                        >
-                          {provider.isVerified ? "Verified" : "Pending"}
-                        </span>
-                      </td>
                       <td className="p-4">
-                        <button className="py-2 px-4 rounded-xl bg-blue-500 text-white text-sm hover:bg-blue-600 transition-colors shadow-sm">
-                          View Profile
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button className="py-2 px-4 rounded-xl bg-blue-500 text-white text-sm hover:bg-blue-600 transition-colors shadow-sm">
+                            View
+                          </button>
+                          <button className="py-2 px-4 rounded-xl bg-yellow-500 text-white text-sm hover:bg-yellow-600 transition-colors shadow-sm">
+                            Edit
+                          </button>
+                          {!provider.isVerified && (
+                            <button className="py-2 px-4 rounded-xl bg-green-500 text-white text-sm hover:bg-green-600 transition-colors shadow-sm">
+                              Verify
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -695,9 +784,16 @@ const Dashboard = () => {
             )}
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Notifications */}
+      {/* Transactions Tab Content */}
+      {activeTab === "transactions" && (
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden">
+          <BookingsAndTransactions />
+        </div>
+      )}
+
+      {/* Notifications - Always visible */}
       <Notifications />
     </div>
   );

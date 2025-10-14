@@ -5,6 +5,7 @@ import {
   FaBell,
   FaBars,
   FaChevronDown,
+  FaInbox,
 } from "react-icons/fa";
 import { ShareContext } from "../../sharedcontext/SharedContext";
 import { assets } from "../../assets/assets";
@@ -12,8 +13,9 @@ import { useNavigate } from "react-router-dom";
 
 const Navbar = ({ onMenuClick }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const navigate = useNavigate()
-  const { user, logoutUser,totalUnread } = useContext(ShareContext);
+  const navigate = useNavigate();
+  const { user, logoutUser, totalUnread, notificationUnreadCount } =
+    useContext(ShareContext);
 
   return (
     <div className="flex items-center justify-between m-1 mt-2 px-4 md:px-6 py-3 rounded-2xl bg-white shadow-md">
@@ -61,13 +63,25 @@ const Navbar = ({ onMenuClick }) => {
           <FaSearch className="text-gray-600 text-lg" />
         </button>
 
-        {/* Notification bell */}
-        <div 
-        onClick={()=>navigate('/user/chat')}
-        className="relative bg-gray-100 p-2 rounded-lg cursor-pointer">
-          <FaBell className="text-gray-600 text-lg" />
+        {/* chatbell */}
+        <div
+          onClick={() => navigate("/user/chat")}
+          className="relative bg-gray-100 p-2 rounded-lg cursor-pointer"
+        >
+          <FaInbox className="text-gray-600 text-lg" />
           <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
             {totalUnread}
+          </span>
+        </div>
+
+        {/* Notification bell - for system notifications */}
+        <div
+          onClick={() => navigate("/user/notification")}
+          className="relative bg-gray-100 p-2 rounded-lg cursor-pointer"
+        >
+          <FaBell className="text-gray-600 text-lg" />
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
+            {notificationUnreadCount} 
           </span>
         </div>
 
@@ -78,8 +92,8 @@ const Navbar = ({ onMenuClick }) => {
             onClick={() => setDropdownOpen(!dropdownOpen)}
           >
             <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center font-semibold text-sm">
-  {user?.name?.charAt(0).toUpperCase() || 'U'}
-</div>
+              {user?.name?.charAt(0).toUpperCase() || "U"}
+            </div>
             <FaChevronDown className="text-gray-600 text-sm" />
           </div>
 

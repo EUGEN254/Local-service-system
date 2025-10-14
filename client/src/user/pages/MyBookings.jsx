@@ -398,27 +398,6 @@ const MyBookings = () => {
                 {selectedService.serviceProvider?.email || "N/A"}
               </span>
             </div>
-
-            <div className="flex justify-between items-start">
-              <span className="font-semibold flex items-center">
-                <FaHome className="mr-1 text-orange-500" /> Address:
-              </span>
-              <span className="font-semibold text-right">
-                {selectedService.serviceProvider?.address || "N/A"}
-              </span>
-            </div>
-
-    
-
-            {/* Provider Bio if available */}
-            {selectedService.serviceProvider?.bio && (
-              <div className="border-t pt-3 mt-3">
-                <h3 className="font-semibold text-gray-800 mb-2">About:</h3>
-                <p className="text-xs text-gray-600 bg-gray-50 p-2 rounded">
-                  {selectedService.serviceProvider.bio}
-                </p>
-              </div>
-            )}
           </div>
 
           <div className="flex justify-end mt-4 pt-3 border-t">

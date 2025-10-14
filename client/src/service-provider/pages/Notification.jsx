@@ -80,7 +80,6 @@ const Notification = () => {
     });
 
   const handleMarkAsRead = async (notificationId) => {
-    console.log("👁️ Marking notification as read:", notificationId);
     await markBookingNotificationAsRead(notificationId);
   };
 

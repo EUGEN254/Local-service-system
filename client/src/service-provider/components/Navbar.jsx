@@ -5,6 +5,7 @@ import {
   FaBell,
   FaBars,
   FaChevronDown,
+  FaInbox,
 } from "react-icons/fa";
 import { ShareContext } from "../../sharedcontext/SharedContext";
 import { assets } from "../../assets/assets.js";
@@ -13,10 +14,11 @@ import { useNavigate } from "react-router-dom";
 const Navbar = ({ onMenuClick }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
-  const { user, logoutUser, unreadBookingCount, totalUnread } = useContext(ShareContext);
+  const { user, logoutUser, unreadBookingCount, totalUnread } =
+    useContext(ShareContext);
 
   // Calculate total notifications (booking notifications + chat messages)
-  const totalNotifications = unreadBookingCount + totalUnread;
+  const totalNotifications = unreadBookingCount;
 
   return (
     <div className="flex items-center justify-between m-1 mt-2 px-4 md:px-6 py-3 rounded-2xl bg-white shadow-md">
@@ -64,16 +66,27 @@ const Navbar = ({ onMenuClick }) => {
           <FaSearch className="text-gray-600 text-lg" />
         </button>
 
+        {/* chatbell */}
+        <div
+          onClick={() => navigate("/sp/inbox")}
+          className="relative bg-gray-100 p-2 rounded-lg cursor-pointer"
+        >
+          <FaInbox className="text-gray-600 text-lg" />
+          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
+            {totalUnread}
+          </span>
+        </div>
+
         {/* Notification bell */}
-        <div 
-          onClick={() => navigate('/sp/notifications')}
+        <div
+          onClick={() => navigate("/sp/notifications")}
           className="relative bg-gray-100 p-2 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
         >
           <FaBell className="text-gray-600 text-lg" />
           {/* Show badge only if there are notifications */}
           {totalNotifications > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-medium">
-              {totalNotifications > 9 ? '9+' : totalNotifications}
+              {totalNotifications > 9 ? "9+" : totalNotifications}
             </span>
           )}
         </div>

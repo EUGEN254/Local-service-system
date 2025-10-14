@@ -1,125 +1,73 @@
 import React, { useState, useEffect, useContext } from "react";
 import { FaCheckCircle, FaTrash, FaBell } from "react-icons/fa";
-import { AdminContext } from "../context/AdminContext";
-import axios from "axios";
 import { toast } from "react-toastify";
+import { ShareContext } from "../../sharedcontext/SharedContext";
 
-const categories = ["All", "User", "Service Provider", "Booking", "Transaction", "System", "Verification"];
+const categories = ["All", "Booking", "Transaction"];
 
-const Notifications = () => {
-  const [notifications, setNotifications] = useState([]);
+const UserNotification = () => {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All");
-  const [unreadCount, setUnreadCount] = useState(0);
   
- 
-  const {backendUrl, admin } = useContext(AdminContext);
+  const {
+    backendUrl,
+    user,
+    notificationUnreadCount,
+    notifications,
+    fetchNotifications,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
+    deleteNotification,
+    fetchNotificationUnreadCount
+  } = useContext(ShareContext);
 
-  const currentUser = admin;
+  const currentUser = user;
 
   useEffect(() => {
     if (currentUser) {
-      fetchNotifications();
-      fetchUnreadCount();
+      fetchAllData();
     }
   }, [currentUser, activeCategory]);
 
-  const fetchNotifications = async () => {
+  const fetchAllData = async () => {
     try {
       setLoading(true);
-      const { data } = await axios.get(
-        `${backendUrl}/api/notifications?category=${activeCategory === "All" ? "" : activeCategory}`,
-        { withCredentials: true }
-      );
-
-      if (data.success) {
-        setNotifications(data.notifications);
-      }
+      await Promise.all([
+        fetchNotifications(activeCategory === "All" ? "" : activeCategory),
+        fetchNotificationUnreadCount()
+      ]);
     } catch (error) {
-      console.error("Failed to fetch notifications:", error);
+      console.error("Failed to fetch data:", error);
       toast.error("Failed to load notifications");
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchUnreadCount = async () => {
+  const handleMarkAsRead = async (notificationId) => {
     try {
-      const { data } = await axios.get(
-        `${backendUrl}/api/notifications/unread-count`,
-        { withCredentials: true }
-      );
-
-      if (data.success) {
-        setUnreadCount(data.unreadCount);
-      }
-    } catch (error) {
-      console.error("Failed to fetch unread count:", error);
-    }
-  };
-
-  const markAsRead = async (notificationId) => {
-    try {
-      const { data } = await axios.put(
-        `${backendUrl}/api/notifications/mark-read/${notificationId}`,
-        {},
-        { withCredentials: true }
-      );
-
-      if (data.success) {
-        setNotifications(prev =>
-          prev.map(n =>
-            n._id === notificationId ? { ...n, read: true } : n
-          )
-        );
-        setUnreadCount(prev => Math.max(0, prev - 1));
-        toast.success("Notification marked as read");
-      }
+      await markNotificationAsRead(notificationId);
+      toast.success("Notification marked as read");
     } catch (error) {
       console.error("Failed to mark as read:", error);
       toast.error("Failed to mark notification as read");
     }
   };
 
-  const markAllAsRead = async () => {
+  const handleMarkAllAsRead = async () => {
     try {
-      const { data } = await axios.put(
-        `${backendUrl}/api/notifications/mark-all-read`,
-        {},
-        { withCredentials: true }
-      );
-
-      if (data.success) {
-        setNotifications(prev =>
-          prev.map(n => ({ ...n, read: true }))
-        );
-        setUnreadCount(0);
-        toast.success("All notifications marked as read");
-      }
+      await markAllNotificationsAsRead();
+      toast.success("All notifications marked as read");
     } catch (error) {
       console.error("Failed to mark all as read:", error);
       toast.error("Failed to mark all notifications as read");
     }
   };
 
-  const deleteNotification = async (notificationId) => {
+  const handleDeleteNotification = async (notificationId) => {
     try {
-      const { data } = await axios.delete(
-        `${backendUrl}/api/notifications/${notificationId}`,
-        { withCredentials: true }
-      );
-
-      if (data.success) {
-        setNotifications(prev =>
-          prev.filter(n => n._id !== notificationId)
-        );
-        // Update unread count if the deleted notification was unread
-        const deletedNotification = notifications.find(n => n._id === notificationId);
-        if (deletedNotification && !deletedNotification.read) {
-          setUnreadCount(prev => Math.max(0, prev - 1));
-        }
-        toast.success("Notification deleted");
-      }
+      await deleteNotification(notificationId);
+      toast.success("Notification deleted");
     } catch (error) {
       console.error("Failed to delete notification:", error);
       toast.error("Failed to delete notification");
@@ -176,17 +124,17 @@ const Notifications = () => {
         <div className="flex items-center gap-3">
           <FaBell className="text-2xl text-blue-500" />
           <h2 className="text-2xl font-bold text-gray-800">Notifications</h2>
-          {unreadCount > 0 && (
+          {notificationUnreadCount > 0 && (
             <span className="bg-red-500 text-white text-sm px-2 py-1 rounded-full">
-              {unreadCount} unread
+              {notificationUnreadCount} unread
             </span>
           )}
         </div>
         <button
-          onClick={markAllAsRead}
-          disabled={unreadCount === 0}
+          onClick={handleMarkAllAsRead}
+          disabled={notificationUnreadCount === 0}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            unreadCount === 0
+            notificationUnreadCount === 0
               ? "bg-gray-300 text-gray-500 cursor-not-allowed"
               : "bg-blue-500 text-white hover:bg-blue-600"
           }`}
@@ -261,7 +209,7 @@ const Notifications = () => {
                   <div className="flex items-center gap-2 ml-4">
                     {!notification.read && (
                       <button
-                        onClick={() => markAsRead(notification._id)}
+                        onClick={() => handleMarkAsRead(notification._id)}
                         className="text-green-500 hover:text-green-700 text-sm flex items-center gap-1 p-2 rounded hover:bg-green-50"
                         title="Mark as read"
                       >
@@ -269,7 +217,7 @@ const Notifications = () => {
                       </button>
                     )}
                     <button
-                      onClick={() => deleteNotification(notification._id)}
+                      onClick={() => handleDeleteNotification(notification._id)}
                       className="text-red-500 hover:text-red-700 text-sm flex items-center gap-1 p-2 rounded hover:bg-red-50"
                       title="Delete notification"
                     >
@@ -286,4 +234,4 @@ const Notifications = () => {
   );
 };
 
-export default Notifications;
+export default UserNotification;

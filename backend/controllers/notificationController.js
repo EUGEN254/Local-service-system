@@ -1,6 +1,7 @@
 // controllers/notificationController.js
 import Notification from "../models/notificationSchema.js";
 import User from "../models/userSchema.js";
+import { io } from "../server.js";
 
 // Get all notifications for a user
 export const getUserNotifications = async (req, res) => {
@@ -127,11 +128,30 @@ export const createNotification = async (userId, notificationData) => {
       ...notificationData
     });
 
-    await notification.save();
+    await notification.save();//save to notification database 
     
-    // Populate before returning if needed
-    return await Notification.findById(notification._id)
-      .populate("relatedEntity", "name email serviceName amount status");
+    // Populate before emitting
+    const populatedNotification = await Notification.findById(notification._id)
+      .populate("relatedEntity", "name email serviceName amount status")
+      .populate("user", "name email role");
+
+    //Emit socket event to the specific user
+    if (io) {
+      // Emit to the specific user's room
+      io.to(userId.toString()).emit("newNotification", {
+        _id: populatedNotification._id,
+        title: populatedNotification.title,
+        message: populatedNotification.message,
+        type: populatedNotification.type,
+        category: populatedNotification.category,
+        read: populatedNotification.read,
+        createdAt: populatedNotification.createdAt,
+        user: populatedNotification.user,
+        relatedEntity: populatedNotification.relatedEntity
+      });
+    }
+
+    return populatedNotification;
   } catch (error) {
     console.error("Create notification error:", error);
     throw error;

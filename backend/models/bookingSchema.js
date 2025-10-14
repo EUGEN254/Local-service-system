@@ -11,6 +11,7 @@ const bookingSchema = new mongoose.Schema(
     address: String,
     city: String,
     delivery_date: Date,
+    phone:{type: Number, required:true},
     is_paid: { type: Boolean, default: false },
     paymentMethod: { type: String, enum: ["Mpesa", "Cash"], default: "Mpesa" },
     status: { type: String, default: "Pending" },

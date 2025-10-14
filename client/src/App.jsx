@@ -30,10 +30,11 @@ import UserSettings from "./user/pages/Settings";
 import UserHelp from "./user/pages/Help";
 import MyBookings from "./user/pages/MyBookings";
 import Payments from "./user/pages/Payments";
-import Notification from "./user/pages/Notification";
 import BrowseServices from "./user/pages/BrowseServices";
 import UserHomeLayout from "./user/pages/Home";
 import Chat from "./user/pages/Chat";
+import UserNotification from "./user/pages/UserNotification";
+
 
 const App = () => {
   const { user, authLoading } = useContext(ShareContext);
@@ -120,6 +121,7 @@ const App = () => {
           <Route path="my-bookings" element={<MyBookings />} />
           <Route path="payment" element={<Payments />} />
           <Route path="chat" element={<Chat />} />
+          <Route path="notification" element={<UserNotification />} />
         </Route>
 
         {/* Catch-all for nested protected routes */}

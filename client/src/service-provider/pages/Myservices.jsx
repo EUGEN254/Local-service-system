@@ -16,6 +16,7 @@ const MyServices = () => {
     user,
     categories,
     fetchCategories,
+    fetchCurrentUser,
   } = useContext(ShareContext);
 
   const [form, setForm] = useState({
@@ -77,13 +78,24 @@ const MyServices = () => {
     }
   };
 
+  // Fixed useEffect - runs only on mount
   useEffect(() => {
     fetchServices();
+    fetchCategories();
+  }, []); // Empty dependency array - runs only once on mount
+
+  // Separate useEffect for setting initial category
+  useEffect(() => {
     // Set initial category when categories are loaded
     if (categories.length > 0 && !form.category) {
       setForm(prev => ({ ...prev, category: categories[0].name }));
     }
-  }, [categories]);
+  }, [categories]); // Only runs when categories change
+
+  // Refresh user data when component mounts
+  useEffect(() => {
+    fetchCurrentUser(false); // false means don't show loader
+  }, []);
 
   // --- Handlers for Add Service ---
   const handleChange = (e) => {
@@ -260,6 +272,7 @@ const MyServices = () => {
     if (!formId.backImage) {
       return toast.error("Back ID image is required");
     }
+    
 
     // Phone number validation (basic)
     const phoneRegex = /^[0-9]{10,15}$/;
@@ -311,6 +324,10 @@ const MyServices = () => {
         backImage: null,
         backImagePreview: null,
       });
+
+      // 🔑 KEY FIX: Refresh user data to clear rejection reason and update verification status
+      await fetchCurrentUser(false);
+
     } catch (err) {
       console.error("Error submitting ID:", err);
       toast.error(
@@ -322,10 +339,6 @@ const MyServices = () => {
       setLoading(false);
     }
   };
-
-   useEffect(()=> {
-      fetchCategories()
-    },[])
 
   return (
     <div className="space-y-6 p-4 sm:p-6 h-[calc(100vh-4rem)] overflow-y-auto">
@@ -562,7 +575,7 @@ const MyServices = () => {
                     name="phonenumber"
                     value={formId.phonenumber}
                     onChange={handleIdChange}
-                    placeholder="Enter your phone number"
+                    placeholder="(e.g., +254700000000, 0700000000, 0100000000)"
                     required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors duration-200"
                   />

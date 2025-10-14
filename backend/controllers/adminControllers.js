@@ -89,38 +89,7 @@ export const updateVerificationStatus = async (req, res) => {
     }
 
     await user.save();
-
-    // ✅ Create notification for the SERVICE PROVIDER
-    let providerNotification = {};
     
-    if (status === "verified") {
-      providerNotification = {
-        title: "🎉 Account Verified Successfully!",
-        message: "Congratulations! Your service provider account has been verified. You can now accept bookings and provide services.",
-        type: "verification",
-        category: "Verification",
-        priority: "high"
-      };
-    } else if (status === "rejected") {
-      providerNotification = {
-        title: "Verification Update",
-        message: `Your ID verification was rejected. ${rejectionReason ? `Reason: ${rejectionReason}` : 'Please check your submitted documents and try again.'}`,
-        type: "verification",
-        category: "Verification",
-        priority: "high"
-      };
-    } else if (status === "pending") {
-      providerNotification = {
-        title: "Verification Status Updated",
-        message: "Your verification status has been set to pending. Our team is reviewing your documents.",
-        type: "verification",
-        category: "Verification",
-        priority: "medium"
-      };
-    }
-
-    await createNotification(userId, providerNotification);
-
     // ✅ Create notification for the ADMIN who performed the action
     await createNotification(req.user._id, {
       title: "Verification Status Updated",

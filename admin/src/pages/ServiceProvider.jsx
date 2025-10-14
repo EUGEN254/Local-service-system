@@ -208,7 +208,6 @@ const ServiceProvider = () => {
   const handleDeleteConfirm = async () => {
     const success = await deleteProvider(selectedProvider._id);
     if (success) {
-      toast.success("Provider deleted successfully!");
       setShowDeleteModal(false);
     } else {
       toast.error("Failed to delete provider");

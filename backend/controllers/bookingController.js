@@ -16,6 +16,7 @@ export const createBooking = async (req, res) => {
       amount, 
       address, 
       city, 
+      phone,
       delivery_date, 
       paymentMethod 
     } = req.body;
@@ -32,6 +33,7 @@ export const createBooking = async (req, res) => {
       amount,
       address,
       city,
+      phone,
       delivery_date,
       is_paid: isPaid,
       paymentMethod,
@@ -60,10 +62,12 @@ export const createBooking = async (req, res) => {
       role: "service-provider" 
     });
 
+    
+
     if (providerUser) {
       await createNotification(providerUser._id, {
         title: "New Booking Received! 🎉",
-        message: `You have a new booking for ${serviceName} from ${populatedBooking.customer?.name || 'a customer'}. Amount: KSh ${amount}`,
+        message: `You have a new booking for ${serviceName} from ${populatedBooking.customer?.name || 'a customer'}. Amount: KSh ${amount} ${booking.phone}`,
         type: "booking",
         category: "Booking",
         relatedEntity: booking._id,
@@ -71,7 +75,7 @@ export const createBooking = async (req, res) => {
         priority: "high"
       });
     } else {
-      console.log(`⚠️ Service provider not found: ${serviceProvider}`);
+      return res.json({success:false,message:`⚠️ Service provider not found: ${serviceProvider}`})
     }
 
     // ✅ Create notification for ADMIN (optional - if you want admins to see all bookings)
@@ -105,13 +109,12 @@ export const createBooking = async (req, res) => {
         paymentMethod: populatedBooking.paymentMethod,
         read: false,
         createdAt: populatedBooking.createdAt,
-        providerName: populatedBooking.providerName, 
+        providerName: populatedBooking.providerName,  
         customerId: populatedBooking.customer?._id
       };
 
       // Emit the newBooking event
       io.emit("newBooking", bookingData);
-      console.log(`🔔 Emitted newBooking event for provider: ${populatedBooking.providerName}`);
     }
 
     res.status(201).json({ 
@@ -182,7 +185,6 @@ export const updatePaymentStatus = async (req, res) => {
     res.status(500).json({ success: false, message: "Failed to update payment status", error });
   }
 };
-
 
 export const updateFailedBooking = async (req, res) => {
   try {

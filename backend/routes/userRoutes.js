@@ -24,7 +24,6 @@ userRouter.get("/me", userAuth, getMe);
 userRouter.put("/update-password", userAuth, updatePassword);
 
 // New ID Verification Routes
-// Update the routes in userRouter.js
 userRouter.post("/submit-id-verification", userAuth, upload.fields([
     { name: 'frontImage', maxCount: 1 },
     { name: 'backImage', maxCount: 1 }

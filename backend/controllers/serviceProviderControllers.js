@@ -77,21 +77,26 @@ export const getCustomerDetails = async (req, res) => {
     if (!customer) {
       return res.status(404).json({ success: false, message: "Customer not found" });
     }
- 
 
-    const latestTransaction = await mpesaTransactionsSchema.findOne({ customer: customer.name })
-      .sort({ createdAt: -1 });
+    let phone = customer.phone || "N/A";
 
+    // If no phone in user model, try to get from latest booking
+    if (phone === "N/A") {
+      const latestBooking = await Booking.findOne({ customer: customerId }).sort({ createdAt: -1 });
+      if (latestBooking?.phone) {
+        phone = latestBooking.phone;
+      }
+    }
 
     const customerData = {
       name: customer.name,
       email: customer.email,
-      phone: latestTransaction ? latestTransaction.phone : "N/A",
+      phone: phone,
     };
 
     res.json({ success: true, customer: customerData });
   } catch (err) {
-    console.error(err);
+    console.error("Error fetching customer details:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 };

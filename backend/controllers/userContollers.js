@@ -32,6 +32,16 @@ export const registerUser = async (req, res) => {
     role,
   });
 
+  // Map user roles to notification categories
+  const getNotificationCategory = (userRole) => {
+    const categoryMap = {
+      customer: "User",
+      "service-provider": "Service Provider",
+      admin: "System",
+    };
+    return categoryMap[userRole] || "System";
+  };
+
   // ✅ Create welcome notification for the new user
   await createNotification(user._id, {
     title: "Welcome to Local Services System! 🎉",
@@ -39,7 +49,7 @@ export const registerUser = async (req, res) => {
       role
     )}`,
     type: "system",
-    category: "System",
+    category: getNotificationCategory(role), // Use mapped category
     priority: "high",
   });
 
@@ -131,6 +141,15 @@ export const loginUser = async (req, res) => {
     // Check if email exists with another role
     const otherRoleUser = await User.findOne({ email });
     if (otherRoleUser) {
+      // 🔒 SECURITY: Don't reveal if the email belongs to an admin
+      if (otherRoleUser.role === "admin") {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid credentials.",
+        });
+      }
+      
+      // For non-admin roles, we can be more specific
       return res.status(400).json({
         success: false,
         message: `This email is registered as a ${otherRoleUser.role}. Please log in as a ${otherRoleUser.role}.`,
@@ -176,7 +195,6 @@ export const loginUser = async (req, res) => {
     user: userWithoutPassword,
   });
 };
-
 export const loginAdmin = async (req, res) => {
   const { email, password, role } = req.body;
 
@@ -376,8 +394,6 @@ export const updatePassword = async (req, res) => {
   }
 };
 
-
-
 export const submitIdVerification = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -397,6 +413,52 @@ export const submitIdVerification = async (req, res) => {
         success: false,
         message: "Phone number is required",
       });
+    }
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Initialize serviceProviderInfo if it doesn't exist
+    if (!user.serviceProviderInfo) {
+      user.serviceProviderInfo = {
+        isVerified: false,
+        rating: 0,
+        totalReviews: 0,
+        completedJobs: 0,
+        services: [],
+        idVerification: {
+          status: "not-submitted",
+        },
+      };
+    }
+
+    // 🔑 UPDATED: Only check for duplicate phone number if user is submitting for the first time
+    // or if they're changing their phone number during resubmission
+    const currentVerificationStatus =
+      user.serviceProviderInfo.idVerification.status;
+    const isFirstTimeSubmission = currentVerificationStatus === "not-submitted";
+    const isChangingPhoneNumber = user.phone !== phonenumber;
+
+    if (isFirstTimeSubmission || isChangingPhoneNumber) {
+      const existingUserWithPhone = await User.findOne({
+        phone: phonenumber,
+        _id: { $ne: userId }, 
+        role: "service-provider",
+      });
+
+      if (existingUserWithPhone) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "This phone number is already registered with another service provider account",
+        });
+      }
     }
 
     // Check if files were uploaded
@@ -437,29 +499,6 @@ export const submitIdVerification = async (req, res) => {
       }),
     ]);
 
-    // Find user
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    // Initialize serviceProviderInfo if it doesn't exist
-    if (!user.serviceProviderInfo) {
-      user.serviceProviderInfo = {
-        isVerified: false,
-        rating: 0,
-        totalReviews: 0,
-        completedJobs: 0,
-        services: [],
-        idVerification: {
-          status: "not-submitted",
-        },
-      };
-    }
-
     // Store old status for comparison
     const oldStatus = user.serviceProviderInfo.idVerification.status;
 
@@ -476,16 +515,10 @@ export const submitIdVerification = async (req, res) => {
       cloudinaryBackId: backImageResult.public_id,
     };
 
-    await user.save();
+    // Clear rejection reason when resubmitting
+    user.serviceProviderInfo.idVerification.rejectionReason = undefined;
 
-    // ✅ Create notification for the SERVICE PROVIDER
-    await createNotification(userId, {
-      title: "ID Verification Submitted Successfully 📄",
-      message: "Your ID documents have been submitted for verification. Our admin team will review them within 24-48 hours. You'll be notified once verified.",
-      type: "verification",
-      category: "Verification",
-      priority: "high"
-    });
+    await user.save();
 
     // ✅ Create notification for ALL ADMINS about new verification request
     const adminUsers = await User.find({ role: "admin" });
@@ -496,27 +529,18 @@ export const submitIdVerification = async (req, res) => {
         type: "verification",
         category: "Verification",
         priority: "medium",
-        actionUrl: `/admin/service-providers` // Link to review the provider
+        actionUrl: `/admin/service-providers`, 
       });
     }
 
     res.status(200).json({
       success: true,
-      message: "ID verification submitted successfully! Awaiting admin approval.",
+      message:
+        "ID verification submitted successfully! Awaiting admin approval.",
       verificationStatus: "pending",
     });
-
   } catch (error) {
     console.error("Error submitting ID verification:", error);
-    
-    // ✅ Create error notification for the user
-    await createNotification(userId, {
-      title: "ID Verification Failed",
-      message: "There was an error submitting your ID documents. Please try again.",
-      type: "verification",
-      category: "Verification",
-      priority: "high"
-    });
 
     res.status(500).json({
       success: false,

@@ -27,24 +27,139 @@ const AppContextProvider = (props) => {
 
   const [services, setServices] = useState([]);
   const [loadingServices, setLoadingServices] = useState(false);
-  const[categories,setCategories] = useState([])
-   const [showCustomCategory, setShowCustomCategory] = useState(false);
+  const [categories, setCategories] = useState([]);
+  const [showCustomCategory, setShowCustomCategory] = useState(false);
 
   // Online users
   const [onlineUsers, setOnlineUsers] = useState([]);
 
-  // Unread messages
+  // Chat unread messages
   const [unreadBySender, setUnreadBySender] = useState({});
   const [totalUnread, setTotalUnread] = useState(0);
   const [bookingNotifications, setBookingNotifications] = useState([]);
   const [unreadBookingCount, setUnreadBookingCount] = useState(0);
 
-  // ✅ ADDED: Messages state for all chats
+  // ✅ ADDED: Notification system states
+  const [notificationUnreadCount, setNotificationUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState([]);
+
+  // Messages state for all chats
   const [messages, setMessages] = useState({}); // { chatId: [messages] }
 
   const socket = useRef();
 
-  // ---------------- FETCH UNREAD COUNTS ----------------
+  // ---------------- NOTIFICATION SYSTEM FUNCTIONS ----------------
+
+  // Fetch notification unread count
+  const fetchNotificationUnreadCount = async () => {
+    if (!user) return;
+
+    try {
+      const { data } = await axios.get(
+        `${backendUrl}/api/notifications/unread-count`,
+        { withCredentials: true }
+      );
+
+      if (data.success) {
+        setNotificationUnreadCount(data.unreadCount);
+      }
+    } catch (error) {
+      console.error("Failed to fetch notification unread count:", error);
+    }
+  };
+
+  // Fetch notifications with optional category filter
+  const fetchNotifications = async (category = "All") => {
+    if (!user) return;
+
+    try {
+      const { data } = await axios.get(
+        `${backendUrl}/api/notifications?category=${category === "All" ? "" : category}`,
+        { withCredentials: true }
+      );
+
+      if (data.success) {
+        setNotifications(data.notifications);
+      }
+      return data;
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+      throw error;
+    }
+  };
+
+  // Mark single notification as read
+  const markNotificationAsRead = async (notificationId) => {
+    try {
+      const { data } = await axios.put(
+        `${backendUrl}/api/notifications/mark-read/${notificationId}`,
+        {},
+        { withCredentials: true }
+      );
+
+      if (data.success) {
+        setNotifications(prev =>
+          prev.map(n =>
+            n._id === notificationId ? { ...n, read: true } : n
+          )
+        );
+        setNotificationUnreadCount(prev => Math.max(0, prev - 1));
+      }
+      return data;
+    } catch (error) {
+      console.error("Failed to mark notification as read:", error);
+      throw error;
+    }
+  };
+
+  // Mark all notifications as read
+  const markAllNotificationsAsRead = async () => {
+    try {
+      const { data } = await axios.put(
+        `${backendUrl}/api/notifications/mark-all-read`,
+        {},
+        { withCredentials: true }
+      );
+
+      if (data.success) {
+        setNotifications(prev =>
+          prev.map(n => ({ ...n, read: true }))
+        );
+        setNotificationUnreadCount(0);
+      }
+      return data;
+    } catch (error) {
+      console.error("Failed to mark all notifications as read:", error);
+      throw error;
+    }
+  };
+
+  // Delete notification
+  const deleteNotification = async (notificationId) => {
+    try {
+      const { data } = await axios.delete(
+        `${backendUrl}/api/notifications/${notificationId}`,
+        { withCredentials: true }
+      );
+
+      if (data.success) {
+        setNotifications(prev =>
+          prev.filter(n => n._id !== notificationId)
+        );
+        // Update unread count if the deleted notification was unread
+        const deletedNotification = notifications.find(n => n._id === notificationId);
+        if (deletedNotification && !deletedNotification.read) {
+          setNotificationUnreadCount(prev => Math.max(0, prev - 1));
+        }
+      }
+      return data;
+    } catch (error) {
+      console.error("Failed to delete notification:", error);
+      throw error;
+    }
+  };
+
+  // ---------------- CHAT UNREAD COUNTS ----------------
   const fetchUnreadCounts = async () => {
     if (!user) return;
 
@@ -72,7 +187,6 @@ const AppContextProvider = (props) => {
 
   // ---------------- FETCH BOOKING NOTIFICATIONS ----------------
   const fetchBookingNotifications = async () => {
-    // FIXED: Use the helper function to check service provider role
     if (!isServiceProvider(user)) return;
 
     try {
@@ -113,7 +227,7 @@ const AppContextProvider = (props) => {
   };
 
   // ---------------- MARK ALL NOTIFICATIONS AS READ ----------------
-  const markAllNotificationsAsRead = async () => {
+  const markAllBookingNotificationsAsRead = async () => {
     try {
       await axios.post(
         `${backendUrl}/api/chat/mark-all-notifications-read`,
@@ -160,9 +274,26 @@ const AppContextProvider = (props) => {
       }
     });
 
-    // FIXED: Updated newBooking socket handler with proper role checking
+    // Listen for new notifications
+    socket.current.on("newNotification", (notificationData) => {
+      // Add new notification
+      setNotifications((prev) => {
+        const newNotifications = [notificationData, ...prev];
+        return newNotifications;
+      });
+
+      // Update unread count
+      setNotificationUnreadCount((prev) => {
+        const newCount = prev + 1;
+        return newCount;
+      });
+
+      // Show toast notification
+      toast.info(notificationData.message || "New notification received");
+    });
+
+    //socket handler with proper role checking
     socket.current.on("newBooking", (bookingData) => {
-      // FIXED: Use helper function to check service provider role
       const shouldReceiveNotification =
         isServiceProvider(user) &&
         user.name?.trim().toLowerCase() ===
@@ -198,11 +329,16 @@ const AppContextProvider = (props) => {
 
     // Fetch immediately
     fetchUnreadCounts();
+    fetchNotificationUnreadCount();
 
-    // Then fetch every 10 seconds (like SpChatSidebar)
-    const interval = setInterval(fetchUnreadCounts, 10000);
+    // Then fetch every 10 seconds for chat, 30 seconds for notifications
+    const chatInterval = setInterval(fetchUnreadCounts, 10000);
+    const notificationInterval = setInterval(fetchNotificationUnreadCount, 30000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(chatInterval);
+      clearInterval(notificationInterval);
+    };
   }, [user]);
 
   // ---------------- AUTH & USER ----------------
@@ -335,16 +471,14 @@ const AppContextProvider = (props) => {
       toast.error("Failed to load categories");
     }
   };
-
-
+  
   // ---------------- VERIFY SESSION ----------------
   useEffect(() => {
     fetchCurrentUser(false);
+    fetchCategories()
   }, []);
 
-  useEffect(()=> {
-    fetchCategories()
-  },[])
+
 
   const value = {
     backendUrl,
@@ -378,7 +512,18 @@ const AppContextProvider = (props) => {
     unreadBookingCount,
     fetchBookingNotifications,
     markBookingNotificationAsRead,
+    markAllBookingNotificationsAsRead,
+    
+    // ✅ ADDED: Notification system functions and states
+    notificationUnreadCount,
+    setNotificationUnreadCount,
+    notifications,
+    setNotifications,
+    fetchNotificationUnreadCount,
+    fetchNotifications,
+    markNotificationAsRead,
     markAllNotificationsAsRead,
+    deleteNotification,
   };
 
   return (
