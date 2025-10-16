@@ -8,7 +8,9 @@ const categories = ["All", "Booking", "Transaction"];
 const UserNotification = () => {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All");
-  
+  const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
+
   const {
     backendUrl,
     user,
@@ -18,7 +20,8 @@ const UserNotification = () => {
     markNotificationAsRead,
     markAllNotificationsAsRead,
     deleteNotification,
-    fetchNotificationUnreadCount
+    fetchNotificationUnreadCount,
+    deleteAllNotifications,
   } = useContext(ShareContext);
 
   const currentUser = user;
@@ -34,7 +37,7 @@ const UserNotification = () => {
       setLoading(true);
       await Promise.all([
         fetchNotifications(activeCategory === "All" ? "" : activeCategory),
-        fetchNotificationUnreadCount()
+        fetchNotificationUnreadCount(),
       ]);
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -105,9 +108,37 @@ const UserNotification = () => {
     }
   };
 
-  const filteredNotifications = activeCategory === "All" 
-    ? notifications 
-    : notifications.filter(n => n.category === activeCategory);
+  // Open confirmation modal
+  const openDeleteAllModal = () => {
+    if (notifications.length === 0) return;
+    setShowDeleteAllModal(true);
+  };
+
+  // Close modal
+  const closeDeleteAllModal = () => {
+    setShowDeleteAllModal(false);
+    setIsDeletingAll(false);
+  };
+
+  // Actually delete all notifications
+  const handleDeleteAllNotifications = async () => {
+    try {
+      setIsDeletingAll(true);
+      await deleteAllNotifications();
+      toast.success("All notifications deleted");
+      closeDeleteAllModal(); // Close modal after success
+    } catch (error) {
+      console.error("Failed to delete all notifications:", error);
+      toast.error("Failed to delete all notifications");
+    } finally {
+      setIsDeletingAll(false);
+    }
+  };
+
+  const filteredNotifications =
+    activeCategory === "All"
+      ? notifications
+      : notifications.filter((n) => n.category === activeCategory);
 
   if (!currentUser) {
     return (
@@ -141,6 +172,14 @@ const UserNotification = () => {
         >
           Mark all as read
         </button>
+
+        <button
+          onClick={openDeleteAllModal}
+          disabled={notifications.length === 0}
+          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-300 flex items-center gap-2"
+        >
+          <FaTrash size={14} /> Clear All Notifications
+        </button>
       </div>
 
       {/* Category Tabs */}
@@ -171,7 +210,9 @@ const UserNotification = () => {
           <div className="p-8 text-center text-gray-500">
             <FaBell className="text-4xl text-gray-300 mx-auto mb-3" />
             <p>No notifications found.</p>
-            <p className="text-sm">Notifications will appear here when you have new activity.</p>
+            <p className="text-sm">
+              Notifications will appear here when you have new activity.
+            </p>
           </div>
         ) : (
           <ul className="divide-y divide-gray-200">
@@ -179,7 +220,9 @@ const UserNotification = () => {
               <li
                 key={notification._id}
                 className={`p-4 hover:bg-gray-50 transition-colors ${
-                  notification.read ? "bg-white" : "bg-blue-50 border-l-4 border-blue-500"
+                  notification.read
+                    ? "bg-white"
+                    : "bg-blue-50 border-l-4 border-blue-500"
                 }`}
               >
                 <div className="flex justify-between items-start">
@@ -198,14 +241,18 @@ const UserNotification = () => {
                           </span>
                         )}
                       </div>
-                      <p className="text-gray-800 font-medium">{notification.title}</p>
-                      <p className="text-gray-600 text-sm mt-1">{notification.message}</p>
+                      <p className="text-gray-800 font-medium">
+                        {notification.title}
+                      </p>
+                      <p className="text-gray-600 text-sm mt-1">
+                        {notification.message}
+                      </p>
                       <p className="text-xs text-gray-400 mt-2">
                         {formatDate(notification.createdAt)}
                       </p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 ml-4">
                     {!notification.read && (
                       <button
@@ -230,6 +277,63 @@ const UserNotification = () => {
           </ul>
         )}
       </div>
+
+      {/* Modal for deleting all notifications */}
+      {showDeleteAllModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-md w-full p-6">
+            {/* Modal Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <FaTrash className="text-red-500" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-800">
+                Delete All Notifications
+              </h3>
+            </div>
+
+            {/* Modal Body */}
+            <div className="mb-6">
+              <p className="text-gray-600 mb-2">
+                Are you sure you want to delete all {notifications.length}{" "}
+                notifications?
+              </p>
+              <p className="text-sm text-gray-500">
+                This action cannot be undone. All your notifications will be
+                permanently removed.
+              </p>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={closeDeleteAllModal}
+                disabled={isDeletingAll}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteAllNotifications}
+                disabled={isDeletingAll}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-red-300 flex items-center gap-2"
+              >
+                {isDeletingAll ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <FaTrash size={14} />
+                    Delete All
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

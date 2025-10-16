@@ -156,8 +156,8 @@ chatRouter.post("/send", userAuth, async (req, res) => {
 chatRouter.get("/unread-count", userAuth, async (req, res) => {
   try {
     const unreadCounts = await Message.aggregate([
-      { $match: { receiver: req.user._id, isRead: false } },
-      { $group: { _id: "$sender", count: { $sum: 1 } } },
+      { $match: { receiver: req.user._id, isRead: false } },//find current message to the logged in user
+      { $group: { _id: "$sender", count: { $sum: 1 } } },//group by sender and count
     ]);
 
     res.json({ success: true, unreadCounts });
@@ -367,11 +367,11 @@ chatRouter.post("/mark-notification-read", userAuth, async (req, res) => {
 =========================================================== */
 chatRouter.post("/mark-all-notifications-read", userAuth, async (req, res) => {
   try {
-    const providerId = req.user._id;
+    const providerName = req.user.name; // Use the user's name, not ID
     
     await Booking.updateMany(
       { 
-        providerName: providerId, 
+        providerName: providerName, // Compare string with string
         read: false 
       },
       { 

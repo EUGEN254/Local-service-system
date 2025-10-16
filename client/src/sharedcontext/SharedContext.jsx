@@ -15,12 +15,14 @@ const isServiceProvider = (user) => {
   );
 };
 
+
+// the main component 
 const AppContextProvider = (props) => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;//getting the server address 
   const navigate = useNavigate();
   const currSymbol = "KES";
 
-  const cachedUser = localStorage.getItem("user");
+  const cachedUser = localStorage.getItem("user");//check if userDat exist in browser
   const [user, setUser] = useState(cachedUser ? JSON.parse(cachedUser) : null);
   const [authLoading, setAuthLoading] = useState(false);
   const [verified, setIsVerified] = useState(false);
@@ -52,7 +54,7 @@ const AppContextProvider = (props) => {
 
   // Fetch notification unread count
   const fetchNotificationUnreadCount = async () => {
-    if (!user) return;
+    if (!user) return;//function should run only if user is logged in
 
     try {
       const { data } = await axios.get(
@@ -61,7 +63,7 @@ const AppContextProvider = (props) => {
       );
 
       if (data.success) {
-        setNotificationUnreadCount(data.unreadCount);
+        setNotificationUnreadCount(data.unreadCount);//update count 
       }
     } catch (error) {
       console.error("Failed to fetch notification unread count:", error);
@@ -98,8 +100,8 @@ const AppContextProvider = (props) => {
       );
 
       if (data.success) {
-        setNotifications(prev =>
-          prev.map(n =>
+        setNotifications(prev =>//taking initial value of array
+          prev.map(n =>//creating a new array going through each notification
             n._id === notificationId ? { ...n, read: true } : n
           )
         );
@@ -159,17 +161,41 @@ const AppContextProvider = (props) => {
     }
   };
 
+  // Delete all notifications
+  const deleteAllNotifications = async () => {
+    try {
+      const { data } = await axios.delete(
+        `${backendUrl}/api/notifications/bulk/delete-all`, 
+        { withCredentials: true }
+      );
+
+      if (data.success) {
+        // Clear ALL notifications from state
+        setNotifications([]);
+        
+        // Reset unread count to 0 (since all are gone)
+        setNotificationUnreadCount(0);
+      }
+      return data;
+    } catch (error) {
+      console.error("Failed to delete all notifications:", error);
+      throw error;
+    }
+  };
+
+
+
   // ---------------- CHAT UNREAD COUNTS ----------------
   const fetchUnreadCounts = async () => {
     if (!user) return;
 
     try {
       const { data } = await axios.get(`${backendUrl}/api/chat/unread-count`, {
-        withCredentials: true,
+        withCredentials: true,//include login infromation that were create by cookie
       });
 
       if (data.success) {
-        const countsMap = {};
+        const countsMap = {};//preparing storage
         let total = 0;
 
         data.unreadCounts.forEach((entry) => {
@@ -524,6 +550,7 @@ const AppContextProvider = (props) => {
     markNotificationAsRead,
     markAllNotificationsAsRead,
     deleteNotification,
+    deleteAllNotifications,
   };
 
   return (

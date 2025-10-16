@@ -5,7 +5,8 @@ import {
   markAsRead,
   markAllAsRead,
   getUnreadCount,
-  deleteNotification
+  deleteNotification,
+  deleteAllNotifications,
 } from "../controllers/notificationController.js";
 import userAuth from "../middleware/userAuth.js";
 
@@ -16,5 +17,8 @@ notificationRouter.get("/unread-count", userAuth, getUnreadCount);
 notificationRouter.put("/mark-read/:notificationId", userAuth, markAsRead);
 notificationRouter.put("/mark-all-read", userAuth, markAllAsRead);
 notificationRouter.delete("/:notificationId", userAuth, deleteNotification);
+notificationRouter.delete("/bulk/delete-all", userAuth, deleteAllNotifications);
+
+
 
 export default notificationRouter;

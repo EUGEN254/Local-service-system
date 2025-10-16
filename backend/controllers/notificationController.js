@@ -19,8 +19,8 @@ export const getUserNotifications = async (req, res) => {
       filter.read = read === "true";
     }
 
-    const notifications = await Notification.find(filter)
-      .sort({ createdAt: -1 })
+    const notifications = await Notification.find(filter)//find notification that matches these condition
+      .sort({ createdAt: -1 })//orders by creation date newest first
       .limit(limit * 1)
       .skip((page - 1) * limit)
       .populate("relatedEntity", "name email serviceName amount status");
@@ -117,6 +117,40 @@ export const deleteNotification = async (req, res) => {
   } catch (error) {
     console.error("Delete notification error:", error);
     res.status(500).json({ success: false, message: "Failed to delete notification" });
+  }
+};
+
+// Delete all notifications for the current user
+export const deleteAllNotifications = async (req, res) => {
+  try {
+    const userId = req.user._id; 
+
+    // Delete all notifications belonging to this user
+    const result = await Notification.deleteMany({ user: userId });
+
+    // Check if any notifications were deleted
+    if (result.deletedCount === 0) {
+      return res.status(200).json({
+        success: true,
+        message: "No notifications found to delete",
+        deletedCount: 0
+      });
+    }
+
+    // Success response
+    res.status(200).json({
+      success: true,
+      message: `Successfully deleted ${result.deletedCount} notifications`,
+      deletedCount: result.deletedCount
+    });
+
+  } catch (error) {
+    console.error("Delete all notifications error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete notifications",
+      error: error.message
+    });
   }
 };
 

@@ -21,7 +21,7 @@ const Notification = () => {
     bookingNotifications, 
     unreadBookingCount,
     markBookingNotificationAsRead,
-    markAllNotificationsAsRead,
+    markAllBookingNotificationsAsRead,
     fetchBookingNotifications,
     user
   } = useContext(ShareContext);
@@ -37,8 +37,6 @@ const Notification = () => {
   useEffect(() => {
     fetchBookingNotifications();
   }, []);
-
-  
 
   // Close modal when clicking outside
   useEffect(() => {
@@ -188,6 +186,7 @@ const Notification = () => {
 
   return (
     <div className="py-12 px-4 max-w-4xl mx-auto bg-gray-50 min-h-screen">
+      {/* Fixed Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
           <h1 className="text-3xl font-bold">Booking Notifications</h1>
@@ -204,7 +203,7 @@ const Notification = () => {
         
         {unreadBookingCount > 0 && (
           <button
-            onClick={markAllNotificationsAsRead}
+            onClick={markAllBookingNotificationsAsRead}
             className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
           >
             Mark All as Read
@@ -212,91 +211,94 @@ const Notification = () => {
         )}
       </div>
 
-      {bookingNotifications.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-lg shadow">
-          <FaBell className="mx-auto text-4xl text-gray-400 mb-4" />
-          <p className="text-gray-500 text-lg">No notifications yet</p>
-          <p className="text-gray-400">New bookings will appear here</p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {bookingNotifications.map((notification, index) => (
-            <div
-              key={notification._id || index}
-              className={`bg-white rounded-lg shadow-md p-6 border-l-4 ${
-                notification.read ? "border-gray-300" : "border-yellow-500 bg-blue-50"
-              }`}
-            >
-              <div className="flex justify-between items-start mb-3">
-                <div className="flex-1">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      New Booking: {notification.serviceName}
-                    </h3>
-                    {!notification.read && (
-                      <button
-                        onClick={() => handleMarkAsRead(notification._id)}
-                        className="flex items-center text-sm text-blue-600 hover:text-blue-800"
-                      >
-                        <FaEye className="mr-1" />
-                        Mark as read
-                      </button>
-                    )}
+      {/* Scrollable Content Area */}
+      <div className="max-h-[calc(100vh-200px)] overflow-y-auto custom-scrollbar">
+        {bookingNotifications.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-lg shadow">
+            <FaBell className="mx-auto text-4xl text-gray-400 mb-4" />
+            <p className="text-gray-500 text-lg">No notifications yet</p>
+            <p className="text-gray-400">New bookings will appear here</p>
+          </div>
+        ) : (
+          <div className="space-y-4 pb-4">
+            {bookingNotifications.map((notification, index) => (
+              <div
+                key={notification._id || index}
+                className={`bg-white rounded-lg shadow-md p-6 border-l-4 ${
+                  notification.read ? "border-gray-300" : "border-yellow-500 bg-blue-50"
+                }`}
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-gray-800">
+                        New Booking: {notification.serviceName}
+                      </h3>
+                      {!notification.read && (
+                        <button
+                          onClick={() => handleMarkAsRead(notification._id)}
+                          className="flex items-center text-sm text-blue-600 hover:text-blue-800"
+                        >
+                          <FaEye className="mr-1" />
+                          Mark as read
+                        </button>
+                      )}
+                    </div>
+                    
+                    <p className="text-gray-600 mt-1">
+                      From: <span className="font-medium">{notification.customerName}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4 mt-4">
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600 flex items-center">
+                      <FaCalendarAlt className="mr-2 text-gray-400" />
+                      {/* UPDATED: Show only date for service date */}
+                      Service Date: {formatDateOnly(notification.delivery_date)}
+                    </p>
+                    <p className="text-sm text-gray-600 flex items-center">
+                      <FaMapMarkerAlt className="mr-2 text-gray-400" />
+                      Location: {notification.city}, {notification.address}
+                    </p>
                   </div>
                   
-                  <p className="text-gray-600 mt-1">
-                    From: <span className="font-medium">{notification.customerName}</span>
-                  </p>
+                  <div className="space-y-2">
+                    <p className="text-sm font-semibold text-gray-700">
+                      Amount: KES {notification.amount}
+                    </p>
+                    <StatusBadge status={notification.status} />
+                    {/* Keep time for received timestamp */}
+                    <p className="text-xs text-gray-500">
+                      Received: {formatDateTime(notification.createdAt)}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid md:grid-cols-2 gap-4 mt-4">
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-600 flex items-center">
-                    <FaCalendarAlt className="mr-2 text-gray-400" />
-                    {/* UPDATED: Show only date for service date */}
-                    Service Date: {formatDateOnly(notification.delivery_date)}
-                  </p>
-                  <p className="text-sm text-gray-600 flex items-center">
-                    <FaMapMarkerAlt className="mr-2 text-gray-400" />
-                    Location: {notification.city}, {notification.address}
-                  </p>
-                </div>
-                
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-gray-700">
-                    Amount: KES {notification.amount}
-                  </p>
-                  <StatusBadge status={notification.status} />
-                  {/* Keep time for received timestamp */}
-                  <p className="text-xs text-gray-500">
-                    Received: {formatDateTime(notification.createdAt)}
-                  </p>
+                <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
+                  <button
+                    ref={el => buttonRefs.current[index] = el}
+                    onClick={() => handleViewCustomer(notification, index)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    <FaUser className="text-sm" />
+                    View Customer
+                  </button>
+                  <button
+                    ref={el => buttonRefs.current[`schedule-${index}`] = el}
+                    onClick={() => handleViewSchedule(notification, index)}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
+                  >
+                    <FaClock className="text-sm" />
+                    View Schedule
+                  </button>
                 </div>
               </div>
-
-              <div className="flex gap-3 mt-4 pt-4 border-t border-gray-200">
-                <button
-                  ref={el => buttonRefs.current[index] = el}
-                  onClick={() => handleViewCustomer(notification, index)}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                >
-                  <FaUser className="text-sm" />
-                  View Customer
-                </button>
-                <button
-                  ref={el => buttonRefs.current[`schedule-${index}`] = el}
-                  onClick={() => handleViewSchedule(notification, index)}
-                  className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm"
-                >
-                  <FaClock className="text-sm" />
-                  View Schedule
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Customer Modal - IMPROVED FOR MOBILE */}
       {modalOpen && modalType === 'customer' && selectedCustomer && (
@@ -426,9 +428,31 @@ const Notification = () => {
         </div>
       )}
 
-      {/* Fixed JSX warning by using style tag without jsx attribute */}
+      {/* Custom Scrollbar and Animation Styles */}
       <style>
         {`
+          /* Custom scrollbar styling */
+          .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+          }
+          .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #a8a8a8;
+          }
+          
+          /* For Firefox */
+          .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #c1c1c1 #f1f1f1;
+          }
+          
           @keyframes fade-in {
             from {
               opacity: 0;
