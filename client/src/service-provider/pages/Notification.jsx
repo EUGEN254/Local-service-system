@@ -428,7 +428,7 @@ const Notification = () => {
         </div>
       )}
 
-      {/* Custom Scrollbar and Animation Styles */}
+      {/* Custom Scrollbar and Animation Styless */}
       <style>
         {`
           /* Custom scrollbar styling */
