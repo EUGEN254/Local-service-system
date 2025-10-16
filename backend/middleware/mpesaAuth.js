@@ -13,7 +13,6 @@ export const generateAuthToken = async () => {
       headers: { Authorization: `Basic ${auth}` },
     });
 
-    console.log("✅ Token generated:", response.data);
     return response.data.access_token;
   } catch (error) {
     console.error("❌ Auth Error:", error.response?.data || error.message);

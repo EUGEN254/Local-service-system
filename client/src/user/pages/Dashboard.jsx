@@ -217,25 +217,28 @@ const Dashboard = () => {
     innerRadius,
     outerRadius,
     percent,
-    name,
+    index,
   }) => {
+    // Only show label if percentage is more than 5%
+    if (percent < 0.05) return null;
+  
     const RADIAN = Math.PI / 180;
+    
+    // Calculate position for center of the slice
     const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
-
-    // Only show label if percentage is more than 5%
-    if (percent < 0.05) return null;
-
+  
     return (
       <text
         x={x}
         y={y}
         fill="white"
-        textAnchor={x > cx ? "start" : "end"}
+        textAnchor="middle"  // Always center the text
         dominantBaseline="central"
         fontSize={12}
         fontWeight="bold"
+        className="pointer-events-none"
       >
         {`${(percent * 100).toFixed(0)}%`}
       </text>

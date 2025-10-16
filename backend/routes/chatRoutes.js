@@ -58,7 +58,7 @@ chatRouter.get("/my-customers", userAuth, async (req, res) => {
 chatRouter.get("/messages/:userId", userAuth, async (req, res) => {
   try {
     const { userId } = req.params;
-    console.log("🟡 Fetch messages for participants:", req.user._id, userId);
+    
 
     // Find chat
     const chat = await Chat.findOne({
@@ -73,8 +73,7 @@ chatRouter.get("/messages/:userId", userAuth, async (req, res) => {
       { $set: { isRead: true } }
     );
 
-    console.log("🟢 Marked unread messages as read.");
-
+    
     res.json({ success: true, messages: chat.messages });
   } catch (err) {
     console.error("❌ Error fetching messages:", err);

@@ -8,11 +8,29 @@ import { createNotification } from "./notificationController.js";
 // Get all service providers
 export const getServiceProviders = async (req, res) => {
   try {
-    const serviceProviders = await User.find({
-      role: "service-provider",
-    })
-      .select("-password")
-      .sort({ createdAt: -1 });
+    const serviceProviders = await User.aggregate([
+      {
+        $match: {
+          role: "service-provider"
+        }
+      },
+      {
+        $lookup: {
+          from: "plumbingservices", // MongoDB collection name (usually pluralized)
+          localField: "_id",
+          foreignField: "serviceProvider",
+          as: "services"
+        }
+      },
+      {
+        $project: {
+          password: 0 // exclude password
+        }
+      },
+      {
+        $sort: { createdAt: -1 }
+      }
+    ]);
 
     res.json({
       success: true,

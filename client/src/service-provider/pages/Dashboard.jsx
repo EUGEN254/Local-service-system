@@ -280,30 +280,30 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="w-full max-w-[1200px] mx-auto p-4 sm:p-6 space-y-8 h-[calc(100vh-4rem)] overflow-y-auto scrollbar-none">
+    <div className="w-full max-w-[1200px] mx-auto p-4 sm:p-6 space-y-6 h-[calc(100vh-4rem)] overflow-y-auto scrollbar-none">
       <p className="mb-3 lg:-mt-7 text-xl font-semibold">Dashboard</p>
 
-      {/* Summary cards */}
-      <div className="flex gap-4 overflow-x-auto pb-2">
+      {/* Summary cards - COMPACT SIZE */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
         {summaryCards.map((card, index) => {
           const Icon = card.icon;
           return (
             <div
               key={index}
-              className={`${card.bgColor} flex-shrink-0 flex items-center justify-between p-4 rounded-xl shadow-md text-white min-w-[200px]`}
+              className={`${card.bgColor} flex items-center justify-between p-3 sm:p-4 rounded-xl shadow-md text-white min-h-[80px]`}
             >
               <div>
-                <p className="text-sm">{card.title}</p>
-                <p className="text-2xl font-bold mt-2">{card.count}</p>
+                <p className="text-xs sm:text-sm font-medium">{card.title}</p>
+                <p className="text-lg sm:text-xl font-bold mt-1">{card.count}</p>
               </div>
-              <Icon className="text-white text-2xl" />
+              <Icon className="text-white text-lg sm:text-xl opacity-90" />
             </div>
           );
         })}
       </div>
 
-      {/* Bar Chart - IMPROVED MOBILE RESPONSIVENESS */}
-      <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md space-y-4 w-full">
+      {/* Bar Chart - REDUCED WIDTH CONTAINER */}
+      <div className="bg-white p-4 sm:p-5 rounded-xl shadow-md space-y-4 w-full max-w-4xl mx-auto">
         <p className="font-semibold text-gray-700 text-lg sm:text-xl">Overview of Services</p>
         
         {/* Improved legend and filter section for mobile */}
@@ -348,8 +348,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Chart container with better mobile handling */}
-        <div className="w-full h-64 sm:h-80">
+        {/* Chart container with reduced width */}
+        <div className="w-full h-64 sm:h-72">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
               data={chartData}
@@ -359,7 +359,7 @@ const Dashboard = () => {
                 left: 0,
                 right: 10
               }}
-              barSize={14}
+              barSize={12}
             >
               <XAxis 
                 dataKey="period" 
@@ -384,6 +384,7 @@ const Dashboard = () => {
       {/* Upcoming Bookings Table */}
       <div className="bg-white p-4 rounded-xl shadow-md space-y-3">
         <div className="flex justify-between items-center flex-wrap gap-2">
+          <h2 className="text-lg font-semibold">Upcoming Requests</h2>
           <div className="flex items-center gap-2 flex-wrap">
             <select
               className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-400 w-full sm:w-auto"
@@ -411,7 +412,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <h2 className="text-lg font-semibold mb-4">Upcoming Requests</h2>
         <div className="border border-gray-200 rounded-lg overflow-x-auto">
           <div className="overflow-y-auto max-h-96 scrollbar-thin">
             <table className="w-full min-w-[600px]">

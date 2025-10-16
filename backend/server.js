@@ -162,7 +162,6 @@ io.on("connection", (socket) => {
       connectedUsers[userId].delete(socket.id);
       if (connectedUsers[userId].size === 0) delete connectedUsers[userId];
     }
-    console.log("🔴 Socket disconnected:", socket.id);
     io.emit("onlineUsers", Object.keys(connectedUsers));
   });
 });
