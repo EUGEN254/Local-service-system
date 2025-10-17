@@ -21,7 +21,7 @@ import supportRouter from "./routes/supportRoutes.js";
 // -------------------- EXPRESS + HTTP --------------------
 const app = express();
 const server = http.createServer(app); // needed for Socket.IO
-const PORT = process.env.PORT || 4000;
+const port = process.env.PORT || 4000;
 
 
 
@@ -32,7 +32,7 @@ const allowedOrigins = [
   "http://localhost:5174",
   "https://admin-lss.vercel.app",
   "https://local-service-system.vercel.app",
-  "https://local-service-system.onrender.com",
+  "https://local-service-system.onrender.com"
 ];
 app.use(express.json({ limit: "4mb" }));
 app.use(cookieParser());
@@ -187,9 +187,9 @@ app.use("/api/support", supportRouter);
 export { io };
 
 // -------------------- START SERVER LOCALLY --------------------
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`✅ Server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== "production") {
+  server.listen(port, () => console.log(`Server started on PORT: ${port}`));
+}
 
 // -------------------- EXPORT FOR VERCEL --------------------
 export default server;
