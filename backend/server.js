@@ -21,7 +21,7 @@ import supportRouter from "./routes/supportRoutes.js";
 // -------------------- EXPRESS + HTTP --------------------
 const app = express();
 const server = http.createServer(app); // needed for Socket.IO
-const port = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4000;
 
 
 
