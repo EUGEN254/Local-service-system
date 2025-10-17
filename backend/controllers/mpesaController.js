@@ -10,12 +10,20 @@ dotenv.config();
 export const handleMpesa = async (req, res) => {
   try {
     const { amount, phone, serviceId, serviceName, bookingId } = req.body;
-   
-
-    console.log("🟢 handleMpesa called with:", { amount, phone, serviceId, serviceName });
+    
+    console.log("🎯 STK PUSH DETAILS:");
+    console.log("Amount:", amount);
+    console.log("Raw Phone:", phone);
+    console.log("Service Name:", serviceName);
 
     const token = await generateAuthToken();
     const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, -3);
+    const formattedPhone = `254${phone.slice(-9)}`;
+    
+    console.log("📞 Formatted Phone for STK:", formattedPhone);
+    console.log("⏰ Timestamp:", timestamp);
+    console.log("🔑 Token Received:", token ? "YES" : "NO");
+
     const password = Buffer.from(
       `${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`
     ).toString("base64");
@@ -26,17 +34,16 @@ export const handleMpesa = async (req, res) => {
       Timestamp: timestamp,
       TransactionType: "CustomerPayBillOnline",
       Amount: amount,
-      PartyA: `254${phone.slice(-9)}`,
+      PartyA: formattedPhone,
       PartyB: process.env.MPESA_SHORTCODE,
-      PhoneNumber: `254${phone.slice(-9)}`,
+      PhoneNumber: formattedPhone,
       CallBackURL: process.env.MPESA_CALLBACK_URL,
       AccountReference: serviceName,
       TransactionDesc: `Payment for ${serviceName}`,
     };
 
-   
+    console.log("📤 FULL STK PUSH PAYLOAD:", JSON.stringify(stkPushPayload, null, 2));
 
-    console.log("📤 Sending STK Push request...");
     const response = await axios.post(
       `${process.env.MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest`,
       stkPushPayload,
@@ -48,29 +55,38 @@ export const handleMpesa = async (req, res) => {
       }
     );
 
-    console.log("✅ STK Push Response:", JSON.stringify(response.data, null, 2));
+    console.log("✅ STK PUSH RESPONSE:", JSON.stringify(response.data, null, 2));
 
+    // Save transaction
     const transaction = new mpesaTransactionsSchema({
       customer: req.customerName,
       bookingId,
       serviceId,
       serviceName,
       amount,
-      phone,
+      phone: formattedPhone, // Store the formatted number
       transactionId: response.data.CheckoutRequestID,
       status: "pending",
     });
 
     await transaction.save();
-    console.log(`💾 Transaction saved: ${transaction._id}`);
-
+    
     res.status(200).json({
       success: true,
       message: "M-Pesa payment initiated successfully.",
       data: response.data,
+      debug: {
+        phoneSent: formattedPhone,
+        amount: amount
+      }
     });
+    
   } catch (error) {
-    console.error("❌ STK Push Error:", error.response?.data || error.message);
+    console.error("❌ STK Push Full Error:", {
+      message: error.message,
+      response: error.response?.data,
+      status: error.response?.status
+    });
     res.status(500).json({
       success: false,
       message: "Failed to initiate M-Pesa payment",
