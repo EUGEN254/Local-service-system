@@ -2,6 +2,9 @@ import axios from "axios";
 import { generateAuthToken } from "../middleware/mpesaAuth.js";
 import mpesaTransactionsSchema from "../models/mpesaTransactionsSchema.js";
 import Booking from "../models/bookingSchema.js";
+import dotenv from 'dotenv';
+dotenv.config();
+
 
 // 1️⃣ INITIATE STK PUSH
 export const handleMpesa = async (req, res) => {
@@ -12,7 +15,7 @@ export const handleMpesa = async (req, res) => {
     console.log("🟢 handleMpesa called with:", { amount, phone, serviceId, serviceName });
 
     const token = await generateAuthToken();
-    const timestamp = new Date().toISOString().replace(/[^0-9]/g, "").slice(0, 14);
+    const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, -3);
     const password = Buffer.from(
       `${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`
     ).toString("base64");
@@ -30,6 +33,8 @@ export const handleMpesa = async (req, res) => {
       AccountReference: serviceName,
       TransactionDesc: `Payment for ${serviceName}`,
     };
+
+   
 
     console.log("📤 Sending STK Push request...");
     const response = await axios.post(
@@ -158,7 +163,6 @@ export const handleCallback = async (req, res) => {
     res.status(500).send("Server Error");
   }
 };
-
 
 // 3️⃣ CHECK PAYMENT STATUS
 export const getPaymentStatus = async (req, res) => {
