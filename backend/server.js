@@ -23,6 +23,8 @@ const app = express();
 const server = http.createServer(app); // needed for Socket.IO
 const port = process.env.PORT || 4000;
 
+
+
 // -------------------- MIDDLEWARE --------------------
 connectCloudinary();
 const allowedOrigins = [
@@ -30,6 +32,7 @@ const allowedOrigins = [
   "http://localhost:5174",
   "https://admin-lss.vercel.app",
   "https://local-service-system.vercel.app",
+  "https://local-service-system.onrender.com",
 ];
 app.use(express.json({ limit: "4mb" }));
 app.use(cookieParser());
