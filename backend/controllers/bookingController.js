@@ -22,7 +22,7 @@ export const createBooking = async (req, res) => {
     } = req.body;
 
     const customerId = req.user._id; 
-    const isPaid = paymentMethod.toLowerCase() === "mpesa"; 
+    const isPaid = false;
 
     const booking = await Booking.create({
       customer: customerId,
