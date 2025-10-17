@@ -21,7 +21,7 @@ import supportRouter from "./routes/supportRoutes.js";
 // -------------------- EXPRESS + HTTP --------------------
 const app = express();
 const server = http.createServer(app); // needed for Socket.IO
-const port = process.env.PORT || 4000;
+const PORT = process.env.PORT || 4000;
 
 
 
@@ -187,9 +187,10 @@ app.use("/api/support", supportRouter);
 export { io };
 
 // -------------------- START SERVER LOCALLY --------------------
-if (process.env.NODE_ENV !== "production") {
-  server.listen(port, () => console.log(`Server started on PORT: ${port}`));
-}
+
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});
 
 // -------------------- EXPORT FOR VERCEL --------------------
 export default server;
