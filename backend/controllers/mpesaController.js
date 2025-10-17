@@ -77,6 +77,8 @@ export const handleMpesa = async (req, res) => {
 // 2️⃣ CALLBACK FROM M-PESA
 export const handleCallback = async (req, res) => {
   try {
+    console.log("📥 Callback received:", JSON.stringify(req.body, null, 2));
+
     const callbackData = req.body;
     const stkCallback = callbackData?.Body?.stkCallback;
     if (!stkCallback) return res.status(400).send("Invalid callback payload");
