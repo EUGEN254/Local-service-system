@@ -18,11 +18,11 @@ export const createBooking = async (req, res) => {
       city, 
       phone,
       delivery_date, 
-      paymentMethod 
+      paymentMethod,
+      isPaid
     } = req.body;
 
     const customerId = req.user._id; 
-    const isPaid = false;
 
     const booking = await Booking.create({
       customer: customerId,

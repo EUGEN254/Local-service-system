@@ -193,8 +193,6 @@ const Payments = () => {
     }
   };
   
-  
-
   // ✅ Handle Cash Payment
   const handleCashPayment = async () => {
     try {
