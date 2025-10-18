@@ -3,6 +3,7 @@ import { generateAuthToken } from "../middleware/mpesaAuth.js";
 import mpesaTransactionsSchema from "../models/mpesaTransactionsSchema.js";
 import Booking from "../models/bookingSchema.js";
 import dotenv from 'dotenv';
+import moment from "moment-timezone";
 dotenv.config();
 
 
@@ -17,7 +18,7 @@ export const handleMpesa = async (req, res) => {
     console.log("Service Name:", serviceName);
 
     const token = await generateAuthToken();
-    const timestamp = new Date().toISOString().replace(/[^0-9]/g, '').slice(0, -3);
+    const timestamp = moment().tz("Africa/Nairobi").format("YYYYMMDDHHmmss");
     const formattedPhone = `254${phone.slice(-9)}`;
     
     console.log("📞 Formatted Phone for STK:", formattedPhone);
