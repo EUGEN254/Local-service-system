@@ -187,9 +187,8 @@ app.use("/api/support", supportRouter);
 export { io };
 
 // -------------------- START SERVER LOCALLY --------------------
-if (process.env.NODE_ENV !== "production") {
-  server.listen(port, () => console.log(`Server started on PORT: ${port}`));
-}
+server.listen(port, () => console.log(`Server started on PORT: ${port}`));
+
 
 // -------------------- EXPORT FOR VERCEL --------------------
 export default server;
