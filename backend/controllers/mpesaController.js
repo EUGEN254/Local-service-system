@@ -3,7 +3,7 @@ import { generateAuthToken } from "../middleware/mpesaAuth.js";
 import mpesaTransactionsSchema from "../models/mpesaTransactionsSchema.js";
 import Booking from "../models/bookingSchema.js";
 import dotenv from 'dotenv';
-import moment from "moment-timezone";
+import { getTimeStamp } from "../utils/mpesaTimestamp.js";
 dotenv.config();
 
 
@@ -18,12 +18,17 @@ export const handleMpesa = async (req, res) => {
     console.log("Service Name:", serviceName);
 
     const token = await generateAuthToken();
-    const timestamp = moment().tz("Africa/Nairobi").format("YYYYMMDDHHmmss");
-    const formattedPhone = `254${phone.slice(-9)}`;
+    if(!token) {
+      throw new Error("Failed to generate M-Pesa auth token");
+    }
+    
+    const timestamp = getTimeStamp();
+    const phoneNumber = phone.replace(/^0/,'');
+    const formattedPhone = `254${phoneNumber}`;
     
     console.log("📞 Formatted Phone for STK:", formattedPhone);
     console.log("⏰ Timestamp:", timestamp);
-    console.log("🔑 Token Received:", token ? "YES" : "NO");
+    console.log("🔑 Token Received:", token);
 
     const password = Buffer.from(
       `${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`
@@ -39,7 +44,7 @@ export const handleMpesa = async (req, res) => {
       PartyB: process.env.MPESA_SHORTCODE,
       PhoneNumber: formattedPhone,
       CallBackURL: process.env.MPESA_CALLBACK_URL,
-      AccountReference: serviceName,
+      AccountReference: "LOCAL-SERVICE-SYSTEM",
       TransactionDesc: `Payment for ${serviceName}`,
     };
 

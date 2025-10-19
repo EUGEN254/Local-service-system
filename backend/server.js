@@ -170,6 +170,7 @@ io.on("connection", (socket) => {
 });
 
 // -------------------- ROUTES --------------------
+
 app.use("/api/user", userRouter);
 app.use("/api/serviceprovider", serviceRouter);
 app.use("/api/customer", customerRouter);

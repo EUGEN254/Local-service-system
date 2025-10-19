@@ -12,7 +12,6 @@ export const generateAuthToken = async () => {
     const response = await axios.get(MPESA_AUTH_URL, {
       headers: { Authorization: `Basic ${auth}` },
     });
-
     return response.data.access_token;
   } catch (error) {
     console.error("❌ Auth Error:", error.response?.data || error.message);
