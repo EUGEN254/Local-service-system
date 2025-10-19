@@ -20,11 +20,11 @@ import mpesaTransactionsSchema from '../models/mpesaTransactionsSchema.js';
 const deleteAllBookings = async () => {
   try {
     // Connect to MongoDB
-    await mongoose.connect('mongodb+srv://bitinyo:12345@cluster0.c6vd6s9.mongodb.net/mern-auth?retryWrites=true&w=majority&appName=Cluster0');
+    await mongoose.connect('');
     console.log('Connected to MongoDB');
 
     // Confirm before deletion (safety measure)
-    const bookingCount = await  mpesaTransactionsSchema.countDocuments();
+    const bookingCount = await  Booking.countDocuments();
     console.log(`📊 Found ${bookingCount} bookings in the database`);
     
     if (bookingCount === 0) {
@@ -61,7 +61,7 @@ const deleteAllBookings = async () => {
     */
 
     // Delete all bookings
-    const result = await  mpesaTransactionsSchema.deleteMany({});
+    const result = await  Booking.deleteMany({});
     console.log(`✅ Successfully deleted ${result.deletedCount} bookings!`);
 
   } catch (error) {

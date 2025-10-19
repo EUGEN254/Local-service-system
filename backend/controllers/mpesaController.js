@@ -70,7 +70,7 @@ export const handleMpesa = async (req, res) => {
       serviceId,
       serviceName,
       amount,
-      phone: formattedPhone, // Store the formatted number
+      phone: formattedPhone, 
       transactionId: response.data.CheckoutRequestID,
       status: "pending",
     });
