@@ -12,7 +12,6 @@ const UserNotification = () => {
   const [isDeletingAll, setIsDeletingAll] = useState(false);
 
   const {
-    backendUrl,
     user,
     notificationUnreadCount,
     notifications,
@@ -99,34 +98,27 @@ const UserNotification = () => {
     const now = new Date();
     const diffInHours = (now - date) / (1000 * 60 * 60);
 
-    if (diffInHours < 1) {
-      return "Just now";
-    } else if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)}h ago`;
-    } else {
-      return date.toLocaleDateString();
-    }
+    if (diffInHours < 1) return "Just now";
+    else if (diffInHours < 24) return `${Math.floor(diffInHours)}h ago`;
+    else return date.toLocaleDateString();
   };
 
-  // Open confirmation modal
   const openDeleteAllModal = () => {
     if (notifications.length === 0) return;
     setShowDeleteAllModal(true);
   };
 
-  // Close modal
   const closeDeleteAllModal = () => {
     setShowDeleteAllModal(false);
     setIsDeletingAll(false);
   };
 
-  // Actually delete all notifications
   const handleDeleteAllNotifications = async () => {
     try {
       setIsDeletingAll(true);
       await deleteAllNotifications();
       toast.success("All notifications deleted");
-      closeDeleteAllModal(); // Close modal after success
+      closeDeleteAllModal();
     } catch (error) {
       console.error("Failed to delete all notifications:", error);
       toast.error("Failed to delete all notifications");
@@ -149,37 +141,44 @@ const UserNotification = () => {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        {/* Left Section */}
+        <div className="flex items-center gap-3 flex-wrap">
           <FaBell className="text-2xl text-blue-500" />
-          <h2 className="text-2xl font-bold text-gray-800">Notifications</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
+            Notifications
+          </h2>
           {notificationUnreadCount > 0 && (
-            <span className="bg-red-500 text-white text-sm px-2 py-1 rounded-full">
+            <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
               {notificationUnreadCount} unread
             </span>
           )}
         </div>
-        <button
-          onClick={handleMarkAllAsRead}
-          disabled={notificationUnreadCount === 0}
-          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-            notificationUnreadCount === 0
-              ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-              : "bg-blue-500 text-white hover:bg-blue-600"
-          }`}
-        >
-          Mark all as read
-        </button>
 
-        <button
-          onClick={openDeleteAllModal}
-          disabled={notifications.length === 0}
-          className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-300 flex items-center gap-2"
-        >
-          <FaTrash size={14} /> Clear All Notifications
-        </button>
+        {/* Right Buttons */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
+          <button
+            onClick={handleMarkAllAsRead}
+            disabled={notificationUnreadCount === 0}
+            className={`w-full sm:w-auto px-4 py-2 rounded-lg font-medium transition-colors ${
+              notificationUnreadCount === 0
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                : "bg-blue-500 text-white hover:bg-blue-600"
+            }`}
+          >
+            Mark all as read
+          </button>
+
+          <button
+            onClick={openDeleteAllModal}
+            disabled={notifications.length === 0}
+            className="w-full sm:w-auto px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:bg-gray-300 flex items-center justify-center gap-2"
+          >
+            <FaTrash size={14} /> Clear All
+          </button>
+        </div>
       </div>
 
       {/* Category Tabs */}
@@ -225,13 +224,13 @@ const UserNotification = () => {
                     : "bg-blue-50 border-l-4 border-blue-500"
                 }`}
               >
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-start gap-3 flex-wrap">
                   <div className="flex gap-3 flex-1">
                     <span className="text-xl mt-1">
                       {getNotificationIcon(notification.type)}
                     </span>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                    <div className="flex-1 min-w-[200px]">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className="text-xs font-semibold text-gray-500 bg-gray-100 px-2 py-1 rounded">
                           {notification.category}
                         </span>
@@ -253,7 +252,7 @@ const UserNotification = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex items-center gap-2">
                     {!notification.read && (
                       <button
                         onClick={() => handleMarkAsRead(notification._id)}
@@ -282,7 +281,6 @@ const UserNotification = () => {
       {showDeleteAllModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6">
-            {/* Modal Header */}
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
                 <FaTrash className="text-red-500" />
@@ -291,20 +289,15 @@ const UserNotification = () => {
                 Delete All Notifications
               </h3>
             </div>
-
-            {/* Modal Body */}
             <div className="mb-6">
               <p className="text-gray-600 mb-2">
                 Are you sure you want to delete all {notifications.length}{" "}
                 notifications?
               </p>
               <p className="text-sm text-gray-500">
-                This action cannot be undone. All your notifications will be
-                permanently removed.
+                This action cannot be undone.
               </p>
             </div>
-
-            {/* Modal Footer */}
             <div className="flex gap-3 justify-end">
               <button
                 onClick={closeDeleteAllModal}
