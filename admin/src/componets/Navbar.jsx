@@ -1,134 +1,146 @@
-import React, { useContext } from "react";
-import { NavLink, useLocation } from "react-router-dom";
+import React, { useContext, useState, useEffect } from "react";
 import {
-  FaTachometerAlt,
-  FaDollarSign,
-  FaServicestack,
-  FaInbox,
-  FaChartLine,
-  FaQuestionCircle,
-  FaCog,
   FaSignOutAlt,
+  FaSearch,
   FaBell,
+  FaBars,
+  FaChevronDown,
 } from "react-icons/fa";
 import { AdminContext } from "../context/AdminContext";
+import { assets } from "../assets/assets";
+import { useNavigate } from "react-router-dom";
 
-// Define nav links with relative paths for nested routes
-const navLinks =(logoutAdmin)=>({
-  menu: [
-    { name: "Dashboard", icon: <FaTachometerAlt />, path: "dashboard" },
-    { name: "Bookings", icon: <FaDollarSign />, path: "payment" }, // Fixed path to match your route
-    { name: "Categories", icon: <FaServicestack />, path: "service-categories" },
-    { name: "Service Providers", icon: <FaInbox />, path: "service-providers" },
-    { name: "User management", icon: <FaInbox />, path: "user-management" },
-    { name: "Analytics", icon: <FaChartLine />, path: "analytics" },
-    { name: "Notification", icon: <FaBell />, path: "notifications" },
-  ],
-  other: [
-    { name: "Settings", icon: <FaCog />, path: "settings" },
-    { name: "Logout", icon: <FaSignOutAlt />, danger: true, path: "/logout",onClick:logoutAdmin },
-  ],
-});
+const Navbar = ({ onMenuClick }) => {
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const { 
+    logoutAdmin, 
+    admin, 
+    loadingAdmin,
+    unreadCount,
+    fetchUnreadCount 
+  } = useContext(AdminContext);
 
-const Sidebar = ({ onLinkClick }) => {
-  const { logoutAdmin,unreadCount } = useContext(AdminContext);
-  const links = navLinks(logoutAdmin);
-  const location = useLocation()
+  const navigate = useNavigate();
 
-   const isOnNotificationsPage = location.pathname.includes('/admin/notifications');
-  return (
-    <div className="w-64 h-full bg-gray-100 shadow-md rounded-2xl m-0 md:m-3 flex flex-col p-4">
-      {/* Logo + Title */}
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-16 h-16 flex items-center justify-center rounded-full bg-yellow-500 text-white">
-          <h1 className="text-sm font-extrabold tracking-tight text-center leading-tight">
-            LSS
-          </h1>
+  // Refresh unread count periodically
+  useEffect(() => {
+    if (admin) {
+      fetchUnreadCount();
+      
+      // Refresh every 30 seconds
+      const interval = setInterval(fetchUnreadCount, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [admin]);
+
+  // Show loading state while admin data is being fetched
+  if (loadingAdmin) {
+    return (
+      <div className="flex items-center justify-between m-1 mt-2 px-4 md:px-6 py-3 rounded-2xl bg-white shadow-md">
+        <div className="flex items-center gap-3">
+          <button
+            className="md:hidden text-gray-700 text-xl p-2 rounded-lg hover:bg-gray-100"
+            onClick={onMenuClick}
+          >
+            <FaBars />
+          </button>
+          <div className="flex flex-col">
+            <div className="flex flex-col">
+              <p className="font-semibold text-gray-800">Loading...</p>
+              <p className="text-sm text-gray-500">Please wait</p>
+            </div>
+          </div>
         </div>
-        <h1 className="text-lg font-bold text-gray-800">
-          Local <span className="text-yellow-500">Service</span> System
-        </h1>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-between m-1 mt-2 px-4 md:px-6 py-3 rounded-2xl bg-white shadow-md">
+      {/* Left side */}
+      <div className="flex items-center gap-3">
+        {/* Hamburger for small screens */}
+        <button
+          className="md:hidden text-gray-700 text-xl p-2 rounded-lg hover:bg-gray-100"
+          onClick={onMenuClick}
+        >
+          <FaBars />
+        </button>
+
+        <div className="hidden md:block">
+          <img
+            src={admin?.image || assets.avatar_icon}
+            alt="logo"
+            className="w-10 h-10 rounded-full"
+          />
+        </div>
+        <div className="flex flex-col">
+          <div className="flex flex-col">
+            <p className="font-semibold text-gray-800">
+              {admin?.name || "Admin User"}
+            </p>
+            <p className="text-sm text-gray-500">{admin?.email || "admin@example.com"}</p>
+          </div>
+        </div>
       </div>
 
-      {/* Menu Section */}
-      <div className="flex flex-col flex-1">
-        {/* Menu Title */}
-        <div className="flex items-center gap-2 mb-4">
-          <p className="text-gray-400 text-xs font-semibold">MENU</p>
-          <div className="flex-1 border-b border-gray-300"></div>
+      {/* Right side */}
+      <div className="flex items-center gap-4">
+        {/* Full search bar - visible on md+ */}
+        <div className="hidden md:flex items-center bg-gray-100 px-3 py-2 rounded-lg w-64">
+          <FaSearch className="text-gray-500 mr-2" />
+          <input
+            type="text"
+            placeholder="Search..."
+            className="bg-transparent outline-none flex-1 text-gray-700"
+          />
         </div>
 
-        <ul className="space-y-1 pl-4">
-          {links.menu.map((link, index) => (
-            <li key={index} className="relative">
-              <NavLink
-                to={link.path}
-                onClick={onLinkClick}
-                end={link.path === "dashboard"} // Use 'end' for exact matching on dashboard
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-2 py-2 rounded-md transition cursor-pointer
-                  ${
-                    isActive
-                      ? "bg-yellow-500 text-gray-900 font-semibold"
-                      : "text-gray-700 hover:text-gray-900"
-                  }`
-                }
+        {/* Search icon only - visible on small screens */}
+        <button className="md:hidden p-2 rounded-lg hover:bg-gray-100">
+          <FaSearch className="text-gray-600 text-lg" />
+        </button>
+
+        {/* Notification bell */}
+        <div 
+        onClick={()=>navigate('/admin/notifications')}
+        className="relative bg-gray-100 p-2 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
+          <FaBell className="text-gray-600 text-lg" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-medium">
+              {unreadCount > 99 ? '99+' : unreadCount}
+            </span>
+          )}
+        </div>
+
+        {/* User circle with dropdown */}
+        <div className="relative cursor-pointer">
+          <div
+            className="flex items-center gap-1 bg-gray-100 px-3 py-2 rounded-full hover:bg-gray-200 transition-colors"
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+          >
+            <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+              {admin?.name?.charAt(0).toUpperCase() || "A"}
+            </div>
+
+            <FaChevronDown className="text-gray-600 text-sm" />
+          </div>
+
+          {/* Dropdown */}
+          {dropdownOpen && (
+            <div className="absolute right-0 mt-3 w-36 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+              <button
+                className="w-full flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100"
+                onClick={logoutAdmin}
               >
-                {link.icon} {link.name}
-
-                {link.name === "Notification" && unreadCount > 0 && !isOnNotificationsPage && (
-                  <span className="absolute right-3 top-2 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5 min-w-5 h-5 flex items-center justify-center">
-                    {unreadCount > 99 ? "99+" : unreadCount}
-                  </span>
-                )}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-
-        <div className="mb-20"></div>
-
-        {/* Other Section */}
-        <div className="flex items-center gap-2 mb-4">
-          <p className="text-gray-400 text-xs font-semibold">OTHER</p>
-          <div className="flex-1 border-b border-gray-300"></div>
+                <FaSignOutAlt className="text-gray-600" /> Logout
+              </button>
+            </div>
+          )}
         </div>
-
-        <ul className="space-y-1 pl-4">
-          {links.other.map((link, index) => (
-            <li key={index}>
-              {link.danger ? (
-                <button
-                  onClick={() => {
-                    link.onClick();
-                    onLinkClick?.();
-                  }}
-                  className="flex items-center gap-3 px-2 py-2 rounded-md transition cursor-pointer text-red-600 hover:bg-yellow-500 hover:text-gray-900 w-full text-left"
-                >
-                  {link.icon} {link.name}
-                </button>
-              ) : (
-                <NavLink
-                  to={link.path}
-                  onClick={onLinkClick}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-2 py-2 rounded-md transition cursor-pointer
-                    ${
-                      isActive
-                        ? "bg-yellow-500 text-gray-900 font-semibold"
-                        : "text-gray-700 hover:bg-yellow-500 hover:text-gray-900"
-                    }`
-                  }
-                >
-                  {link.icon} {link.name}
-                </NavLink>
-              )}
-            </li>
-          ))}
-        </ul>
       </div>
     </div>
   );
 };
 
-export default Sidebar;
+export default Navbar;

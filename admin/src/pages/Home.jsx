@@ -55,9 +55,9 @@ const Home = () => {
 
       {/* Overlay Sidebar for small screens */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-50 flex bg-black bg-opacity-40 backdrop-blur-sm">
+        <div className="fixed inset-0 z-50 flex bg-opacity-30">
           {/* Sidebar panel */}
-          <div className="relative w-64 h-full shadow-lg bg-white flex flex-col p-4">
+          <div className="relative w-64 h-full shadow-md flex flex-col p-4">
             {/* Close button */}
             <button
               className="absolute top-5 -right-3 text-gray-600 hover:text-gray-900 text-xl"
@@ -73,13 +73,13 @@ const Home = () => {
       )}
 
       {/* Main content */}
-      <div className="flex flex-col flex-1 overflow-y-auto">
+      <div className="flex flex-col flex-1 md:ml-0 overflow-y-auto">
         <Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
 
         {/* Main Page Wrapper */}
-        <div className="p-6 mt-2 bg-white rounded-2xl shadow-sm min-h-[calc(100vh-4rem)] w-full md:max-w-6xl mx-auto overflow-y-auto">
-          <Outlet />
-        </div>
+        <div className="p-6 mt-2 bg-gray-100 rounded-2xl min-h-[calc(100vh-4rem)] w-full md:max-w-6xl mx-auto overflow-y-auto">
+                  <Outlet />
+                </div>
       </div>
     </div>
   );
