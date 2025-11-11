@@ -9,7 +9,7 @@ export async function sendOtpEmail(email, otp) {
       'https://api.brevo.com/v3/smtp/email',
       {
         sender: {
-          name: 'SafeCity',
+          name: process.env.SENDER_NAME,
           email: process.env.SENDER_EMAIL
         },
         to: [{ email: email }],
