@@ -3,9 +3,8 @@ import generateToken from "../utils/generateToken.js";
 import bcrypt from "bcryptjs";
 import { v2 as cloudinary } from "cloudinary";
 import { createNotification } from "./notificationController.js";
-import { PASSWORD_RESET_TEMPLATE } from "../configs/passwordResetTemplate.js";
-import transporter from "../utils/sendEmail.js";
 import PasswordReset from "../models/passwordReset.js";
+import { sendOtpEmail } from "../utils/emailService.js";
 
 export const registerUser = async (req, res) => {
   const { name, email, password, role } = req.body;
@@ -604,8 +603,9 @@ export const getIdVerificationStatus = async (req, res) => {
   }
 };
 
+
 /* =========================
-   SEND RESET OTP
+   SEND RESET OTP - UPDATED
 ========================= */
 export const sendResetOtp = async (req, res) => {
   try {
@@ -632,13 +632,8 @@ export const sendResetOtp = async (req, res) => {
     // Save new OTP
     await PasswordReset.create({ email, otp, expiresAt });
 
-    // Send email
-    await transporter.sendMail({
-      from: process.env.SENDER_EMAIL,
-      to: email,
-      subject: "Password Reset OTP",
-      html: PASSWORD_RESET_TEMPLATE(otp, email),
-    });
+    // ✅ CHANGED: Use Brevo API instead of SMTP
+    await sendOtpEmail(email, otp);
 
     res.status(200).json({
       success: true,
@@ -646,10 +641,12 @@ export const sendResetOtp = async (req, res) => {
     });
   } catch (error) {
     console.error("sendResetOtp error:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || "Server error" 
+    });
   }
 };
-
 /* =========================
    VERIFY RESET OTP
 ========================= */
