@@ -180,7 +180,7 @@ const LandingPage = () => {
               </div>
               <div className="animate-count-up" style={{ animationDelay: "700ms" }}>
                 <div className="text-2xl lg:text-3xl font-bold text-gray-900">24/7</div>
-                <div className="text-sm text-gray-600 mt-2 font-medium">Support Available</div>
+                <div className="text-sm text-gray-600 mt-2 font-medium">Support Available.</div>
               </div>
             </div>
           </div>
