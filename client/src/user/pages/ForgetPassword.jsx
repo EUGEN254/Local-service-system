@@ -213,7 +213,7 @@ const ForgetPassword = () => {
       {/* Back to login link */}
       <div className="mt-6 text-sm text-gray-400">
         <NavLink
-          to="/login"
+          to="/"
           className="flex items-center justify-center gap-2 text-yellow-400 hover:text-yellow-300 transition"
         >
           <FiArrowLeft /> Back to Login
