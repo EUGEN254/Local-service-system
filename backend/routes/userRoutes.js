@@ -9,7 +9,10 @@ import {
   submitIdVerification,
   getIdVerificationStatus, 
   loginAdmin,
-  logoutAdmin
+  logoutAdmin,
+  sendResetOtp,
+  verifyResetOtp,
+  resetPassword
 } from "../controllers/userContollers.js";
 import upload from "../middleware/uploadMiddleware.js";
 
@@ -22,6 +25,12 @@ userRouter.post("/logoutAdmin", logoutAdmin);
 userRouter.post("/logout", logoutUser);
 userRouter.get("/me", userAuth, getMe);
 userRouter.put("/update-password", userAuth, updatePassword);
+
+
+// Password routes
+userRouter.post("/send-reset-otp", sendResetOtp);
+userRouter.post("/verify-reset-otp", verifyResetOtp);
+userRouter.post("/reset-password", resetPassword);
 
 // New ID Verification Routes
 userRouter.post("/submit-id-verification", userAuth, upload.fields([

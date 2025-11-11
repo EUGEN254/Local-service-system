@@ -1,7 +1,7 @@
 // src/sharedcomponent/LoginSignUp.jsx
 import React, { useContext, useState } from "react";
 import { FiMail, FiLock, FiUserPlus, FiAlertTriangle } from "react-icons/fi";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { ShareContext } from "../sharedcontext/SharedContext";
@@ -276,6 +276,20 @@ const onsubmitHandler = async (e) => {
               </button>
             </div>
           </div>
+
+          {/* forgot password */}
+          {
+            currState !== "Sign Up" && (
+              <div>
+                <NavLink 
+                to="/forget-password"
+                className=' border-b border-red-500 text-red-500 cursor-pointer'>
+                  Forgot password ?
+
+                </NavLink>
+              </div>
+            )
+          }
 
           {/* Terms checkbox (Sign Up only) */}
           {currState === "Sign Up" && (

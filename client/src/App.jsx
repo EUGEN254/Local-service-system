@@ -34,6 +34,7 @@ import BrowseServices from "./user/pages/BrowseServices";
 import UserHomeLayout from "./user/pages/Home";
 import Chat from "./user/pages/Chat";
 import UserNotification from "./user/pages/UserNotification";
+import ForgetPassword from "./user/pages/ForgetPassword";
 
 
 const App = () => {
@@ -66,6 +67,9 @@ const App = () => {
       <Routes>
         {/* Public routes - exact paths */}
         <Route path="/" element={<LandingPage />} />
+        <Route path="forget-password" element={<ForgetPassword />} />
+
+        
         <Route 
           path="/auth" 
           element={
@@ -122,6 +126,7 @@ const App = () => {
           <Route path="payment" element={<Payments />} />
           <Route path="chat" element={<Chat />} />
           <Route path="notification" element={<UserNotification />} />
+          
         </Route>
 
         {/* Catch-all for nested protected routes */}
