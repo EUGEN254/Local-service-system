@@ -23,12 +23,22 @@ export const handleMpesa = async (req, res) => {
     }
     
     const timestamp = getTimeStamp();
-    const phoneNumber = phone.replace(/^0/,'');
-    const formattedPhone = `254${phoneNumber}`;
     
-    console.log("📞 Formatted Phone for STK:", formattedPhone);
-    console.log("⏰ Timestamp:", timestamp);
-    console.log("🔑 Token Received:", token);
+    // Normalize phone number into 2547XXXXXXXX format
+    let raw = String(phone || "").trim();
+    raw = raw.replace(/\s+/g, ""); // remove spaces
+    if (raw.startsWith("+")) raw = raw.slice(1);
+
+    let formattedPhoneNormalized = raw;
+    if (formattedPhoneNormalized.startsWith("0")) {
+      formattedPhoneNormalized = `254${formattedPhoneNormalized.slice(1)}`;
+    } else if (/^7\d{8}$/.test(formattedPhoneNormalized)) {
+      // e.g. 7XXXXXXXX -> prefix with 254
+      formattedPhoneNormalized = `254${formattedPhoneNormalized}`;
+    } else if (!formattedPhoneNormalized.startsWith("254")) {
+      // If it's not already in the 254 format, assume national and prefix
+      formattedPhoneNormalized = `254${formattedPhoneNormalized}`;
+    }
 
     const password = Buffer.from(
       `${process.env.MPESA_SHORTCODE}${process.env.MPESA_PASSKEY}${timestamp}`
@@ -40,16 +50,15 @@ export const handleMpesa = async (req, res) => {
       Timestamp: timestamp,
       TransactionType: "CustomerPayBillOnline",
       Amount: amount,
-      PartyA: formattedPhone,
+      PartyA: formattedPhoneNormalized,
       PartyB: process.env.MPESA_SHORTCODE,
-      PhoneNumber: formattedPhone,
+      PhoneNumber: formattedPhoneNormalized,
       CallBackURL: process.env.MPESA_CALLBACK_URL,
       AccountReference: "LOCAL-SERVICE-SYSTEM",
       TransactionDesc: `Payment for ${serviceName}`,
     };
 
-    console.log("📤 FULL STK PUSH PAYLOAD:", JSON.stringify(stkPushPayload, null, 2));
-
+    // DEBUG: don't log secrets (token) in production
     const response = await axios.post(
       `${process.env.MPESA_BASE_URL}/mpesa/stkpush/v1/processrequest`,
       stkPushPayload,
@@ -70,7 +79,7 @@ export const handleMpesa = async (req, res) => {
       serviceId,
       serviceName,
       amount,
-      phone: formattedPhone, 
+      phone: formattedPhoneNormalized, 
       transactionId: response.data.CheckoutRequestID,
       status: "pending",
     });
@@ -82,7 +91,7 @@ export const handleMpesa = async (req, res) => {
       message: "M-Pesa payment initiated successfully.",
       data: response.data,
       debug: {
-        phoneSent: formattedPhone,
+        phoneSent: formattedPhoneNormalized,
         amount: amount
       }
     });

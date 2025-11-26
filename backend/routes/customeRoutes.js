@@ -10,7 +10,7 @@ const customerRouter = express.Router();
 customerRouter.get("/services", getServicesForCustomer);
 customerRouter.post("/create", userAuth, createBooking);
 customerRouter.get("/mybookings", userAuth, getUserBookings);
-customerRouter.put("/update-booking-status/:id", updateFailedBooking)
+customerRouter.put("/update-booking-status/:id", userAuth, updateFailedBooking)
 customerRouter.put("/update-payment", userAuth, updatePaymentStatus);
 customerRouter.get('/details/:serviceId', getServiceProviderDetails);
 

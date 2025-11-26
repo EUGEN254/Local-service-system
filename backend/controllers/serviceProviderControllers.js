@@ -189,12 +189,23 @@ export const editService = async (req, res) => {
 
 export const updateStatus = async (req, res) => {
   try {
+    // Authorization: only the service provider who owns the booking or an admin can change status
+    if (!req.user) return res.status(401).json({ success: false, message: "Not authenticated" });
+
     const { status } = req.body;
-    const booking = await Booking.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+
+    const isProvider = booking.providerName === req.user.name;
+    const isAdmin = req.user.role === "admin";
+    const isCustomer = booking.customer?.toString() === req.user._id?.toString();
+
+    if (!isProvider && !isAdmin && !isCustomer) {
+      return res.status(403).json({ success: false, message: "Not authorized to update booking status" });
+    }
+
+    booking.status = status;
+    await booking.save();
     res.json({ success: true, booking });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

@@ -15,7 +15,7 @@ serviceRouter.put("/update-profile", userAuth, upload.single("image"), updatePro
 serviceRouter.get("/customer/:customerId", userAuth, getCustomerDetails);
 serviceRouter.get("/details/:serviceId", getServiceDetails);
 serviceRouter.put("/edit/:id", userAuth, upload.single("image"), editService);
-serviceRouter.put('/booking/:id/status', updateStatus)
+serviceRouter.put('/booking/:id/status', userAuth, updateStatus)
 
 export default serviceRouter;
 

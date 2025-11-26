@@ -92,7 +92,7 @@ export const createBooking = async (req, res) => {
       });
     }
 
-    // ✅ Emit socket event for real-time notification
+    // ✅ Emit socket event for real-time notification (only to the provider)
     if (io) {
       const bookingData = {
         _id: populatedBooking._id,
@@ -113,8 +113,13 @@ export const createBooking = async (req, res) => {
         customerId: populatedBooking.customer?._id
       };
 
-      // Emit the newBooking event
-      io.emit("newBooking", bookingData);
+      // Emit the newBooking event only to provider's room
+      if (providerUser && providerUser._id) {
+        io.to(providerUser._id.toString()).emit("newBooking", bookingData);
+      } else {
+        // Fallback: emit globally (shouldn't normally happen)
+        io.emit("newBooking", bookingData);
+      }
     }
 
     res.status(201).json({ 
@@ -188,14 +193,23 @@ export const updatePaymentStatus = async (req, res) => {
 
 export const updateFailedBooking = async (req, res) => {
   try {
-    const booking = await Booking.findByIdAndUpdate(
-      req.params.id,
-      {
-        is_paid: req.body.is_paid,
-        status: req.body.status || (req.body.is_paid ? "Waiting for Work" : "Payment Failed"),
-      },
-      { new: true }
-    );
+    if (!req.user) return res.status(401).json({ success: false, message: "Not authenticated" });
+
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+
+    const isOwner = booking.customer?.toString() === req.user._id?.toString();
+    const isProvider = booking.providerName === req.user.name;
+    const isAdmin = req.user.role === "admin";
+
+    if (!isOwner && !isProvider && !isAdmin) {
+      return res.status(403).json({ success: false, message: "Not authorized to update this booking" });
+    }
+
+    booking.is_paid = req.body.is_paid;
+    booking.status = req.body.status || (req.body.is_paid ? "Waiting for Work" : "Payment Failed");
+    await booking.save();
+
     res.json({ success: true, booking });
   } catch (err) {
     console.error("Error updating booking:", err);

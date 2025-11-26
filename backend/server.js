@@ -13,6 +13,8 @@ import mpesaRouter from "./routes/mpesaRoutes.js";
 import chatRouter from "./routes/chatRoutes.js";
 import Chat from "./models/Chat.js";
 import { Server } from "socket.io";
+import jwt from "jsonwebtoken";
+import User from "./models/userSchema.js";
 import adminRouter from "./routes/adminRoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
 import notificationRouter from "./routes/notificationRoutes.js";
@@ -54,18 +56,54 @@ const io = new Server(server, {
 // Track online users (userId -> Set of socketIds)
 export const connectedUsers = {};
 
+// ---------------- SOCKET AUTH (verify cookie JWT) ----------------
+io.use(async (socket, next) => {
+  try {
+    const cookieHeader = socket.handshake.headers?.cookie || "";
+    const token = cookieHeader
+      .split(";")
+      .map((p) => p.trim())
+      .find((c) => c.startsWith("token="))
+      ?.split("=")[1];
+
+    if (!token) {
+      // Reject connection if no token is present
+      return next(new Error("Authentication error: missing token"));
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (!decoded?.id) return next(new Error("Authentication error"));
+
+    const user = await User.findById(decoded.id).select("-password");
+    if (!user) return next(new Error("Authentication error"));
+
+    socket.user = user;
+    return next();
+  } catch (err) {
+    console.error("Socket auth error:", err.message);
+    return next(new Error("Authentication error"));
+  }
+});
+
 io.on("connection", (socket) => {
   console.log("🟢 New socket connected:", socket.id);
 
   // ---------------- JOIN USER ROOM (COMBINED FOR CHAT & NOTIFICATIONS) ----------------
   socket.on("joinUserRoom", ({ userId, userName, userRole, roomProvider, serviceName, roomId }) => {
-    if (!userId) return;
+    // Only allow the socket to join the user room if it matches the authenticated socket user
+    const authUserId = socket.user?._id?.toString();
+    const targetId = userId?.toString();
 
-    if (!connectedUsers[userId]) connectedUsers[userId] = new Set();
-    connectedUsers[userId].add(socket.id);
+    if (!targetId || !authUserId || targetId !== authUserId) {
+      console.warn(`Socket ${socket.id} attempted to join user room for ${userId} (auth ${authUserId})`);
+      return; // don't allow impersonation
+    }
+
+    if (!connectedUsers[targetId]) connectedUsers[targetId] = new Set();
+    connectedUsers[targetId].add(socket.id);
 
     // Join user's personal room for notifications (using userId)
-    socket.join(userId);
+    socket.join(targetId);
     
     // Also join chat room if provided
     if (roomId) {
