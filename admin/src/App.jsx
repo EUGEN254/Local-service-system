@@ -57,15 +57,15 @@ const App = () => {
 
   return (
     <>
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={true}
+          <ToastContainer
+        position="top-right" 
+        autoClose={1500}
+        newestOnTop
         closeOnClick
-        pauseOnFocusLoss
-        draggable
         pauseOnHover
+        draggable
+        className="!z-[10000] !p-1" 
+        toastStyle={{ height: '50px', minHeight: '50px' }}
       />
 
       <Routes>
