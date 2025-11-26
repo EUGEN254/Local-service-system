@@ -13,7 +13,7 @@ import {
   sendResetOtp,
   verifyResetOtp,
   resetPassword
-} from "../controllers/userContollers.js";
+} from "../controllers/userControllers.js";
 import upload from "../middleware/uploadMiddleware.js";
 
 const userRouter = express.Router();

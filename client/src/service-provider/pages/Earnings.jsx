@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { FaDollarSign, FaCheckCircle, FaClock, FaWallet, FaCalendarAlt, FaChartLine } from "react-icons/fa";
+import { FaDollarSign, FaCheckCircle, FaWallet, FaCalendarAlt, FaChartLine } from "react-icons/fa";
 import { ShareContext } from "../../sharedcontext/SharedContext";
 import axios from "axios";
 
@@ -17,6 +17,7 @@ const Earnings = () => {
           `${backendUrl}/api/serviceprovider/mybookings`,
           { withCredentials: true }
         );
+        
         if (data.success) setBookings(data.bookings);
       } catch (err) {
         console.error("Error fetching bookings:", err);
@@ -38,12 +39,14 @@ const Earnings = () => {
           const bookingDate = new Date(b.updatedAt);
           return bookingDate.toDateString() === now.toDateString();
         });
-      case "week":
+      case "week": {
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         return completedBookings.filter(b => new Date(b.updatedAt) >= weekAgo);
-      case "month":
+      }
+      case "month": {
         const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
         return completedBookings.filter(b => new Date(b.updatedAt) >= monthAgo);
+      }
       default:
         return completedBookings;
     }
@@ -53,17 +56,20 @@ const Earnings = () => {
   const allCompletedBookings = bookings.filter(b => b.status === "Completed" && b.is_paid);
 
   // Calculate earnings data
-  const totalEarnings = filteredBookings.reduce((sum, b) => sum + (b.amount || 0), 0);
-  const totalAllTimeEarnings = allCompletedBookings.reduce((sum, b) => sum + (b.amount || 0), 0);
+  // Ensure any amounts are treated as numbers to avoid string concatenation
+  const totalEarnings = filteredBookings.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const totalAllTimeEarnings = allCompletedBookings.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const completedServices = filteredBookings.length;
   const totalServicesCompleted = allCompletedBookings.length;
 
   // Calculate pending earnings (bookings that are completed but might have pending payout)
-  const pendingPayoutBookings = bookings.filter(b => 
-    b.status === "Completed" && b.is_paid
-    // Add your payout logic here if you have a payout system
+  // NOTE: the actual payout logic depends on your backend schema.
+  // Here we treat completed & paid bookings that haven't been processed for payout
+  // (i.e. `payoutProcessed` !== true) as available for payout. Adjust as needed.
+  const pendingPayoutBookings = bookings.filter(b =>
+    b.status === "Completed" && b.is_paid && !b.payoutProcessed
   );
-  const pendingPayout = pendingPayoutBookings.reduce((sum, b) => sum + (b.amount || 0), 0);
+  const pendingPayout = pendingPayoutBookings.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
 
   // Calculate this month's growth
   const thisMonthBookings = allCompletedBookings.filter(b => {
@@ -81,8 +87,8 @@ const Earnings = () => {
            bookingDate.getFullYear() === lastMonthYear;
   });
 
-  const thisMonthEarnings = thisMonthBookings.reduce((sum, b) => sum + (b.amount || 0), 0);
-  const lastMonthEarnings = lastMonthBookings.reduce((sum, b) => sum + (b.amount || 0), 0);
+  const thisMonthEarnings = thisMonthBookings.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const lastMonthEarnings = lastMonthBookings.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const growthPercentage = lastMonthEarnings > 0 
     ? ((thisMonthEarnings - lastMonthEarnings) / lastMonthEarnings * 100).toFixed(1)
     : thisMonthEarnings > 0 ? 100 : 0;
@@ -238,8 +244,8 @@ const Earnings = () => {
                           <td className="p-3 text-sm text-gray-900 font-semibold">
                             {currSymbol}{service.totalAmount}
                           </td>
-                          <td className="p-3 text-sm text-gray-900">
-                            {currSymbol}{(service.totalAmount / service.count).toFixed(2)}
+                                              <td className="p-3 text-sm text-gray-900">
+                                                {currSymbol}{service.count > 0 ? (service.totalAmount / service.count).toFixed(2) : '0.00'}
                           </td>
                         </tr>
                       ))}
@@ -253,7 +259,7 @@ const Earnings = () => {
                           {currSymbol}{totalEarnings}
                         </td>
                         <td className="p-3 text-sm text-gray-900">
-                          {currSymbol}{(totalEarnings / completedServices).toFixed(2)}
+                          {currSymbol}{completedServices > 0 ? (totalEarnings / completedServices).toFixed(2) : '0.00'}
                         </td>
                       </tr>
                     </tfoot>
