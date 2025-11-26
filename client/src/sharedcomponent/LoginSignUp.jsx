@@ -4,7 +4,7 @@ import { FiMail, FiLock, FiUserPlus, FiAlertTriangle } from "react-icons/fi";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { ShareContext } from "../sharedcontext/SharedContext";
+import { ShareContext } from "../sharedcontext/SharedContext"
 
 const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
   const [currState, setCurrState] = useState(initialState);

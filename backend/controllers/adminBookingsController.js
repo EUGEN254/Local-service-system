@@ -49,7 +49,7 @@ export const getBookings = async (req, res) => {
 
     const total = await Booking.countDocuments(query);
 
-    console.log(`Found ${bookings.length} bookings`);
+    // Found bookings count: handled in response
 
     res.json({
       success: true,
@@ -113,7 +113,7 @@ export const getTransactions = async (req, res) => {
 
     const total = await mpesaTransactionsSchema.countDocuments(query);
 
-    console.log(`Found ${transactions.length} transactions`);
+    // Found transactions count: handled in response
 
     res.json({
       success: true,
@@ -137,7 +137,7 @@ export const updateBookingStatus = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
 
-    console.log('Updating booking status:', { id, status, admin: req.user._id });
+    // Updating booking status
 
     const validStatuses = ['Pending', 'Confirmed', 'In Progress', 'Completed', 'Cancelled'];
     

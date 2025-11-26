@@ -4,13 +4,14 @@ import { ShareContext } from "../../sharedcontext/SharedContext.jsx";
 import { assets } from "../../assets/assets";
 import { formatMessageTime } from "../../service-provider/libs/Utils.js";
 import { v4 as uuidv4 } from "uuid"; 
-import { FaImage, FaPaperPlane, FaTimes } from "react-icons/fa";
+import { FaImage, FaPaperPlane, FaTimes, FaCircleNotch } from "react-icons/fa";
 
 const ChatContainer = ({ selectedUser, setSelectedUser }) => {
-  const { user, backendUrl, socket, onlineUsers, messages, setMessages } = useContext(ShareContext);
+  const { user, backendUrl, socket, onlineUsers, messages, setMessages, markAsRead, setActiveRoomId } = useContext(ShareContext);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isSending, setIsSending] = useState(false); // indicates a message send in progress
   const [imagePreview, setImagePreview] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const scrollEnd = useRef();
@@ -55,6 +56,17 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
     fetchMessages();
   }, [selectedUser, backendUrl, currentChatId, setMessages]);
 
+  // Mark this room as the active room so the shared socket listener doesn't mark
+  // messages in this chat as unread when they arrive. When chat is closed, clear it.
+  useEffect(() => {
+    if (selectedUser) {
+      setActiveRoomId(currentChatId);
+      return () => setActiveRoomId(null);
+    }
+    // If no selected user ensure it's cleared
+    setActiveRoomId(null);
+  }, [selectedUser, currentChatId, setActiveRoomId]);
+
   // ✅ Receive messages via socket and update context WITH DUPLICATE PREVENTION
   useEffect(() => {
     if (!socket.current) return;
@@ -72,6 +84,13 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
           return prev; // Don't add duplicate
         }
         
+        // If the incoming message is for this open chat and is sent to the current user,
+        // immediately mark it as read so unread counters update correctly.
+        if (msg.receiver === user._id && selectedUser && msg.sender === selectedUser._id) {
+          // fire-and-forget — mark read will update local state and call backend
+          markAsRead(msg.sender).catch?.(() => {});
+        }
+
         return {
           ...prev,
           [currentChatId]: [...existingMessages, msg]
@@ -115,6 +134,8 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
   const handleSend = async () => {
     if ((!newMessage.trim() && !imagePreview) || !selectedUser) return;
 
+    setIsSending(true);
+
     const roomId = [user._id, selectedUser._id].sort().join("_");
     const messageId = uuidv4();
 
@@ -145,6 +166,8 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
         setNewMessage("");
       } catch (err) {
         console.error("❌ Error sending message:", err);
+      } finally {
+        setIsSending(false);
       }
     }
   };
@@ -204,6 +227,7 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
       alert('Failed to send image');
     } finally {
       setUploading(false);
+      setIsSending(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -302,7 +326,7 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
                   </div>
                 ) : (
                   <p
-                    className={`p-3 text-sm rounded-lg break-words max-w-xs ${
+                    className={`p-3 text-sm rounded-lg wrap-break-word max-w-xs ${
                       msg.sender === user._id
                         ? "bg-yellow-500 text-gray-900 rounded-br-none"
                         : "bg-white text-gray-800 border rounded-bl-none"
@@ -406,14 +430,20 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
 
           <button
             onClick={handleSend}
-            disabled={!isOnline || (!newMessage.trim() && !imagePreview) || uploading}
+            disabled={!isOnline || (!newMessage.trim() && !imagePreview) || uploading || isSending}
             className={`p-2 rounded-full transition ${
-              isOnline && (newMessage.trim() || imagePreview) && !uploading
+              isOnline && (newMessage.trim() || imagePreview) && !uploading && !isSending
                 ? "bg-yellow-500 hover:bg-yellow-400 shadow-sm" 
                 : "bg-gray-300 cursor-not-allowed"
             }`}
           >
-            <FaPaperPlane className="w-4 h-4 text-white" />
+            {isSending ? (
+              <FaCircleNotch className="w-4 h-4 text-white animate-spin" />
+            ) : uploading ? (
+              <span className="text-xs text-white">📤</span>
+            ) : (
+              <FaPaperPlane className="w-4 h-4 text-white" />
+            )}
           </button>
         </div>
       </div>

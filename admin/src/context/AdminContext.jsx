@@ -88,7 +88,7 @@ export const AdminProvider = ({ children }) => {
       // Navigate to login page
       navigate("/", { replace: true });
     } catch (err) {
-      console.log("Logout error:", err);
+      console.error("Logout error:", err);
       // Even if backend call fails, still clear frontend and redirect
       navigate("/", { replace: true });
     }finally{

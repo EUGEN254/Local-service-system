@@ -84,7 +84,7 @@ const Notification = () => {
   const handleViewCustomer = async (notification, index) => {
     try {
       if (!notification?.customerId) {
-        console.log("No customer ID available");
+        // No customer ID available
         return;
       }
 

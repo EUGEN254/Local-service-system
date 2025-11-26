@@ -86,7 +86,7 @@ io.use(async (socket, next) => {
 });
 
 io.on("connection", (socket) => {
-  console.log("🟢 New socket connected:", socket.id);
+  // New socket connected: socket.id available on socket object (logging removed)
 
   // ---------------- JOIN USER ROOM (COMBINED FOR CHAT & NOTIFICATIONS) ----------------
   socket.on("joinUserRoom", ({ userId, userName, userRole, roomProvider, serviceName, roomId }) => {
@@ -108,12 +108,9 @@ io.on("connection", (socket) => {
     // Also join chat room if provided
     if (roomId) {
       socket.join(roomId);
-      console.log(
-        `${userRole} ${userName} (${userId}) joined room "${serviceName}" by ${roomProvider}. RoomID: ${roomId}`
-      );
     }
 
-    console.log(`🔔 ${userRole} ${userName} (${userId}) joined notification room`);
+    // User joined notification room (logging removed)
 
     io.emit("onlineUsers", Object.keys(connectedUsers));
   });
@@ -121,12 +118,12 @@ io.on("connection", (socket) => {
   // ---------------- JOIN / LEAVE ROOMS ----------------
   socket.on("joinRoom", (roomId) => {
     socket.join(roomId);
-    console.log(`✅ Socket ${socket.id} joined room ${roomId}`);
+    // Socket joined room (logging removed)
   });
 
   socket.on("leaveRoom", (roomId) => {
     socket.leave(roomId);
-    console.log(`🚪 Socket ${socket.id} left room ${roomId}`);
+    // Socket left room (logging removed)
   });
 
   socket.on("leaveAllRooms", () => {
@@ -134,7 +131,7 @@ io.on("connection", (socket) => {
     rooms.forEach((room) => {
       if (room !== socket.id) socket.leave(room);
     });
-    console.log(`🚪 Socket ${socket.id} left all rooms`);
+    // Socket left all rooms (logging removed)
   });
 
   // ---------------- SEND / RECEIVE MESSAGES ----------------
@@ -169,9 +166,9 @@ io.on("connection", (socket) => {
           });
           chat.updatedAt = new Date();
           await chat.save();
-          console.log("💾 Message saved:", messageId);
+          // Message saved to DB: messageId
         } else {
-          console.log("⚠️ Duplicate message ignored:", messageId);
+          // Duplicate message ignored: messageId
         }
       } catch (err) {
         console.error("❌ Error saving message:", err.message);
@@ -226,7 +223,9 @@ app.use("/api/support", supportRouter);
 export { io };
 
 // -------------------- START SERVER LOCALLY --------------------
-server.listen(port, () => console.log(`Server started on PORT: ${port}`));
+server.listen(port, () => {
+  console.log(`🚀 Server started on port ${port}`);
+});
 
 
 // -------------------- EXPORT FOR VERCEL --------------------

@@ -290,7 +290,7 @@ const Dashboard = () => {
           return (
             <div
               key={index}
-              className={`${card.bgColor} flex items-center justify-between p-3 sm:p-4 rounded-xl shadow-md text-white min-h-[80px]`}
+              className={`${card.bgColor} flex items-center justify-between p-3 sm:p-4 rounded-xl shadow-md text-white min-h-20`}
             >
               <div>
                 <p className="text-xs sm:text-sm font-medium">{card.title}</p>

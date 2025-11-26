@@ -651,7 +651,7 @@ export const getAllBookings = async (req, res) => {
       .populate("customer", "name email phone")
       .sort({ createdAt: -1 });
 
-    console.log("Bookings found:", bookings.length);
+    // Bookings count available in response
 
     res.status(200).json({
       success: true,

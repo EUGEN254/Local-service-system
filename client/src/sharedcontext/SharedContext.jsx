@@ -48,6 +48,11 @@ const AppContextProvider = (props) => {
   // Messages state for all chats
   const [messages, setMessages] = useState({}); // { chatId: [messages] }
 
+  // Track the currently open chat room id (so incoming messages for the open chat
+  // don't increment unread counters)
+  const [activeRoomId, setActiveRoomId] = useState(null);
+  const activeRoomIdRef = useRef(null);
+
   const socket = useRef();
 
   // ---------------- NOTIFICATION SYSTEM FUNCTIONS ----------------
@@ -291,6 +296,12 @@ const AppContextProvider = (props) => {
     // Listen for new messages
     socket.current.on("receiveMessage", (message) => {
       if (message.receiver === user._id) {
+        // If the message belongs to the currently open chat, don't increment unread
+        // counts — the chat container will handle marking it as read.
+        if (activeRoomIdRef.current && activeRoomIdRef.current === message.roomId) {
+          return;
+        }
+
         // Update unread counts immediately when new message arrives
         setUnreadBySender((prev) => {
           const newCount = (prev[message.sender] || 0) + 1;
@@ -348,6 +359,11 @@ const AppContextProvider = (props) => {
       socket.current.disconnect();
     };
   }, [user]);
+
+  // Keep ref in sync with activeRoomId so socket listener access is stable
+  useEffect(() => {
+    activeRoomIdRef.current = activeRoomId;
+  }, [activeRoomId]);
 
   // ---------------- PERIODIC UNREAD COUNT FETCHING ----------------
   useEffect(() => {
@@ -477,7 +493,7 @@ const AppContextProvider = (props) => {
       navigate("/", { replace: true });
       setTimeout(() => toast.success("Logged out successfully"), 100);
     } catch (err) {
-      console.log("Logout error:", err);
+      console.error("Logout error:", err);
     } finally {
       setTimeout(() => setAuthLoading(false), 150);
     }
@@ -545,6 +561,9 @@ const AppContextProvider = (props) => {
     setNotificationUnreadCount,
     notifications,
     setNotifications,
+    // currently-open chat room id (used by chat containers)
+    activeRoomId,
+    setActiveRoomId,
     fetchNotificationUnreadCount,
     fetchNotifications,
     markNotificationAsRead,

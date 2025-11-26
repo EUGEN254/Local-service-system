@@ -12,10 +12,7 @@ export const handleMpesa = async (req, res) => {
   try {
     const { amount, phone, serviceId, serviceName, bookingId } = req.body;
     
-    console.log("🎯 STK PUSH DETAILS:");
-    console.log("Amount:", amount);
-    console.log("Raw Phone:", phone);
-    console.log("Service Name:", serviceName);
+    // STK push initiated (sensitive details removed from logs in production)
 
     const token = await generateAuthToken();
     if(!token) {
@@ -70,7 +67,7 @@ export const handleMpesa = async (req, res) => {
       }
     );
 
-    console.log("✅ STK PUSH RESPONSE:", JSON.stringify(response.data, null, 2));
+    // STK push response received
 
     // Save transaction
     const transaction = new mpesaTransactionsSchema({
@@ -113,7 +110,7 @@ export const handleMpesa = async (req, res) => {
 // 2️⃣ CALLBACK FROM M-PESA
 export const handleCallback = async (req, res) => {
   try {
-    console.log("📥 Callback received:", JSON.stringify(req.body, null, 2));
+    // Callback received from M-Pesa
 
     const callbackData = req.body;
     const stkCallback = callbackData?.Body?.stkCallback;
@@ -199,7 +196,7 @@ export const handleCallback = async (req, res) => {
 export const getPaymentStatus = async (req, res) => {
   try {
     const { transactionId } = req.params;
-    console.log(`🔍 Checking payment status for transaction: ${transactionId}`);
+    // Checking payment status for transaction
 
     const tx = await mpesaTransactionsSchema.findOne({ transactionId });
     if (!tx) {

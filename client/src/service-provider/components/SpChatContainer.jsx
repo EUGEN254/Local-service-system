@@ -4,13 +4,14 @@ import { v4 as uuidv4 } from "uuid";
 import { ShareContext } from "../../sharedcontext/SharedContext.jsx";
 import { assets } from "../../assets/assets.js";
 import { formatMessageTime } from "../libs/Utils.js";
-import { FaImage, FaPaperPlane, FaTimes } from "react-icons/fa";
+import { FaImage, FaPaperPlane, FaTimes, FaCircleNotch } from "react-icons/fa";
 
 const SpChatContainer = ({ selectedUser, setSelectedUser }) => {
-  const { user, backendUrl, socket, onlineUsers, messages, setMessages } = useContext(ShareContext);
+  const { user, backendUrl, socket, onlineUsers, messages, setMessages, markAsRead, setActiveRoomId } = useContext(ShareContext);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isSending, setIsSending] = useState(false); // indicates a message send in progress
   const [imagePreview, setImagePreview] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const scrollEnd = useRef();
@@ -68,6 +69,16 @@ const SpChatContainer = ({ selectedUser, setSelectedUser }) => {
     fetchMessages();
   }, [selectedUser, backendUrl, currentChatId, setMessages]);
 
+  // Mark this room as active while open so unread counters don't increase for
+  // messages arriving in this chat — service-provider side.
+  useEffect(() => {
+    if (selectedUser) {
+      setActiveRoomId(currentChatId);
+      return () => setActiveRoomId(null);
+    }
+    setActiveRoomId(null);
+  }, [selectedUser, currentChatId, setActiveRoomId]);
+
   // Receive messages via socket and update context
   useEffect(() => {
     if (!socket.current) return;
@@ -84,6 +95,11 @@ const SpChatContainer = ({ selectedUser, setSelectedUser }) => {
             return prev;
           }
           
+          // If this message is incoming for the currently open chat, mark it as read
+          if (msg.receiver === user._id && selectedUser && msg.sender === selectedUser._id) {
+            markAsRead(msg.sender).catch?.(() => {});
+          }
+
           return {
             ...prev,
             [currentChatId]: [...existingMessages, msg]
@@ -131,6 +147,8 @@ const SpChatContainer = ({ selectedUser, setSelectedUser }) => {
     const roomId = [user._id, selectedUser._id].sort().join("_");
     const messageId = uuidv4();
 
+    setIsSending(true);
+
     // If there's an image preview, send image first
     if (imagePreview) {
       await handleSendImage(messageId, roomId);
@@ -158,6 +176,8 @@ const SpChatContainer = ({ selectedUser, setSelectedUser }) => {
         setNewMessage("");
       } catch (err) {
         console.error("❌ Error sending message:", err);
+      } finally {
+        setIsSending(false);
       }
     }
   };
@@ -167,6 +187,7 @@ const SpChatContainer = ({ selectedUser, setSelectedUser }) => {
     if (!imagePreview || !selectedUser) return;
 
     setUploading(true);
+    setIsSending(true);
 
     try {
       const formData = new FormData();
@@ -217,6 +238,7 @@ const SpChatContainer = ({ selectedUser, setSelectedUser }) => {
       alert('Failed to send image');
     } finally {
       setUploading(false);
+      setIsSending(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -311,7 +333,7 @@ const SpChatContainer = ({ selectedUser, setSelectedUser }) => {
                   </div>
                 ) : (
                   <p
-                    className={`p-3 text-sm rounded-lg break-words max-w-xs ${
+                    className={`p-3 text-sm rounded-lg wrap-break-word max-w-xs ${
                       msg.sender === user._id
                         ? "bg-yellow-500 text-gray-900 rounded-br-none"
                         : "bg-white text-gray-800 border rounded-bl-none"
@@ -414,15 +436,17 @@ const SpChatContainer = ({ selectedUser, setSelectedUser }) => {
 
           <button
             onClick={handleSend}
-            disabled={!isOnline || (!newMessage.trim() && !imagePreview) || uploading}
+            disabled={!isOnline || (!newMessage.trim() && !imagePreview) || uploading || isSending}
             className={`p-2 rounded-full transition ${
-              isOnline && (newMessage.trim() || imagePreview) && !uploading
+              isOnline && (newMessage.trim() || imagePreview) && !uploading && !isSending
                 ? "bg-yellow-500 hover:bg-yellow-400 shadow-sm" 
                 : "bg-gray-300 cursor-not-allowed"
             }`}
           >
-            {uploading ? (
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            {isSending ? (
+              <FaCircleNotch className="w-4 h-4 text-white animate-spin" />
+            ) : uploading ? (
+              <span className="text-xs text-white">📤</span>
             ) : (
               <FaPaperPlane className="w-4 h-4 text-white" />
             )}
