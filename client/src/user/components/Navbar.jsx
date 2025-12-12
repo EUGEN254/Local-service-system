@@ -31,7 +31,7 @@ const Navbar = ({ onMenuClick }) => {
 
         <div className="hidden md:block">
           <img
-            src={assets.avatar_icon}
+            src={user?.image || assets.avatar_icon}
             alt="logo"
             className="w-10 h-10 rounded-full"
           />

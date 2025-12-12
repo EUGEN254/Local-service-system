@@ -58,8 +58,13 @@ const App = () => {
         closeOnClick
         pauseOnHover
         draggable
-        className="z-10000! p-1!"
-        toastStyle={{ height: "50px", minHeight: "50px" }}
+        className="z-10000"
+        toastStyle={{
+          height: "50px",
+          minHeight: "50px",
+          fontSize: "14px", 
+          lineHeight: "1.2", 
+        }}
       />
 
       <Routes>
