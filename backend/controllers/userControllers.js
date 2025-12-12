@@ -5,7 +5,9 @@ import { v2 as cloudinary } from "cloudinary";
 import { createNotification } from "./notificationController.js";
 import PasswordReset from "../models/passwordReset.js";
 import { sendOtpEmail } from "../utils/emailService.js";
+import { OAuth2Client } from "google-auth-library";
 
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export const registerUser = async (req, res) => {
   const { name, email, password, role } = req.body;
@@ -198,6 +200,90 @@ export const loginUser = async (req, res) => {
     user: userWithoutPassword,
   });
 };
+
+// handle google login
+export const googleLoginUser = async (req, res) => {
+  try {
+    const { token, role } = req.body; // Get both token and role from request
+
+    if (!token || !role) {
+      return res.status(400).json({
+        success: false,
+        message: "Token and role are required",
+      });
+    }
+
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { email, name, picture } = payload;
+
+    let user = await User.findOne({ email });
+
+    if (!user) {
+      // Create new user with Google
+      user = await User.create({
+        name,
+        email,
+        password: null,
+        avatar: picture,
+        role, // Use the role from request
+      });
+    } else {
+      // If user exists, update their role if needed
+
+      if (user.role !== role) {
+        // Optional: Handle role mismatch
+        return res.status(400).json({
+          success: false,
+          message: `This email is already registered as a ${user.role}. Please login as a ${user.role} or use a different email.`,
+        });
+      }
+    }
+
+    // Generate JWT token
+    const jwtToken = generateToken(user); // Renamed to avoid conflict
+
+    // Set cookie
+    res.cookie("token", jwtToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+    });
+
+    // Return success response
+    res.status(200).json({
+      success: true,
+      message: "Google login successful",
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        avatar: user.avatar,
+      },
+    });
+  } catch (error) {
+    console.error("Google login error:", error);
+
+    // More specific error messages
+    if (error.message.includes("Token used too late")) {
+      return res.status(400).json({
+        success: false,
+        message: "Google token expired. Please try again.",
+      });
+    }
+
+    res.status(400).json({
+      success: false,
+      message: error.message || "Invalid Google token",
+    });
+  }
+};
+
 export const loginAdmin = async (req, res) => {
   const { email, password, role } = req.body;
 
@@ -602,7 +688,6 @@ export const getIdVerificationStatus = async (req, res) => {
   }
 };
 
-
 /* =========================
    SEND RESET OTP - UPDATED
 ========================= */
@@ -640,9 +725,9 @@ export const sendResetOtp = async (req, res) => {
     });
   } catch (error) {
     console.error("sendResetOtp error:", error);
-    res.status(500).json({ 
-      success: false, 
-      message: error.message || "Server error" 
+    res.status(500).json({
+      success: false,
+      message: error.message || "Server error",
     });
   }
 };

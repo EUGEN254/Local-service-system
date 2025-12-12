@@ -12,13 +12,15 @@ import {
   logoutAdmin,
   sendResetOtp,
   verifyResetOtp,
-  resetPassword
+  resetPassword,
+  googleLoginUser
 } from "../controllers/userControllers.js";
 import upload from "../middleware/uploadMiddleware.js";
 
 const userRouter = express.Router();
 
 userRouter.post("/register", registerUser);
+userRouter.post("/google-login", googleLoginUser);
 userRouter.post("/login", loginUser);
 userRouter.post("/login-admin", loginAdmin);
 userRouter.post("/logoutAdmin", logoutAdmin);
