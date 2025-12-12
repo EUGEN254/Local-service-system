@@ -23,7 +23,6 @@ import SPEarnings from "./service-provider/pages/Earnings";
 import SPHomeLayout from "./service-provider/pages/Home";
 import SPNotification from "./service-provider/pages/Notification";
 
-
 // User
 import UserDashboard from "./user/pages/Dashboard";
 import UserSettings from "./user/pages/Settings";
@@ -35,7 +34,6 @@ import UserHomeLayout from "./user/pages/Home";
 import Chat from "./user/pages/Chat";
 import UserNotification from "./user/pages/UserNotification";
 import ForgetPassword from "./user/pages/ForgetPassword";
-
 
 const App = () => {
   const { user, authLoading } = useContext(ShareContext);
@@ -53,41 +51,44 @@ const App = () => {
 
   return (
     <>
-       <ToastContainer
-  position="top-right" 
-  autoClose={1500}
-  newestOnTop
-  closeOnClick
-  pauseOnHover
-  draggable
-  className="!z-[10000] !p-1" 
-  toastStyle={{ height: '50px', minHeight: '50px' }}
-/>
-
+      <ToastContainer
+        position="top-right"
+        autoClose={1500}
+        newestOnTop
+        closeOnClick
+        pauseOnHover
+        draggable
+        className="z-10000! p-1!"
+        toastStyle={{ height: "50px", minHeight: "50px" }}
+      />
 
       <Routes>
         {/* Public routes - exact paths */}
         <Route path="/" element={<LandingPage />} />
         <Route path="forget-password" element={<ForgetPassword />} />
 
-        
-        <Route 
-          path="/auth" 
+        <Route
+          path="/auth"
           element={
             user ? ( // user is truthy object (logged in)
-              <Navigate 
-                to={role === "service-provider" ? "/sp/dashboard" : "/user/dashboard"} 
-                replace 
+              <Navigate
+                to={
+                  role === "service-provider"
+                    ? "/sp/dashboard"
+                    : "/user/dashboard"
+                }
+                replace
               />
-            ) : ( // user is null (not logged in)
+            ) : (
+              // user is null (not logged in)
               <LoginSignUp />
             )
-          } 
+          }
         />
 
         {/* Protected routes - Service Provider */}
-        <Route 
-          path="/sp" 
+        <Route
+          path="/sp"
           element={
             user && role === "service-provider" ? (
               <SPHomeLayout />
@@ -108,8 +109,8 @@ const App = () => {
         </Route>
 
         {/* Protected routes - Customer */}
-        <Route 
-          path="/user" 
+        <Route
+          path="/user"
           element={
             user && role === "customer" ? (
               <UserHomeLayout />
@@ -127,7 +128,6 @@ const App = () => {
           <Route path="payment" element={<Payments />} />
           <Route path="chat" element={<Chat />} />
           <Route path="notification" element={<UserNotification />} />
-          
         </Route>
 
         {/* Catch-all for nested protected routes */}
