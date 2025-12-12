@@ -9,27 +9,52 @@ import { OAuth2Client } from "google-auth-library";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+// Helper function for role-specific welcome messages
+const getRoleSpecificMessage = (role) => {
+  switch (role) {
+    case "customer":
+      return "Start exploring services in your area and book your first service today!";
+    case "service-provider":
+      return "Complete your profile and get verified to start accepting service requests.";
+    case "admin":
+      return "You have access to the admin dashboard to manage the platform.";
+    default:
+      return "Start using our platform to find or provide services.";
+  }
+};
+
+// Helper: Map user roles to notification categories
+const getNotificationCategory = (userRole) => {
+  const categoryMap = {
+    customer: "User",
+    "service-provider": "Service Provider",
+    admin: "System",
+  };
+  return categoryMap[userRole] || "System";
+};
+
+// Register new user
 export const registerUser = async (req, res) => {
   const { name, email, password, role } = req.body;
 
   if (!name || !email || !password || !role) {
-    return res
-      .status(400)
-      .json({ success: false, message: "All fields are required" });
+    return res.status(400).json({
+      success: false,
+      message: "All fields are required",
+    });
   }
 
-  // Check if email already exists
+  // Check for existing email
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    return res
-      .status(400)
-      .json({ success: false, message: "Email already exists" });
+    return res.status(400).json({
+      success: false,
+      message: "Email already exists",
+    });
   }
 
-  // Hash password
+  // Hash password and create user
   const hashedPassword = await bcrypt.hash(password, 10);
-
-  // Create user
   const user = await User.create({
     name,
     email,
@@ -37,28 +62,18 @@ export const registerUser = async (req, res) => {
     role,
   });
 
-  // Map user roles to notification categories
-  const getNotificationCategory = (userRole) => {
-    const categoryMap = {
-      customer: "User",
-      "service-provider": "Service Provider",
-      admin: "System",
-    };
-    return categoryMap[userRole] || "System";
-  };
-
-  // ✅ Create welcome notification for the new user
+  // Send welcome notification
   await createNotification(user._id, {
     title: "Welcome to Local Services System! 🎉",
     message: `Welcome ${name}! Your ${role} account has been created successfully. ${getRoleSpecificMessage(
       role
     )}`,
     type: "system",
-    category: getNotificationCategory(role), // Use mapped category
+    category: getNotificationCategory(role),
     priority: "high",
   });
 
-  // ✅ Create admin notification for new user registration
+  // Notify all admins about new registration
   const adminUsers = await User.find({ role: "admin" });
   for (const admin of adminUsers) {
     await createNotification(admin._id, {
@@ -70,7 +85,7 @@ export const registerUser = async (req, res) => {
     });
   }
 
-  // ✅ If user is a service provider, create verification notification
+  // Special handling for service providers
   if (role === "service-provider") {
     await createNotification(user._id, {
       title: "Service Provider Account Created",
@@ -93,9 +108,8 @@ export const registerUser = async (req, res) => {
     }
   }
 
-  // Generate JWT token with role
+  // Generate token and set cookie
   const token = generateToken(user);
-
   res.cookie("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -114,19 +128,7 @@ export const registerUser = async (req, res) => {
   });
 };
 
-const getRoleSpecificMessage = (role) => {
-  switch (role) {
-    case "customer":
-      return "Start exploring services in your area and book your first service today!";
-    case "service-provider":
-      return "Complete your profile and get verified to start accepting service requests.";
-    case "admin":
-      return "You have access to the admin dashboard to manage the platform.";
-    default:
-      return "Start using our platform to find or provide services.";
-  }
-};
-
+// User login
 export const loginUser = async (req, res) => {
   const { email, password, role } = req.body;
 
@@ -137,27 +139,25 @@ export const loginUser = async (req, res) => {
     });
   }
 
-  // 🔹 Find user by email and role
+  // Find user by email and role
   const user = await User.findOne({ email, role })
     .select("name email password role status")
     .lean();
 
   if (!user) {
-    // Check if email exists with another role
+    // Check if email exists with different role
     const otherRoleUser = await User.findOne({ email });
     if (otherRoleUser) {
-      // 🔒 SECURITY: Don't reveal if the email belongs to an admin
+      // Security: Hide admin existence
       if (otherRoleUser.role === "admin") {
         return res.status(400).json({
           success: false,
           message: "Invalid credentials.",
         });
       }
-
-      // For non-admin roles, we can be more specific
       return res.status(400).json({
         success: false,
-        message: `This email is registered as a ${otherRoleUser.role}. Please log in as a ${otherRoleUser.role}.`,
+        message: `Email registered as ${otherRoleUser.role}. Login as ${otherRoleUser.role}.`,
       });
     }
 
@@ -167,7 +167,7 @@ export const loginUser = async (req, res) => {
     });
   }
 
-  // 🔹 Check if account is active
+  // Check account status
   if (user.status === "inactive") {
     return res.status(403).json({
       success: false,
@@ -175,7 +175,7 @@ export const loginUser = async (req, res) => {
     });
   }
 
-  // 🔹 Check password
+  // Verify password
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
     return res.status(400).json({
@@ -184,8 +184,8 @@ export const loginUser = async (req, res) => {
     });
   }
 
+  // Generate token and set cookie
   const token = generateToken(user);
-
   res.cookie("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -193,7 +193,6 @@ export const loginUser = async (req, res) => {
   });
 
   const { password: _, ...userWithoutPassword } = user;
-
   return res.status(200).json({
     success: true,
     message: "Login successful!",
@@ -201,10 +200,10 @@ export const loginUser = async (req, res) => {
   });
 };
 
-// handle google login
+// Google OAuth login
 export const googleLoginUser = async (req, res) => {
   try {
-    const { token, role } = req.body; // Get both token and role from request
+    const { token, role } = req.body;
 
     if (!token || !role) {
       return res.status(400).json({
@@ -213,63 +212,122 @@ export const googleLoginUser = async (req, res) => {
       });
     }
 
+    // Verify Google token
     const ticket = await client.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
 
     const payload = ticket.getPayload();
-    const { email, name, picture } = payload;
+    const { email, name, picture, email_verified, sub } = payload;
 
     let user = await User.findOne({ email });
 
     if (!user) {
-      // Create new user with Google
+      // Create new user from Google account
       user = await User.create({
         name,
         email,
         password: null,
-        avatar: picture,
-        role, // Use the role from request
+        image: picture, // Store Google profile image
+        role,
+        emailVerified: email_verified || false,
+        googleId: sub,
       });
-    } else {
-      // If user exists, update their role if needed
 
+      // Send welcome notification for Google signup
+      await createNotification(user._id, {
+        title: "Welcome to Local Services System! 🎉",
+        message: `Welcome ${name}! Your ${role} account has been created successfully with Google. ${getRoleSpecificMessage(
+          role
+        )}`,
+        type: "system",
+        category: "User",
+        priority: "high",
+      });
+
+      // Notify admins about Google registration
+      const adminUsers = await User.find({ role: "admin" });
+      for (const admin of adminUsers) {
+        await createNotification(admin._id, {
+          title: "New User Registration (Google)",
+          message: `New ${role} registered via Google: ${name} (${email})`,
+          type: "user",
+          category: "User",
+          priority: "medium",
+        });
+      }
+
+      // Special handling for service providers
+      if (role === "service-provider") {
+        await createNotification(user._id, {
+          title: "Service Provider Account Created",
+          message:
+            "Your service provider account is pending verification. Please submit your ID documents to start accepting bookings.",
+          type: "verification",
+          category: "Verification",
+          priority: "high",
+        });
+
+        for (const admin of adminUsers) {
+          await createNotification(admin._id, {
+            title: "New Service Provider Registered",
+            message: `New service provider ${name} needs verification.`,
+            type: "verification",
+            category: "Verification",
+            priority: "medium",
+          });
+        }
+      }
+    } else {
+      // Existing user - verify role match
       if (user.role !== role) {
-        // Optional: Handle role mismatch
         return res.status(400).json({
           success: false,
-          message: `This email is already registered as a ${user.role}. Please login as a ${user.role} or use a different email.`,
+          message: `Email registered as ${user.role}. Login as ${user.role}.`,
         });
+      }
+
+      // Update profile image if missing
+      if (!user.image && picture) {
+        user.image = picture;
+        await user.save();
       }
     }
 
-    // Generate JWT token
-    const jwtToken = generateToken(user); // Renamed to avoid conflict
-
-    // Set cookie
+    // Generate token and set cookie
+    const jwtToken = generateToken(user);
     res.cookie("token", jwtToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    // Return success response
+    // Return user data
     res.status(200).json({
       success: true,
       message: "Google login successful",
       user: {
-        id: user._id,
+        _id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
-        avatar: user.avatar,
+        image: user.image || "",
+        phone: user.phone || "",
+        address: user.address || "",
+        bio: user.bio || "",
+        ...(user.role === "service-provider" && {
+          isVerified: user.serviceProviderInfo?.isVerified || false,
+          verificationStatus:
+            user.serviceProviderInfo?.idVerification?.status || "not-submitted",
+        }),
       },
     });
   } catch (error) {
     console.error("Google login error:", error);
 
-    // More specific error messages
+    // Handle specific Google token errors
     if (error.message.includes("Token used too late")) {
       return res.status(400).json({
         success: false,
@@ -279,11 +337,12 @@ export const googleLoginUser = async (req, res) => {
 
     res.status(400).json({
       success: false,
-      message: error.message || "Invalid Google token",
+      message: "Google authentication failed. Please try again.",
     });
   }
 };
 
+// Admin login
 export const loginAdmin = async (req, res) => {
   const { email, password, role } = req.body;
 
@@ -294,18 +353,16 @@ export const loginAdmin = async (req, res) => {
     });
   }
 
-  // 🔹 Find user by email and role
   const user = await User.findOne({ email, role })
     .select("name email password role")
     .lean();
 
   if (!user) {
-    // Check if email exists with another role
     const otherRoleUser = await User.findOne({ email });
     if (otherRoleUser) {
       return res.status(400).json({
         success: false,
-        message: `Invalid credentials`,
+        message: "Invalid credentials",
       });
     }
 
@@ -315,7 +372,7 @@ export const loginAdmin = async (req, res) => {
     });
   }
 
-  // 🔹 Check if account is active
+  // Check account status
   if (user.status === "inactive") {
     return res.status(403).json({
       success: false,
@@ -323,7 +380,7 @@ export const loginAdmin = async (req, res) => {
     });
   }
 
-  // 🔹 Check password
+  // Verify password
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
     return res.status(400).json({
@@ -333,7 +390,6 @@ export const loginAdmin = async (req, res) => {
   }
 
   const token = generateToken(user);
-
   res.cookie("token", token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -341,7 +397,6 @@ export const loginAdmin = async (req, res) => {
   });
 
   const { password: _, ...userWithoutPassword } = user;
-
   return res.status(200).json({
     success: true,
     message: "Login successful!",
@@ -349,31 +404,25 @@ export const loginAdmin = async (req, res) => {
   });
 };
 
-export const logoutUser = (req, res) => {
-  res.clearCookie("token");
-  res.json({ success: true, message: "Logged out successfully" });
-};
-
-export const logoutAdmin = (req, res) => {
-  res.clearCookie("token");
-  res.json({ success: true, message: "Logged out successfully" });
-};
-
+// Get current user profile
 export const getMe = async (req, res) => {
   try {
     if (!req.user) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
     }
 
-    // Get fresh user data from database with serviceProviderInfo
     const user = await User.findById(req.user._id).select("-password");
     if (!user) {
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
     }
 
-    // Return full safe user object (no password)
+    // Return user data without sensitive information
     const safeUser = {
       _id: user._id,
       name: user.name,
@@ -385,12 +434,11 @@ export const getMe = async (req, res) => {
       image: user.image || "",
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
-      // ✅ Add verification status and rejection reason
       isVerified: user.serviceProviderInfo?.isVerified || false,
       verificationStatus:
         user.serviceProviderInfo?.idVerification?.status || "not-submitted",
       rejectionReason:
-        user.serviceProviderInfo?.idVerification?.rejectionReason || "", // ✅ Add this
+        user.serviceProviderInfo?.idVerification?.rejectionReason || "",
     };
 
     res.json({ success: true, user: safeUser });
@@ -400,6 +448,7 @@ export const getMe = async (req, res) => {
   }
 };
 
+// Update user password
 export const updatePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -419,7 +468,6 @@ export const updatePassword = async (req, res) => {
       });
     }
 
-    // Find user by ID
     const user = await User.findById(userId).select("+password");
     if (!user) {
       return res.status(404).json({
@@ -440,21 +488,19 @@ export const updatePassword = async (req, res) => {
       });
     }
 
-    // Hash new password
+    // Hash and save new password
     const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-
-    // Update password
     user.password = hashedNewPassword;
     await user.save();
 
-    // ✅ Create password change notification
+    // Notify user about password change
     await createNotification(userId, {
       title: "Password Changed Successfully 🔒",
       message:
         "Your account password has been updated successfully. If you didn't make this change, please contact support immediately.",
       type: "system",
       category: "System",
-      priority: "high", // High priority for security-related events
+      priority: "high",
     });
 
     res.json({
@@ -464,8 +510,7 @@ export const updatePassword = async (req, res) => {
   } catch (error) {
     console.error("Error updating password:", error);
 
-    // ✅ Create error notification for security awareness
-    await createNotification(userId, {
+    await createNotification(req.user._id, {
       title: "Password Update Failed",
       message:
         "There was an error while trying to update your password. Please try again.",
@@ -481,12 +526,13 @@ export const updatePassword = async (req, res) => {
   }
 };
 
+// Submit ID verification for service providers
 export const submitIdVerification = async (req, res) => {
   try {
     const userId = req.user._id;
     const { phonenumber, idType, idNumber } = req.body;
 
-    // Check if user is a service provider
+    // Only service providers can submit verification
     if (req.user.role !== "service-provider") {
       return res.status(403).json({
         success: false,
@@ -494,7 +540,6 @@ export const submitIdVerification = async (req, res) => {
       });
     }
 
-    // Basic validation
     if (!phonenumber) {
       return res.status(400).json({
         success: false,
@@ -502,7 +547,6 @@ export const submitIdVerification = async (req, res) => {
       });
     }
 
-    // Find user
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({
@@ -511,7 +555,7 @@ export const submitIdVerification = async (req, res) => {
       });
     }
 
-    // Initialize serviceProviderInfo if it doesn't exist
+    // Initialize service provider info if needed
     if (!user.serviceProviderInfo) {
       user.serviceProviderInfo = {
         isVerified: false,
@@ -525,11 +569,9 @@ export const submitIdVerification = async (req, res) => {
       };
     }
 
-    // 🔑 UPDATED: Only check for duplicate phone number if user is submitting for the first time
-    // or if they're changing their phone number during resubmission
-    const currentVerificationStatus =
-      user.serviceProviderInfo.idVerification.status;
-    const isFirstTimeSubmission = currentVerificationStatus === "not-submitted";
+    // Check for duplicate phone number (only on first submission or phone change)
+    const currentStatus = user.serviceProviderInfo.idVerification.status;
+    const isFirstTimeSubmission = currentStatus === "not-submitted";
     const isChangingPhoneNumber = user.phone !== phonenumber;
 
     if (isFirstTimeSubmission || isChangingPhoneNumber) {
@@ -548,7 +590,7 @@ export const submitIdVerification = async (req, res) => {
       }
     }
 
-    // Check if files were uploaded
+    // Validate uploaded files
     if (!req.files || !req.files.frontImage || !req.files.backImage) {
       return res.status(400).json({
         success: false,
@@ -559,13 +601,13 @@ export const submitIdVerification = async (req, res) => {
     const frontImageFile = req.files.frontImage[0];
     const backImageFile = req.files.backImage[0];
 
-    // Validate file types
     const allowedMimeTypes = [
       "image/jpeg",
       "image/png",
       "image/jpg",
       "application/pdf",
     ];
+
     if (
       !allowedMimeTypes.includes(frontImageFile.mimetype) ||
       !allowedMimeTypes.includes(backImageFile.mimetype)
@@ -576,7 +618,7 @@ export const submitIdVerification = async (req, res) => {
       });
     }
 
-    // Upload images to Cloudinary
+    // Upload to Cloudinary
     const [frontImageResult, backImageResult] = await Promise.all([
       cloudinary.uploader.upload(frontImageFile.path, {
         folder: "id-verification",
@@ -586,10 +628,7 @@ export const submitIdVerification = async (req, res) => {
       }),
     ]);
 
-    // Store old status for comparison
-    const oldStatus = user.serviceProviderInfo.idVerification.status;
-
-    // Update user data
+    // Update user verification data
     user.phone = phonenumber;
     user.serviceProviderInfo.idVerification = {
       status: "pending",
@@ -600,14 +639,12 @@ export const submitIdVerification = async (req, res) => {
       idNumber: idNumber || "",
       cloudinaryFrontId: frontImageResult.public_id,
       cloudinaryBackId: backImageResult.public_id,
+      rejectionReason: undefined, // Clear previous rejection
     };
-
-    // Clear rejection reason when resubmitting
-    user.serviceProviderInfo.idVerification.rejectionReason = undefined;
 
     await user.save();
 
-    // ✅ Create notification for ALL ADMINS about new verification request
+    // Notify all admins about verification request
     const adminUsers = await User.find({ role: "admin" });
     for (const admin of adminUsers) {
       await createNotification(admin._id, {
@@ -628,7 +665,6 @@ export const submitIdVerification = async (req, res) => {
     });
   } catch (error) {
     console.error("Error submitting ID verification:", error);
-
     res.status(500).json({
       success: false,
       message: "Server error while submitting ID verification",
@@ -636,12 +672,12 @@ export const submitIdVerification = async (req, res) => {
   }
 };
 
-// Keep the getIdVerificationStatus function the same as before
+// Get ID verification status
 export const getIdVerificationStatus = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // Check if user is a service provider
+    // Only service providers can check status
     if (req.user.role !== "service-provider") {
       return res.status(403).json({
         success: false,
@@ -657,7 +693,7 @@ export const getIdVerificationStatus = async (req, res) => {
       });
     }
 
-    // If user doesn't have serviceProviderInfo, they haven't submitted anything
+    // Check if verification has been submitted
     if (!user.serviceProviderInfo || !user.serviceProviderInfo.idVerification) {
       return res.json({
         success: true,
@@ -667,7 +703,6 @@ export const getIdVerificationStatus = async (req, res) => {
     }
 
     const verificationInfo = user.serviceProviderInfo.idVerification;
-
     res.json({
       success: true,
       verificationStatus: verificationInfo.status,
@@ -675,7 +710,6 @@ export const getIdVerificationStatus = async (req, res) => {
       verifiedAt: verificationInfo.verifiedAt,
       idType: verificationInfo.idType,
       rejectionReason: verificationInfo.rejectionReason,
-      // Optionally include image URLs if needed
       hasFrontImage: !!verificationInfo.idFrontImage,
       hasBackImage: !!verificationInfo.idBackImage,
     });
@@ -688,35 +722,35 @@ export const getIdVerificationStatus = async (req, res) => {
   }
 };
 
-/* =========================
-   SEND RESET OTP - UPDATED
-========================= */
+// Send password reset OTP
 export const sendResetOtp = async (req, res) => {
   try {
     const { email } = req.body;
 
-    if (!email)
-      return res
-        .status(400)
-        .json({ success: false, message: "Please provide email" });
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Please provide email",
+      });
+    }
 
     const user = await User.findOne({ email });
-    if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "No user found with that email" });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "No user found with that email",
+      });
+    }
 
-    // Generate OTP and expiry
+    // Generate OTP
     const otp = String(Math.floor(100000 + Math.random() * 900000));
     const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
 
-    // Remove old OTPs for this email
+    // Clear old OTPs and save new one
     await PasswordReset.deleteMany({ email });
-
-    // Save new OTP
     await PasswordReset.create({ email, otp, expiresAt });
 
-    // ✅ CHANGED: Use Brevo API instead of SMTP
+    // Send OTP email
     await sendOtpEmail(email, otp);
 
     res.status(200).json({
@@ -731,54 +765,75 @@ export const sendResetOtp = async (req, res) => {
     });
   }
 };
-/* =========================
-   VERIFY RESET OTP
-========================= */
+
+// Verify password reset OTP
 export const verifyResetOtp = async (req, res) => {
   try {
     const { email, otp } = req.body;
 
     const record = await PasswordReset.findOne({ email, otp });
-    if (!record)
-      return res.status(400).json({ success: false, message: "Invalid OTP" });
+    if (!record) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
 
-    if (record.expiresAt < new Date())
-      return res.status(400).json({ success: false, message: "OTP expired" });
+    if (record.expiresAt < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired",
+      });
+    }
 
-    res
-      .status(200)
-      .json({ success: true, message: "OTP verified successfully" });
+    res.status(200).json({
+      success: true,
+      message: "OTP verified successfully",
+    });
   } catch (error) {
     console.error("verifyResetOtp error:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
 };
 
-/* =========================
-   RESET PASSWORD
-========================= */
+// Reset password with verified OTP
 export const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
 
     const record = await PasswordReset.findOne({ email, otp });
-    if (!record)
-      return res.status(400).json({ success: false, message: "Invalid OTP" });
+    if (!record) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
 
-    if (record.expiresAt < new Date())
-      return res.status(400).json({ success: false, message: "OTP expired" });
+    if (record.expiresAt < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired",
+      });
+    }
 
     const user = await User.findOne({ email });
-    if (!user)
-      return res
-        .status(404)
-        .json({ success: false, message: "User not found" });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
 
+    // Hash and save new password
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
     await user.save();
 
-    await PasswordReset.deleteMany({ email }); // clear used OTP
+    // Clear used OTP
+    await PasswordReset.deleteMany({ email });
 
     res.status(200).json({
       success: true,
@@ -786,6 +841,27 @@ export const resetPassword = async (req, res) => {
     });
   } catch (error) {
     console.error("resetPassword error:", error);
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+    });
   }
+};
+
+// User logout
+export const logoutUser = (req, res) => {
+  res.clearCookie("token");
+  res.json({
+    success: true,
+    message: "Logged out successfully",
+  });
+};
+
+// Admin logout
+export const logoutAdmin = (req, res) => {
+  res.clearCookie("token");
+  res.json({
+    success: true,
+    message: "Logged out successfully",
+  });
 };

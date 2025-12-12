@@ -11,11 +11,14 @@ const userSchema = new mongoose.Schema(
       unique: true,
       validate: [validator.isEmail, "Invalid email"],
     },
-    password: { type: String},
+    password: { type: String },
     phone: { type: String },
     bio: { type: String, maxlength: 500 },
     address: { type: String },
-    image: { type: String }, 
+    image: { 
+      type: String, 
+      default: "" 
+    }, 
     role: {
       type: String,
       enum: ["customer", "service-provider", "admin"],
@@ -26,6 +29,9 @@ const userSchema = new mongoose.Schema(
       enum: ["active", "inactive"],
       default: "active"
     },
+    // Add Google-specific fields
+    googleId: { type: String }, // Store Google ID
+    emailVerified: { type: Boolean, default: false },
     
     // Service Provider Specific Fields
     serviceProviderInfo: {
@@ -60,7 +66,9 @@ const userSchema = new mongoose.Schema(
           type: String, 
           enum: ["national-id", "passport", "driving-license", "other"],
           default: "national-id"
-        }
+        },
+        cloudinaryFrontId: { type: String }, // Store Cloudinary public ID
+        cloudinaryBackId: { type: String }   // Store Cloudinary public ID
       }
     }
   },
