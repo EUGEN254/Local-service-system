@@ -8,6 +8,7 @@ const bookingSchema = new mongoose.Schema(
     categoryName: String,
     providerName: String,
     amount: Number,
+    image:String,
     address: String,
     city: String,
     delivery_date: Date,

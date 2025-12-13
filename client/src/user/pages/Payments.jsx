@@ -4,6 +4,8 @@ import { FiSmartphone } from "react-icons/fi";
 import { FaStar } from "react-icons/fa";
 import axios from "axios";
 import { ShareContext } from "../../sharedcontext/SharedContext";
+import { formatDateForInput } from "../../utils/formatDateHelper.js";
+import { formatPhone } from "../../utils/formatPhone.js";
 
 const Payments = () => {
   const location = useLocation();
@@ -11,6 +13,7 @@ const Payments = () => {
   const { backendUrl, currSymbol } = useContext(ShareContext);
 
   const { service } = location.state || {};
+
   const displayService = service || {
     serviceProvider: "N/A",
     serviceName: "No Service Selected",
@@ -19,13 +22,14 @@ const Payments = () => {
     image: "",
   };
 
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    address: "",
-    city: "",
-    delivery_date: "",
-  });
+ const [formData, setFormData] = useState({
+  name: "",
+  phone: displayService.phone ,
+  address: displayService.address || "",
+  city: displayService.city || "",
+  delivery_date: displayService.delivery_date || "",
+});
+
 
   const [paymentMethod, setPaymentMethod] = useState("Mpesa");
   const [mpesaAmount, setMpesaAmount] = useState(displayService.amount);
@@ -46,18 +50,18 @@ const Payments = () => {
       />
     ));
 
-  // ✅ Handle M-Pesa Payment (with booking + polling)
+  // Handle M-Pesa Payment (with booking + polling)
   const handleMpesaPayment = async () => {
     try {
       setLoading(true);
       setError("");
       setMessage("Processing payment...");
-  
+
       // Detect if we're paying for an existing booking
       let bookingId = displayService._id;
       const isExistingBooking = displayService.status && displayService._id;
-  
-      // 🧩 Step 1: Create booking if new
+
+      //Create booking if new
       if (!isExistingBooking) {
         setMessage("Creating booking...");
         const bookingRes = await axios.post(
@@ -68,9 +72,10 @@ const Payments = () => {
             serviceName: displayService.serviceName,
             categoryName: displayService.category,
             amount: displayService.amount,
+            image: displayService.image,
             address: formData.address,
             city: formData.city,
-            phone:formData.phone,
+            phone: formData.phone,
             delivery_date: formData.delivery_date,
             paymentMethod: "Mpesa",
             is_paid: false,
@@ -82,8 +87,8 @@ const Payments = () => {
       } else {
         setMessage("Retrying payment for existing booking...");
       }
-  
-      // 🧩 Step 2: Initiate M-Pesa STK Push
+
+      // Initiate M-Pesa STK Push
       setMessage("Initiating M-Pesa STK push...");
       const mpesaRes = await axios.post(
         `${backendUrl}/api/mpesa/stkpush`,
@@ -96,14 +101,14 @@ const Payments = () => {
         },
         { withCredentials: true }
       );
-  
+
       if (!mpesaRes.data.success) {
         setLoading(false);
         setMessage("");
         setError("Failed to initiate M-Pesa payment.");
         return;
       }
-  
+
       const checkoutId = mpesaRes.data.data?.CheckoutRequestID;
       if (!checkoutId) {
         setLoading(false);
@@ -111,22 +116,22 @@ const Payments = () => {
         setError("Missing payment reference. Please try again.");
         return;
       }
-  
+
       // 🧩 Step 3: Poll payment status
       setMessage("Waiting for payment confirmation...");
       let attempts = 0;
       const maxAttempts = 20; // ~1 minute
       let pollingActive = true;
-  
+
       const checkStatus = async () => {
         if (!pollingActive) return;
-  
+
         try {
           const statusRes = await axios.get(
             `${backendUrl}/api/mpesa/status/${checkoutId}`
           );
           const status = statusRes.data.status;
-  
+
           if (status === "completed") {
             pollingActive = false;
             setMessage("✅ Payment successful!");
@@ -140,8 +145,7 @@ const Payments = () => {
               { withCredentials: true }
             );
             setTimeout(() => navigate("/user/my-bookings"), 2500);
-          } 
-          else if (status === "failed") {
+          } else if (status === "failed") {
             // 🧩 Payment failed – clear waiting msg, show failure
             pollingActive = false;
             setMessage("❌ Payment failed. Please try again."); // show clear failure message
@@ -155,12 +159,10 @@ const Payments = () => {
               { withCredentials: true }
             );
             setLoading(false);
-          } 
-          else if (attempts < maxAttempts) {
+          } else if (attempts < maxAttempts) {
             attempts++;
             setTimeout(checkStatus, 3000);
-          } 
-          else {
+          } else {
             // 🧩 Timed out – clear waiting msg, show timeout
             pollingActive = false;
             setMessage("⚠️ Payment timeout. Please try again.");
@@ -183,7 +185,7 @@ const Payments = () => {
           setLoading(false);
         }
       };
-  
+
       checkStatus();
     } catch (err) {
       console.error("M-Pesa Error:", err);
@@ -192,8 +194,8 @@ const Payments = () => {
       setLoading(false);
     }
   };
-  
-  // ✅ Handle Cash Payment
+
+  // Handle Cash Payment
   const handleCashPayment = async () => {
     try {
       setLoading(true);
@@ -208,9 +210,10 @@ const Payments = () => {
           serviceName: displayService.serviceName,
           categoryName: displayService.category,
           amount: displayService.amount,
+          image: displayService.image,
           address: formData.address,
           city: formData.city,
-          phone:formData.phone,
+          phone: formData.phone,
           delivery_date: formData.delivery_date,
           paymentMethod: "Cash",
           is_paid: false,
@@ -280,17 +283,22 @@ const Payments = () => {
               />
             </div>
 
-            <div>
+            <div className="relative">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Phone (M-Pesa)
               </label>
+
+              <span className="absolute left-1 top-11.5 -translate-y-1/2 text-gray-500">
+                +254
+              </span>
+
               <input
                 type="tel"
                 name="phone"
                 value={formData.phone}
                 onChange={handleChange}
-                placeholder="2547XXXXXXXX"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                placeholder="7XXXXXXXX"
+                className="w-full pl-12 px-4 py-2 border border-gray-300 rounded-md"
                 required
               />
             </div>
@@ -316,7 +324,9 @@ const Payments = () => {
               <input
                 type="date"
                 name="delivery_date"
-                value={formData.delivery_date}
+                value={formatDateForInput(
+                  formData.delivery_date 
+                )}
                 onChange={handleChange}
                 min={new Date().toISOString().split("T")[0]}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md"

@@ -7,13 +7,13 @@ import { getTimeStamp } from "../utils/mpesaTimestamp.js";
 dotenv.config();
 
 
-// 1️⃣ INITIATE STK PUSH
+//INITIATE STK PUSH
 export const handleMpesa = async (req, res) => {
   try {
     const { amount, phone, serviceId, serviceName, bookingId } = req.body;
+    console.log(phone)
     
     // STK push initiated (sensitive details removed from logs in production)
-
     const token = await generateAuthToken();
     if(!token) {
       throw new Error("Failed to generate M-Pesa auth token");
@@ -67,8 +67,6 @@ export const handleMpesa = async (req, res) => {
       }
     );
 
-    // STK push response received
-
     // Save transaction
     const transaction = new mpesaTransactionsSchema({
       customer: req.customerName,
@@ -87,14 +85,10 @@ export const handleMpesa = async (req, res) => {
       success: true,
       message: "M-Pesa payment initiated successfully.",
       data: response.data,
-      debug: {
-        phoneSent: formattedPhoneNormalized,
-        amount: amount
-      }
     });
     
   } catch (error) {
-    console.error("❌ STK Push Full Error:", {
+    console.error("STK Push Full Error:", {
       message: error.message,
       response: error.response?.data,
       status: error.response?.status
@@ -107,10 +101,11 @@ export const handleMpesa = async (req, res) => {
   }
 };
 
-// 2️⃣ CALLBACK FROM M-PESA
+// CALLBACK FROM M-PESA
 export const handleCallback = async (req, res) => {
   try {
     // Callback received from M-Pesa
+    console.log('STK Callback response:', JSON.stringify(req.body));
 
     const callbackData = req.body;
     const stkCallback = callbackData?.Body?.stkCallback;
@@ -131,14 +126,14 @@ export const handleCallback = async (req, res) => {
 
     switch (resultCode) {
       case 0:
-        // ✅ Payment success
+        // Payment success
         transaction.status = "completed";
         transaction.mpesaReceiptNumber = stkCallback.CallbackMetadata?.Item?.find(
           (i) => i.Name === "MpesaReceiptNumber"
         )?.Value;
         transaction.callbackData = stkCallback;
 
-        // ✅ Mark booking as paid
+        // Mark booking as paid
         if (transaction.bookingId) {
           await Booking.updateOne(
             { _id: transaction.bookingId },
@@ -155,12 +150,12 @@ export const handleCallback = async (req, res) => {
         break;
 
       default:
-        // ❌ Payment failed or canceled
+        // Payment failed or canceled
         transaction.status = "failed";
         transaction.failureReason = resultDesc;
         transaction.callbackData = stkCallback;
 
-        // 🔥 NEW: mark booking as failed
+        // mark booking as failed
         if (transaction.bookingId) {
           await Booking.updateOne(
             { _id: transaction.bookingId },
@@ -187,7 +182,7 @@ export const handleCallback = async (req, res) => {
       failureReason,
     });
   } catch (err) {
-    console.error("❌ M-Pesa Callback Error:", err.message);
+    console.error("M-Pesa Callback Error:", err.message);
     res.status(500).send("Server Error");
   }
 };

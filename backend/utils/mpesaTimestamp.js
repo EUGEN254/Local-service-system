@@ -14,3 +14,6 @@ export function getTimeStamp() {
   const timestamp = `${year}${month}${day}${hours}${minutes}${seconds}`;
   return timestamp;
 }
+
+
+

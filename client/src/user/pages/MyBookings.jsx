@@ -184,6 +184,10 @@ const MyBookings = () => {
     );
   };
 
+  useEffect(() => {
+  console.log("My bookings:", bookings);
+}, [bookings]);
+
   return (
     <div className="py-12 px-4 max-w-6xl mx-auto bg-gray-50 min-h-screen overflow-y-auto scrollbar-none">
       <h1 className="text-3xl font-bold mb-4">My Bookings</h1>
