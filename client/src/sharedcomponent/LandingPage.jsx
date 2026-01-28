@@ -26,7 +26,6 @@ const LandingPage = () => {
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  console.log("Current User in Landing Page:", user);
 
   // fetch categories from backend
   const fetchCategories = async () => {

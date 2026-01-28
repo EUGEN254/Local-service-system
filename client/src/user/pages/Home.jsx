@@ -1,10 +1,12 @@
 import React, { useState } from "react";
-import { Outlet } from "react-router-dom";
+import { Outlet, useNavigate } from "react-router-dom";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
+import { FaHome } from "react-icons/fa";
 
 const Home = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -35,10 +37,21 @@ const Home = () => {
       {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-        
+
         {/* Main content area with consistent width */}
         <div className="flex-1 bg-gray-50 overflow-y-auto">
-          <div className="p-4 md:p-6 w-full mx-auto">
+          {/* Back home button - full width */}
+          <div className="flex items-center justify-between px-4 md:mt-5">
+            <div 
+            onClick={()=>navigate('/')}
+            className="flex items-center gap-2 text-gray-700 cursor-pointer hover:text-gray-900 ml-2">
+              <FaHome size={20}/>
+              <span className="text-lg font-semibold">Back Home</span>
+            </div>
+          </div>
+
+          {/* Main content with max-width constraint */}
+          <div className="p-4 md:p-6 max-w-7xl mx-auto w-full">
             <Outlet />
           </div>
         </div>

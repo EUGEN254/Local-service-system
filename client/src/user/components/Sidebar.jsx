@@ -1,79 +1,79 @@
 import React, { useContext } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
-import { 
-  FaTachometerAlt, 
-  FaServicestack, 
-  FaBook, 
-  FaDollarSign, 
+import {
+  FaTachometerAlt,
+  FaServicestack,
+  FaBook,
+  FaDollarSign,
   FaInbox,
-  FaQuestionCircle, 
-  FaCog, 
+  FaQuestionCircle,
+  FaCog,
   FaSignOutAlt,
   FaHome,
   FaSearch,
-  FaUsers
+  FaUsers,
 } from "react-icons/fa";
 import { ShareContext } from "../../sharedcontext/SharedContext";
 
 const navLinks = (logoutUser, navigate) => ({
   menu: [
-    { 
-      name: "Dashboard", 
-      icon: <FaTachometerAlt className="w-5 h-5" />, 
-      path: "dashboard" 
+    {
+      name: "Dashboard",
+      icon: <FaTachometerAlt className="w-5 h-5" />,
+      path: "dashboard",
     },
-    { 
-      name: "Browse Services", 
-      icon: <FaServicestack className="w-5 h-5" />, 
-      path: "browse-services" 
+    {
+      name: "Browse Services",
+      icon: <FaServicestack className="w-5 h-5" />,
+      path: "browse-services",
     },
-    { 
-      name: "My Bookings", 
-      icon: <FaBook className="w-5 h-5" />, 
-      path: "my-bookings" 
+    {
+      name: "My Bookings",
+      icon: <FaBook className="w-5 h-5" />,
+      path: "my-bookings",
     },
-    { 
-      name: "Payments", 
-      icon: <FaDollarSign className="w-5 h-5" />, 
-      path: "payment" 
+    {
+      name: "Payments",
+      icon: <FaDollarSign className="w-5 h-5" />,
+      path: "payment",
     },
-    { 
-      name: "Chat", 
-      icon: <FaInbox className="w-5 h-5" />, 
-      path: "chat" 
+    {
+      name: "Chat",
+      icon: <FaInbox className="w-5 h-5" />,
+      path: "chat",
     },
-    { 
-      name: "All Providers", 
-      icon: <FaUsers className="w-5 h-5" />, 
-      path: "all-providers" 
+    {
+      name: "All Providers",
+      icon: <FaUsers className="w-5 h-5" />,
+      path: "all-providers",
     },
   ],
   other: [
-    { 
-      name: "Home", 
-      icon: <FaHome className="w-5 h-5" />, 
+    {
+      name: "Home",
+      icon: <FaHome className="w-5 h-5" />,
       path: "/",
-      onClick: () => navigate('/')
+      onClick: () => navigate("/"),
     },
-    { 
-      name: "Help & Support", 
-      icon: <FaQuestionCircle className="w-5 h-5" />, 
-      path: "help" 
+    {
+      name: "Help & Support",
+      icon: <FaQuestionCircle className="w-5 h-5" />,
+      path: "help",
     },
-    { 
-      name: "Settings", 
-      icon: <FaCog className="w-5 h-5" />, 
-      path: "settings" 
+    {
+      name: "Settings",
+      icon: <FaCog className="w-5 h-5" />,
+      path: "settings",
     },
-    { 
-      name: "Logout", 
-      icon: <FaSignOutAlt className="w-5 h-5" />, 
-      danger: true, 
+    {
+      name: "Logout",
+      icon: <FaSignOutAlt className="w-5 h-5" />,
+      danger: true,
       path: "/",
       onClick: () => {
         logoutUser();
-        navigate('/');
-      }
+        navigate("/");
+      },
     },
   ],
 });
@@ -84,8 +84,8 @@ const Sidebar = ({ onLinkClick }) => {
   const navigate = useNavigate();
   const links = navLinks(logoutUser, navigate);
 
-  // ✅ Check if user is currently on the chat page
-  const isOnChatPage = location.pathname.includes('/chat');
+  // Check if user is currently on the chat page
+  const isOnChatPage = location.pathname.includes("/chat");
 
   return (
     <div className="w-74 h-full bg-gray-900 text-white shadow-lg flex flex-col overflow-hidden">
@@ -107,14 +107,16 @@ const Sidebar = ({ onLinkClick }) => {
         {/* Main Menu */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-4">
-            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Main Menu</p>
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+              Main Menu
+            </p>
             <div className="flex-1 border-b border-gray-700"></div>
           </div>
-          
+
           <ul className="space-y-1">
             {links.menu.map((link, index) => (
               <li key={index}>
-                {link.path.startsWith('/') ? (
+                {link.path.startsWith("/") ? (
                   <button
                     onClick={() => {
                       navigate(link.path);
@@ -128,11 +130,13 @@ const Sidebar = ({ onLinkClick }) => {
                   >
                     {link.icon}
                     <span className="text-sm font-medium">{link.name}</span>
-                    {link.name === "Chat" && totalUnread > 0 && !isOnChatPage && (
-                      <span className="absolute right-3 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-1 min-w-5 text-center">
-                        {totalUnread > 99 ? "99+" : totalUnread}
-                      </span>
-                    )}
+                    {link.name === "Chat" &&
+                      totalUnread > 0 &&
+                      !isOnChatPage && (
+                        <span className="absolute right-3 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-1 min-w-5 text-center">
+                          {totalUnread > 99 ? "99+" : totalUnread}
+                        </span>
+                      )}
                   </button>
                 ) : (
                   <NavLink
@@ -149,11 +153,13 @@ const Sidebar = ({ onLinkClick }) => {
                   >
                     {link.icon}
                     <span className="text-lg font-medium">{link.name}</span>
-                    {link.name === "Chat" && totalUnread > 0 && !isOnChatPage && (
-                      <span className="absolute right-3 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-1 min-w-5 text-center">
-                        {totalUnread > 99 ? "99+" : totalUnread}
-                      </span>
-                    )}
+                    {link.name === "Chat" &&
+                      totalUnread > 0 &&
+                      !isOnChatPage && (
+                        <span className="absolute right-3 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-1 min-w-5 text-center">
+                          {totalUnread > 99 ? "99+" : totalUnread}
+                        </span>
+                      )}
                   </NavLink>
                 )}
               </li>
@@ -164,10 +170,12 @@ const Sidebar = ({ onLinkClick }) => {
         {/* Other Menu */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-4">
-            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Other</p>
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">
+              Other
+            </p>
             <div className="flex-1 border-b border-gray-700"></div>
           </div>
-          
+
           <ul className="space-y-1">
             {links.other.map((link, index) => (
               <li key={index}>
@@ -184,7 +192,7 @@ const Sidebar = ({ onLinkClick }) => {
                     }`}
                   >
                     {link.icon}
-                    <span className="text-sm font-medium">{link.name}</span>
+                    <span className="text-lg font-medium">{link.name}</span>
                   </button>
                 ) : (
                   <NavLink
@@ -200,7 +208,7 @@ const Sidebar = ({ onLinkClick }) => {
                     end
                   >
                     {link.icon}
-                    <span className="text-sm font-medium">{link.name}</span>
+                    <span className="text-lg font-medium">{link.name}</span>
                   </NavLink>
                 )}
               </li>
@@ -208,7 +216,6 @@ const Sidebar = ({ onLinkClick }) => {
           </ul>
         </div>
       </div>
-
     </div>
   );
 };

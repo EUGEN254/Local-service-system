@@ -17,79 +17,13 @@
     />
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/worklink.svg" />
+
+    <link rel="stylesheet" href="/src/index.css" />
 
    
 
-    <style>
-      /* =============================
-         GLOBAL STYLES & PRELOADER
-      =============================== */
-      html,
-      body {
-        margin: 0;
-        padding: 0;
-        height: 100%;
-        background-color: #ffff;
-        font-family: "Outfit", sans-serif;
-        font-size: 14px;
-        line-height: 1.5;
-      }
-
-      /* Disable scroll while loading */
-      html.loading,
-      body.loading {
-        overflow: hidden;
-      }
-      html:not(.loading),
-      body:not(.loading) {
-        overflow: auto;
-      }
-
-      /* Full-screen loader */
-      #startup-loader {
-        position: fixed;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #111827;
-        color: white;
-        z-index: 99999;
-        opacity: 1;
-        transition: opacity 0.2s ease;
-        font-family: "Outfit", sans-serif;
-      }
-
-      #startup-loader.fade-out {
-        opacity: 0;
-        pointer-events: none;
-      }
-
-      /* Spinner */
-      .spinner {
-        width: 40px;
-        height: 40px;
-        border-radius: 9999px;
-        border-bottom: 2px solid #facc15;
-        border-left: 2px solid transparent;
-        border-right: 2px solid transparent;
-        border-top: 2px solid transparent;
-        animation: spin 1s linear infinite;
-        will-change: transform;
-      }
-
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-
-      .loading-text {
-        margin-left: 0.75rem;
-        font-size: 1.125rem;
-      }
-    </style>
+    
   </head>
 
   <body class="loading bg-gray-900 text-white">

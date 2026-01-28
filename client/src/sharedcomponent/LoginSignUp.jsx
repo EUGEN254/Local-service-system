@@ -83,7 +83,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
 
       if (data.success) {
         await fetchCurrentUser();
-        const targetRoute = data.user.role === "customer" ? "/user" : "/sp";
+        const targetRoute = data.user.role === "customer" ? "/user/browse-services" : "/sp";
         navigate(targetRoute, { replace: true });
         toast.success(data.message);
         if (setShowAuthModal) setShowAuthModal(false);
@@ -121,7 +121,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
       if (data.success) {
         toast.success("Logged in with Google successfully!");
         await fetchCurrentUser();
-        const targetRoute = data.user.role === "customer" ? "/user" : "/sp";
+        const targetRoute = data.user.role === "customer" ? "/user/browse-services" : "/sp";
         navigate(targetRoute, { replace: true });
         if (setShowAuthModal) setShowAuthModal(false);
       } else {
@@ -142,9 +142,9 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
       {/* Role Confirmation Modal */}
       {showRoleConfirm && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-60">
-          <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-auto border border-gray-200">
+          <div className="bg-white rounded-xl shadow-2xl p-5 max-w-md w-full mx-auto border border-gray-200">
             <div className="flex items-center mb-4">
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+              <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                 <FiAlertTriangle className="text-blue-600 text-lg" />
               </div>
               <h3 className="text-xl font-bold text-gray-900">
@@ -152,8 +152,8 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
               </h3>
             </div>
 
-            <div className="mb-6">
-              <p className="text-gray-700 mb-4">
+            <div className="mb-5">
+              <p className="text-gray-700 mb-4 text-base">
                 {getRoleConfirmationMessage()}
               </p>
               <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
@@ -166,13 +166,13 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
             <div className="flex gap-3">
               <button
                 onClick={cancelRole}
-                className="flex-1 py-3 px-4 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors border border-gray-300"
+                className="flex-1 py-2.5 px-4 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium transition-colors border border-gray-300 text-base"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmRole}
-                className="flex-1 py-3 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors"
+                className="flex-1 py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors text-base"
               >
                 Confirm {pendingRole === "customer" ? "Customer" : "Service Provider"}
               </button>
@@ -181,19 +181,19 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
         </div>
       )}
 
-      {/* Main Auth Modal */}
-      <div className="relative w-full max-w-md bg-gray-100 rounded-xl shadow-lg p-6">
+      {/* Main Auth Modal - BALANCED VERSION */}
+      <div className="relative w-full max-w-md bg-gray-100 rounded-xl shadow-lg p-5 overflow-y-scroll max-h-[95vh] custom-scrollbar">
         <button
           onClick={() => setShowAuthModal(false)}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 text-2xl transition-colors"
+          className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 text-xl transition-colors"
           disabled={isLoading}
         >
           &times;
         </button>
 
-        <div className="mb-6 text-center">
-          <h2 className="text-2xl font-bold text-gray-900">{currState}</h2>
-          <p className="text-gray-600 mt-2">
+        <div className="mb-5 text-center">
+          <h2 className="text-3xl font-bold text-gray-900">{currState}</h2>
+          <p className="text-gray-600 mt-2 text-base">
             {currState === "Login"
               ? "Sign in to your account"
               : "Create a new account"}
@@ -203,7 +203,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
         <form onSubmit={onsubmitHandler} className="space-y-4">
           {/* Role Selector */}
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-base font-medium text-gray-700 mb-2">
               I am a...
             </label>
             <div className="flex gap-3">
@@ -212,7 +212,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
                   key={r}
                   type="button"
                   onClick={() => !isLoading && handleRoleSelect(r)}
-                  className={`flex-1 py-3 px-4 rounded-lg border transition-colors ${
+                  className={`flex-1 py-2.5 px-3 rounded-lg border transition-colors ${
                     role === r
                       ? "bg-blue-50 border-blue-500 text-blue-700"
                       : "bg-gray-50 border-gray-300 text-gray-700 hover:border-gray-400"
@@ -220,17 +220,17 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
                   disabled={isLoading}
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <div className={`w-3 h-3 rounded-full ${
+                    <div className={`w-3.5 h-3.5 rounded-full ${
                       role === r ? "bg-blue-500" : "bg-gray-400"
                     }`}></div>
-                    <span className="text-sm font-medium capitalize">
+                    <span className="text-base font-medium capitalize">
                       {r === "customer" ? "Customer" : "Service Provider"}
                     </span>
                   </div>
                 </button>
               ))}
             </div>
-            <p className="text-xs text-gray-500 mt-2">
+            <p className="text-base text-gray-500 mt-2">
               {currState === "Login"
                 ? `You'll sign in as ${role === "customer" ? "Customer" : "Service Provider"}`
                 : `You'll sign up as ${role === "customer" ? "Customer" : "Service Provider"}`}
@@ -240,12 +240,12 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
           {/* Name (Sign Up only) */}
           {currState === "Sign Up" && (
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-base font-medium text-gray-700 mb-1">
                 Full Name
               </label>
               <div className="relative">
                 <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                  <FiUserPlus className="text-gray-400" />
+                  <FiUserPlus className="text-gray-400 text-base" />
                 </div>
                 <input
                   type="text"
@@ -254,7 +254,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   disabled={isLoading}
-                  className="w-full pl-10 pr-3 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full pl-10 pr-3 py-2.5 text-base rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 focus:outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
             </div>
@@ -262,12 +262,12 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Email Address
             </label>
             <div className="relative">
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                <FiMail className="text-gray-400" />
+                <FiMail className="text-gray-400 text-base" />
               </div>
               <input
                 type="email"
@@ -276,19 +276,19 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
-                className="w-full pl-10 pr-3 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full pl-10 pr-3 py-2.5 text-base rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 focus:outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
             </div>
           </div>
 
           {/* Password */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-base font-medium text-gray-700 mb-1">
               Password
             </label>
             <div className="relative">
               <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
-                <FiLock className="text-gray-400" />
+                <FiLock className="text-gray-400 text-base" />
               </div>
               <input
                 type={passwordVisible ? "text" : "password"}
@@ -297,12 +297,12 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
                 placeholder="••••••••"
                 required
                 disabled={isLoading}
-                className="w-full pl-10 pr-10 py-3 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                className="w-full pl-10 pr-10 py-2.5 text-base rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 focus:outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
               />
               <button
                 type="button"
                 onClick={() => !isLoading && setPasswordVisible(!passwordVisible)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 disabled:opacity-50"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 text-base disabled:opacity-50"
                 disabled={isLoading}
               >
                 {passwordVisible ? "Hide" : "Show"}
@@ -315,7 +315,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
             <div className="text-right">
               <NavLink
                 to="/forget-password"
-                className="text-sm text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                className="text-base text-blue-600 hover:text-blue-800 hover:underline transition-colors"
               >
                 Forgot password?
               </NavLink>
@@ -324,7 +324,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
 
           {/* Terms Checkbox */}
           {currState === "Sign Up" && (
-            <div className="flex items-start space-x-3">
+            <div className="flex items-start space-x-2">
               <input
                 id="terms"
                 type="checkbox"
@@ -332,7 +332,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
                 disabled={isLoading}
                 checked={termsAccepted}
                 onChange={() => !isLoading && setTermsAccepted(!termsAccepted)}
-                className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                className="mt-0.5 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor="terms" className="text-sm text-gray-600">
                 I agree to the{" "}
@@ -350,11 +350,11 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
           <button
             type="submit"
             disabled={isLoading || (currState === "Sign Up" && !termsAccepted)}
-            className="w-full py-3 px-4 rounded-lg font-medium bg-gray-900 hover:bg-gray-800 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+            className="w-full py-3 px-4 rounded-lg font-medium bg-gray-900 hover:bg-gray-800 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-base"
           >
             {formLoading ? (
               <>
-                <svg className="animate-spin h-5 w-5 mr-2 text-white" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin h-4 w-4 mr-2 text-white" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                 </svg>
@@ -368,14 +368,14 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
           </button>
 
           {/* Switch Mode */}
-          <div className="text-center text-sm text-gray-600">
+          <div className="text-center text-base text-gray-600">
             {currState === "Login" ? (
               <p>
                 Don't have an account?{" "}
                 <button
                   type="button"
                   onClick={() => !isLoading && setCurrState("Sign Up")}
-                  className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                  className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-base"
                   disabled={isLoading}
                 >
                   Sign up
@@ -387,7 +387,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
                 <button
                   type="button"
                   onClick={() => !isLoading && setCurrState("Login")}
-                  className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+                  className="font-medium text-blue-600 hover:text-blue-800 hover:underline text-base"
                   disabled={isLoading}
                 >
                   Sign in
@@ -398,14 +398,14 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
         </form>
 
         {/* Divider */}
-        <div className="flex items-center my-6">
+        <div className="flex items-center my-5">
           <div className="flex-1 h-px bg-gray-300"></div>
-          <span className="px-3 text-sm text-gray-500">Or continue with</span>
+          <span className="px-3 text-base text-gray-500">Or continue with</span>
           <div className="flex-1 h-px bg-gray-300"></div>
         </div>
 
         {/* Google Login */}
-        <div className="mb-3 relative">
+        <div className="relative">
           <div className={googleLoading ? 'opacity-50' : ''}>
             <GoogleLogin
               onSuccess={handleGoogleLogin}
@@ -421,7 +421,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
           {googleLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/90 rounded-lg">
               <div className="text-center">
-                <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-1"></div>
                 <p className="text-sm text-gray-600">Signing in with Google...</p>
               </div>
             </div>
@@ -429,7 +429,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
           
           {/* Role Reminder */}
           <div className="mt-3 text-center">
-            <p className="text-xs text-gray-600">
+            <p className="text-sm text-gray-600">
               Google login will use:{" "}
               <span className="font-medium text-blue-600">
                 {role === "customer" ? "Customer" : "Service Provider"}
