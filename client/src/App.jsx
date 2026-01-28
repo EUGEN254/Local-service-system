@@ -34,6 +34,8 @@ import UserHomeLayout from "./user/pages/Home";
 import Chat from "./user/pages/Chat";
 import UserNotification from "./user/pages/UserNotification";
 import ForgetPassword from "./user/pages/ForgetPassword";
+import AllProviders from "./user/pages/AllProviders";
+import ScrollToTop from "./sharedcomponent/ScrollToTop";
 
 const App = () => {
   const { user, authLoading } = useContext(ShareContext);
@@ -48,6 +50,9 @@ const App = () => {
       </div>
     );
   }
+
+
+
 
   return (
     <>
@@ -66,6 +71,7 @@ const App = () => {
           lineHeight: "1.2", 
         }}
       />
+        <ScrollToTop/>
 
       <Routes>
         {/* Public routes - exact paths */}
@@ -133,6 +139,7 @@ const App = () => {
           <Route path="payment" element={<Payments />} />
           <Route path="chat" element={<Chat />} />
           <Route path="notification" element={<UserNotification />} />
+          <Route path="all-providers" element={<AllProviders />} />
         </Route>
 
         {/* Catch-all for nested protected routes */}

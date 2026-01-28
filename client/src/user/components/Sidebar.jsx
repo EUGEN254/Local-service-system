@@ -1,122 +1,214 @@
 import React, { useContext } from "react";
-import { NavLink, useLocation } from "react-router-dom";
-import {
-  FaTachometerAlt,
-  FaServicestack,
-  FaBook,
-  FaDollarSign,
-  FaBell,
-  FaQuestionCircle,
-  FaCog,
-  FaSignOutAlt,
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { 
+  FaTachometerAlt, 
+  FaServicestack, 
+  FaBook, 
+  FaDollarSign, 
   FaInbox,
+  FaQuestionCircle, 
+  FaCog, 
+  FaSignOutAlt,
+  FaHome,
+  FaSearch,
+  FaUsers
 } from "react-icons/fa";
 import { ShareContext } from "../../sharedcontext/SharedContext";
 
-const navLinks = (logoutUser) => ({
+const navLinks = (logoutUser, navigate) => ({
   menu: [
-    { name: "Dashboard", icon: <FaTachometerAlt />, path: "dashboard" },
-    { name: "Browse Services", icon: <FaServicestack />, path: "browse-services" },
-    { name: "My Bookings", icon: <FaBook />, path: "my-bookings" },
-    { name: "Payments", icon: <FaDollarSign />, path: "payment" },
-    { name: "Chat", icon: <FaInbox />, path: "chat" },
+    { 
+      name: "Dashboard", 
+      icon: <FaTachometerAlt className="w-5 h-5" />, 
+      path: "dashboard" 
+    },
+    { 
+      name: "Browse Services", 
+      icon: <FaServicestack className="w-5 h-5" />, 
+      path: "browse-services" 
+    },
+    { 
+      name: "My Bookings", 
+      icon: <FaBook className="w-5 h-5" />, 
+      path: "my-bookings" 
+    },
+    { 
+      name: "Payments", 
+      icon: <FaDollarSign className="w-5 h-5" />, 
+      path: "payment" 
+    },
+    { 
+      name: "Chat", 
+      icon: <FaInbox className="w-5 h-5" />, 
+      path: "chat" 
+    },
+    { 
+      name: "All Providers", 
+      icon: <FaUsers className="w-5 h-5" />, 
+      path: "all-providers" 
+    },
   ],
   other: [
-    { name: "Help", icon: <FaQuestionCircle />, path: "help" },
-    { name: "Settings", icon: <FaCog />, path: "settings" },
-    { name: "Logout", icon: <FaSignOutAlt />, danger: true, path: "/logout", onClick: logoutUser },
+    { 
+      name: "Home", 
+      icon: <FaHome className="w-5 h-5" />, 
+      path: "/",
+      onClick: () => navigate('/')
+    },
+    { 
+      name: "Help & Support", 
+      icon: <FaQuestionCircle className="w-5 h-5" />, 
+      path: "help" 
+    },
+    { 
+      name: "Settings", 
+      icon: <FaCog className="w-5 h-5" />, 
+      path: "settings" 
+    },
+    { 
+      name: "Logout", 
+      icon: <FaSignOutAlt className="w-5 h-5" />, 
+      danger: true, 
+      path: "/",
+      onClick: () => {
+        logoutUser();
+        navigate('/');
+      }
+    },
   ],
 });
 
 const Sidebar = ({ onLinkClick }) => {
   const { logoutUser, totalUnread } = useContext(ShareContext);
   const location = useLocation();
-  const links = navLinks(logoutUser);
+  const navigate = useNavigate();
+  const links = navLinks(logoutUser, navigate);
 
   // ✅ Check if user is currently on the chat page
   const isOnChatPage = location.pathname.includes('/chat');
 
   return (
-    <div className="w-64 h-full bg-gray-100 shadow-md rounded-2xl m-0 md:m-3 flex flex-col p-4">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="w-16 h-16 flex items-center justify-center rounded-full bg-yellow-500 text-white">
-          <h1 className="text-sm font-extrabold tracking-tight text-center leading-tight">LSS</h1>
+    <div className="w-74 h-full bg-gray-900 text-white shadow-lg flex flex-col overflow-hidden">
+      {/* Header - Matches Landing Page */}
+      <div className="p-6 border-b border-gray-700">
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center flex-shrink-0">
+            <span className="text-gray-900 font-bold text-lg">W</span>
+          </div>
+          <div>
+            <div className="text-xl font-bold text-white">WorkLink</div>
+            <div className="text-xs text-gray-400">Customer Dashboard</div>
+          </div>
         </div>
-        <h1 className="text-lg font-bold text-gray-800">
-          Local <span className="text-yellow-500">Service</span> System
-        </h1>
       </div>
 
-      <div className="flex flex-col flex-1">
-        <div className="flex items-center gap-2 mb-4">
-          <p className="text-gray-400 text-xs font-semibold">MENU</p>
-          <div className="flex-1 border-b border-gray-300"></div>
-        </div>
-
-        <ul className="space-y-1 pl-4">
-          {links.menu.map((link, index) => (
-            <li key={index} className="relative">
-              <NavLink
-                to={link.path}
-                onClick={onLinkClick}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 px-2 py-2 rounded-md transition cursor-pointer relative ${
-                    isActive ? "bg-yellow-500 text-gray-900 font-semibold" : "text-gray-700 hover:text-gray-900"
-                  }`
-                }
-              >
-                {link.icon}
-                <span>{link.name}</span>
-                {/* ✅ Only show unread count when NOT on chat page */}
-                {link.name === "Chat" && totalUnread > 0 && !isOnChatPage && (
-                  <span className="absolute right-3 top-1 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-0.5">
-                    {totalUnread > 99 ? "99+" : totalUnread}
-                  </span>
+      {/* Navigation */}
+      <div className="flex-1 p-4 overflow-y-auto">
+        {/* Main Menu */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Main Menu</p>
+            <div className="flex-1 border-b border-gray-700"></div>
+          </div>
+          
+          <ul className="space-y-1">
+            {links.menu.map((link, index) => (
+              <li key={index}>
+                {link.path.startsWith('/') ? (
+                  <button
+                    onClick={() => {
+                      navigate(link.path);
+                      onLinkClick?.();
+                    }}
+                    className={`flex items-center gap-3 w-full px-3 py-3 rounded-lg transition-colors relative ${
+                      location.pathname.includes(link.path)
+                        ? "bg-white text-gray-900 font-semibold"
+                        : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                    }`}
+                  >
+                    {link.icon}
+                    <span className="text-sm font-medium">{link.name}</span>
+                    {link.name === "Chat" && totalUnread > 0 && !isOnChatPage && (
+                      <span className="absolute right-3 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-1 min-w-5 text-center">
+                        {totalUnread > 99 ? "99+" : totalUnread}
+                      </span>
+                    )}
+                  </button>
+                ) : (
+                  <NavLink
+                    to={link.path}
+                    onClick={onLinkClick}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-3 py-3 rounded-lg transition-colors relative ${
+                        isActive
+                          ? "bg-white text-gray-900 font-semibold"
+                          : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                      }`
+                    }
+                    end
+                  >
+                    {link.icon}
+                    <span className="text-lg font-medium">{link.name}</span>
+                    {link.name === "Chat" && totalUnread > 0 && !isOnChatPage && (
+                      <span className="absolute right-3 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-1 min-w-5 text-center">
+                        {totalUnread > 99 ? "99+" : totalUnread}
+                      </span>
+                    )}
+                  </NavLink>
                 )}
-              </NavLink>
-            </li>
-          ))}
-        </ul>
-
-        <div className="mb-20"></div>
-
-        <div className="flex items-center gap-2 mb-4">
-          <p className="text-gray-400 text-xs font-semibold">OTHER</p>
-          <div className="flex-1 border-b border-gray-300"></div>
+              </li>
+            ))}
+          </ul>
         </div>
 
-        <ul className="space-y-1 pl-4">
-          {links.other.map((link, index) =>
-            link.danger ? (
+        {/* Other Menu */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-4">
+            <p className="text-xs text-gray-400 font-medium uppercase tracking-wider">Other</p>
+            <div className="flex-1 border-b border-gray-700"></div>
+          </div>
+          
+          <ul className="space-y-1">
+            {links.other.map((link, index) => (
               <li key={index}>
-                <button
-                  onClick={() => {
-                    link.onClick();
-                    onLinkClick?.();
-                  }}
-                  className="flex items-center gap-3 px-2 py-2 rounded-md transition cursor-pointer text-red-600 hover:bg-yellow-500 hover:text-gray-900 w-full text-left"
-                >
-                  {link.icon} {link.name}
-                </button>
+                {link.onClick ? (
+                  <button
+                    onClick={() => {
+                      link.onClick();
+                      onLinkClick?.();
+                    }}
+                    className={`flex items-center gap-3 w-full px-3 py-3 rounded-lg transition-colors ${
+                      link.danger
+                        ? "text-red-400 hover:bg-red-900/20 hover:text-red-300"
+                        : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                    }`}
+                  >
+                    {link.icon}
+                    <span className="text-sm font-medium">{link.name}</span>
+                  </button>
+                ) : (
+                  <NavLink
+                    to={link.path}
+                    onClick={onLinkClick}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
+                        isActive
+                          ? "bg-white text-gray-900 font-semibold"
+                          : "text-gray-300 hover:bg-gray-800 hover:text-white"
+                      }`
+                    }
+                    end
+                  >
+                    {link.icon}
+                    <span className="text-sm font-medium">{link.name}</span>
+                  </NavLink>
+                )}
               </li>
-            ) : (
-              <li key={index}>
-                <NavLink
-                  to={link.path}
-                  onClick={onLinkClick}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 px-2 py-2 rounded-md transition cursor-pointer ${
-                      isActive ? "bg-yellow-500 text-gray-900 font-semibold" : "text-gray-700 hover:bg-yellow-500 hover:text-gray-900"
-                    }`
-                  }
-                >
-                  {link.icon} {link.name}
-                </NavLink>
-              </li>
-            )
-          )}
-        </ul>
+            ))}
+          </ul>
+        </div>
       </div>
+
     </div>
   );
 };

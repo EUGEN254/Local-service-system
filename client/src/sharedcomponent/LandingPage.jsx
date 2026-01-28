@@ -5,18 +5,28 @@ import LearnMore from "./LearnMore";
 import { ShareContext } from "../sharedcontext/SharedContext";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import {
+  FaSignOutAlt,
+  FaChevronDown,
+  FaTachometerAlt,
+  FaCog,
+} from "react-icons/fa";
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const navigate = useNavigate();
   const [authMode, setAuthMode] = useState("Sign Up");
   const [showLearnMore, setShowLearnMore] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const { backendUrl } = useContext(ShareContext);
+  const { backendUrl, user, logoutUser } = useContext(ShareContext);
   const [categories, setCategories] = useState([]);
   const [serviceImages, setServicesImages] = useState([]);
   const [showProviderModal, setShowProviderModal] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(null);
-  const [loadingProvider, setLoadingProvider] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  console.log("Current User in Landing Page:", user);
 
   // fetch categories from backend
   const fetchCategories = async () => {
@@ -243,7 +253,7 @@ const LandingPage = () => {
                   {info.services && info.services.length > 0 ? (
                     <div className="flex flex-wrap gap-2">
                       {info.services
-                        .filter((service) => service.serviceName) 
+                        .filter((service) => service.serviceName)
                         .map((service, index) => (
                           <span
                             key={service._id || index}
@@ -310,7 +320,10 @@ const LandingPage = () => {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <div className="flex items-center">
+              <div
+                onClick={() => navigate("/")}
+                className="flex items-center cursor-pointer"
+              >
                 <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center mr-2">
                   <span className="text-white font-bold">W</span>
                 </div>
@@ -332,12 +345,6 @@ const LandingPage = () => {
               >
                 Services
               </a>
-              <a
-                href="#providers"
-                className="text-gray-700 hover:text-gray-900 font-medium"
-              >
-                Providers
-              </a>
               <button
                 onClick={() => setShowLearnMore(true)}
                 className="text-gray-700 hover:text-gray-900 font-medium"
@@ -346,27 +353,97 @@ const LandingPage = () => {
               </button>
             </div>
 
-            {/* Get Started Button in Navbar */}
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => {
-                  setAuthMode("Login");
-                  setShowAuthModal(true);
-                }}
-                className="hidden sm:block text-gray-700 hover:text-gray-900 font-medium px-4 py-2 rounded-lg hover:bg-gray-100"
-              >
-                Sign In
-              </button>
-              <button
-                onClick={() => {
-                  setAuthMode("Sign Up");
-                  setShowAuthModal(true);
-                }}
-                className="bg-gray-900 hover:bg-gray-800 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors"
-              >
-                Get Started Free
-              </button>
-            </div>
+            {/* Right side - Auth/User */}
+            {user ? (
+              <div className="flex items-center gap-6">
+                {/* Dashboard button */}
+                <button
+                  onClick={() => navigate("/user/dashboard")}
+                  className="hidden md:block text-gray-700 hover:text-gray-900 font-medium  px-4 py-2  hover:bg-gray-100"
+                >
+                  Dashboard
+                </button>
+
+                {/* User dropdown */}
+                <div className="relative">
+                  <div
+                    className="flex items-center gap-2 bg-gray-100 px-3 py-2 rounded-full cursor-pointer hover:bg-gray-200 transition-colors"
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                  >
+                    <div className="w-8 h-8 bg-gray-900 text-white rounded-full flex items-center justify-center font-semibold">
+                      {user?.name?.charAt(0).toUpperCase() || "U"}
+                    </div>
+                    <FaChevronDown
+                      className={`text-gray-600 text-sm transition-transform ${dropdownOpen ? "rotate-180" : ""}`}
+                    />
+                  </div>
+
+                  {/* Dropdown */}
+                  {dropdownOpen && (
+                    <div className="absolute right-0 mt-3 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-50">
+                      <div className="p-3 border-b border-gray-100">
+                        <p className="text-sm font-medium text-gray-900">
+                          {user?.name}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {user?.email}
+                        </p>
+                      </div>
+                      <div className="py-1">
+                        <button
+                          onClick={() => {
+                            navigate("/user/dashboard");
+                            setDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-sm"
+                        >
+                          <FaTachometerAlt className="text-gray-500" />
+                          <span className="font-medium">Dashboard</span>
+                        </button>
+                        <button
+                          onClick={() => {
+                            navigate("/user/settings");
+                            setDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-sm"
+                        >
+                          <FaCog className="text-gray-500" />
+                          <span className="font-medium">Settings</span>
+                        </button>
+                        <button
+                          className="w-full flex items-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-sm"
+                          onClick={logoutUser}
+                        >
+                          <FaSignOutAlt className="text-red-500" />
+                          <span className="font-medium">Logout</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => {
+                    setAuthMode("Login");
+                    setShowAuthModal(true);
+                  }}
+                  className="hidden sm:block text-gray-700 hover:text-gray-900 font-medium px-4 py-2 rounded-lg hover:bg-gray-100"
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => {
+                    setAuthMode("Sign Up");
+                    setShowAuthModal(true);
+                  }}
+                  className="bg-gray-900 hover:bg-gray-800 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors"
+                >
+                  Get Started Free
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -714,15 +791,27 @@ const LandingPage = () => {
                         >
                           Quick View
                         </button>
-                        <button
-                          onClick={() => {
-                            setAuthMode("Sign Up");
-                            setShowAuthModal(true);
-                          }}
-                          className="bg-gray-900 hover:bg-gray-800 text-white font-medium px-4 py-2 rounded transition-colors"
-                        >
-                          Book Now
-                        </button>
+                        {user ? (
+                          <button
+                            onClick={() => {
+                              navigate("/user/payment", { state: { service } });
+                              window.scrollTo(0, 0);
+                            }}
+                            className="bg-gray-900 hover:bg-gray-800 text-white font-medium px-4 py-2 rounded transition-colors"
+                          >
+                            Book Now
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setAuthMode("Sign Up");
+                              setShowAuthModal(true);
+                            }}
+                            className="bg-gray-900 hover:bg-gray-800 text-white font-medium px-4 py-2 rounded transition-colors"
+                          >
+                            Book Now
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
