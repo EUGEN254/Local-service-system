@@ -11,7 +11,7 @@ dotenv.config();
 export const handleMpesa = async (req, res) => {
   try {
     const { amount, phone, serviceId, serviceName, bookingId } = req.body;
-    console.log(phone)
+    
     
     // STK push initiated (sensitive details removed from logs in production)
     const token = await generateAuthToken();

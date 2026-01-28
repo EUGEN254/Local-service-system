@@ -19,6 +19,7 @@ import adminRouter from "./routes/adminRoutes.js";
 import categoryRouter from "./routes/categoryRoutes.js";
 import notificationRouter from "./routes/notificationRoutes.js";
 import supportRouter from "./routes/supportRoutes.js";
+import landipageDetailsRouter from "./routes/landipageDetails.js";
 
 // -------------------- EXPRESS + HTTP --------------------
 const app = express();
@@ -34,7 +35,7 @@ const allowedOrigins = [
   "http://localhost:5174",
   "https://admin-lss.vercel.app",
   "https://local-service-system.vercel.app",
-  "https://local-service-system.onrender.com"
+  "https://local-service-system.onrender.com",
 ];
 app.use(express.json({ limit: "4mb" }));
 app.use(cookieParser());
@@ -215,6 +216,7 @@ app.use("/api/admin", adminRouter);
 app.use("/api/categories", categoryRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/support", supportRouter);
+app.use("/api/landingpage", landipageDetailsRouter);
 
 
 

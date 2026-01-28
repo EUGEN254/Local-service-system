@@ -11,14 +11,20 @@ export const addService = async (req, res) => {
     const serviceProviderName = req.serviceProviderName;
 
     if (!category || !serviceName || !amount) {
-      return res.status(400).json({ success: false, message: "All fields are required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "All fields are required" });
     }
 
     if (!req.file) {
-      return res.status(400).json({ success: false, message: "Service image is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Service image is required" });
     }
 
-    const result = await cloudinary.uploader.upload(req.file.path, { folder: "services" });
+    const result = await cloudinary.uploader.upload(req.file.path, {
+      folder: "services",
+    });
 
     const newService = new plumbingServiceSchema({
       category,
@@ -32,6 +38,22 @@ export const addService = async (req, res) => {
     });
 
     const savedService = await newService.save();
+
+    const serviceSummary = {
+      _id: savedService._id,
+      serviceName: savedService.serviceName,
+      category: savedService.category,
+      amount: savedService.amount,
+      image: savedService.image,
+      status: savedService.status,
+      dateAdded: savedService.dateAdded,
+    };
+
+    await User.findByIdAndUpdate(
+      req.user._id,
+      { $push: { "serviceProviderInfo.services": serviceSummary } },
+      { new: true },
+    );
     res.status(201).json({ success: true, service: savedService });
   } catch (err) {
     console.error(err);
@@ -49,24 +71,26 @@ export const getMyServices = async (req, res) => {
     res.json({ success: true, services });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: "Failed to fetch services" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch services" });
   }
 };
 
-
 export const getProviderBookings = async (req, res) => {
   try {
-    const providerName = req.user.name; 
+    const providerName = req.user.name;
     const bookings = await Booking.find({ providerName })
-      .populate("customer", "name email phone") 
+      .populate("customer", "name email phone")
       .sort({ createdAt: -1 });
     res.status(200).json({ success: true, bookings });
   } catch (error) {
     console.error("Fetch provider bookings error:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch bookings", error });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch bookings", error });
   }
 };
-
 
 export const getCustomerDetails = async (req, res) => {
   try {
@@ -75,14 +99,18 @@ export const getCustomerDetails = async (req, res) => {
     // Fetch customer from Users collection
     const customer = await User.findById(customerId);
     if (!customer) {
-      return res.status(404).json({ success: false, message: "Customer not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Customer not found" });
     }
 
     let phone = customer.phone || "N/A";
 
     // If no phone in user model, try to get from latest booking
     if (phone === "N/A") {
-      const latestBooking = await Booking.findOne({ customer: customerId }).sort({ createdAt: -1 });
+      const latestBooking = await Booking.findOne({
+        customer: customerId,
+      }).sort({ createdAt: -1 });
       if (latestBooking?.phone) {
         phone = latestBooking.phone;
       }
@@ -101,24 +129,26 @@ export const getCustomerDetails = async (req, res) => {
   }
 };
 
-
 export const getServiceDetails = async (req, res) => {
   try {
     const { serviceId } = req.params;
     const service = await plumbingServiceSchema.findById(serviceId);
 
     if (!service) {
-      return res.status(404).json({ success: false, message: "Service not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Service not found" });
     }
 
     // Get service provider details from User collection
-    const serviceProvider = await User.findById(service.serviceProvider)
-      .select('name email phone address bio');
+    const serviceProvider = await User.findById(service.serviceProvider).select(
+      "name email phone address bio",
+    );
 
     // Create response with both service and provider details
     const responseData = {
       service: service,
-      serviceProvider: serviceProvider || null
+      serviceProvider: serviceProvider || null,
     };
 
     res.status(200).json({ success: true, data: responseData });
@@ -130,26 +160,35 @@ export const getServiceDetails = async (req, res) => {
 
 // Delete a service
 export const deleteService = async (req, res) => {
-    try {
-      const { id } = req.params;
-  
-      const service = await plumbingServiceSchema.findById(id);
-      if (!service) {
-        return res.status(404).json({ success: false, message: "Service not found" });
-      }
-  
-      if (!service.serviceProvider.equals(req.user._id)) {
-        return res.status(403).json({ success: false, message: "Not authorized" });
-      }
-  
-      await service.deleteOne(); 
-      res.json({ success: true, message: "Service deleted successfully", serviceId: id });
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ success: false, message: "Failed to delete service" });
+  try {
+    const { id } = req.params;
+
+    const service = await plumbingServiceSchema.findById(id);
+    if (!service) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Service not found" });
     }
-  };
-  
+
+    if (!service.serviceProvider.equals(req.user._id)) {
+      return res
+        .status(403)
+        .json({ success: false, message: "Not authorized" });
+    }
+
+    await service.deleteOne();
+    res.json({
+      success: true,
+      message: "Service deleted successfully",
+      serviceId: id,
+    });
+  } catch (err) {
+    console.error(err);
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to delete service" });
+  }
+};
 
 // Edit a service
 export const editService = async (req, res) => {
@@ -159,11 +198,15 @@ export const editService = async (req, res) => {
 
     const service = await plumbingServiceSchema.findById(id);
     if (!service) {
-      return res.status(404).json({ success: false, message: "Service not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Service not found" });
     }
 
     if (!service.serviceProvider.equals(req.user._id)) {
-      return res.status(403).json({ success: false, message: "Not authorized" });
+      return res
+        .status(403)
+        .json({ success: false, message: "Not authorized" });
     }
 
     // Update fields
@@ -174,7 +217,9 @@ export const editService = async (req, res) => {
 
     // Update image if a new file is uploaded
     if (req.file) {
-      const result = await cloudinary.uploader.upload(req.file.path, { folder: "services" });
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "services",
+      });
       service.image = result.secure_url;
     }
 
@@ -182,26 +227,37 @@ export const editService = async (req, res) => {
     res.json({ success: true, service: updatedService });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: "Failed to update service" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to update service" });
   }
 };
-
 
 export const updateStatus = async (req, res) => {
   try {
     // Authorization: only the service provider who owns the booking or an admin can change status
-    if (!req.user) return res.status(401).json({ success: false, message: "Not authenticated" });
+    if (!req.user)
+      return res
+        .status(401)
+        .json({ success: false, message: "Not authenticated" });
 
     const { status } = req.body;
     const booking = await Booking.findById(req.params.id);
-    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+    if (!booking)
+      return res
+        .status(404)
+        .json({ success: false, message: "Booking not found" });
 
     const isProvider = booking.providerName === req.user.name;
     const isAdmin = req.user.role === "admin";
-    const isCustomer = booking.customer?.toString() === req.user._id?.toString();
+    const isCustomer =
+      booking.customer?.toString() === req.user._id?.toString();
 
     if (!isProvider && !isAdmin && !isCustomer) {
-      return res.status(403).json({ success: false, message: "Not authorized to update booking status" });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to update booking status",
+      });
     }
 
     booking.status = status;
@@ -211,7 +267,6 @@ export const updateStatus = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
-
 
 export const updateProfile = async (req, res) => {
   try {

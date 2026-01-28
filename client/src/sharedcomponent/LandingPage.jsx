@@ -1,262 +1,834 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import LoginSignUp from "./LoginSignUp";
 import AnimatedCounter from "./AnimatedCounter";
 import LearnMore from "./LearnMore";
+import { ShareContext } from "../sharedcontext/SharedContext";
+import axios from "axios";
+import { toast } from "react-toastify";
 
 const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState("Sign Up");
   const [showLearnMore, setShowLearnMore] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("All");
+  const { backendUrl } = useContext(ShareContext);
+  const [categories, setCategories] = useState([]);
+  const [serviceImages, setServicesImages] = useState([]);
+  const [showProviderModal, setShowProviderModal] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState(null);
+  const [loadingProvider, setLoadingProvider] = useState(false);
 
-  // Service images for the right column
-  const serviceImages = [
-    {
-      url: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=400&h=300&fit=crop",
-      title: "Home Cleaning",
-    },
-    {
-      url: "https://i.pinimg.com/736x/b5/bd/36/b5bd3645659070d20d9aa549d7d301b2.jpg",
-      title: "Plumbing",
-    },
-    {
-      url: "https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=400&h=300&fit=crop",
-      title: "Electrical",
-    },
-    {
-      url: "https://images.unsplash.com/photo-1560066984-138dadb4c035?w=400&h=300&fit=crop",
-      title: "Beauty Services",
-    },
-  ];
+  // fetch categories from backend
+  const fetchCategories = async () => {
+    try {
+      const { data } = await axios.get(
+        `${backendUrl}/api/landingpage/categories`,
+      );
+      if (data.success) {
+        setCategories(data.data);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
-  return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-white overflow-hidden">
-      {/* Left Column - Hero Section */}
-      <div className="flex-1 flex flex-col justify-center items-start p-8 lg:p-12 xl:p-16 bg-linear-to-br from-slate-900 via-blue-900 to-purple-900 relative overflow-hidden">
-        {/* Animated Background Elements */}
-        <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-1/4 -left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-float-slow"></div>
-          <div className="absolute bottom-1/4 -right-10 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl animate-float"></div>
-          <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl animate-pulse"></div>
-        </div>
+  // fetch services
+  const fetchServices = async () => {
+    try {
+      const { data } = await axios.get(
+        `${backendUrl}/api/landingpage/services`,
+      );
 
-        {/* Grid Pattern Overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-size-[64px_64px] mask-[radial-gradient(ellipse_80%_50%_at_50%_50%,black,transparent)]"></div>
+      if (data.success) {
+        setServicesImages(data.data);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
-        <div className="relative z-10 max-w-lg -mt-8 lg:-mt-122">
-          {/* Badge */}
-          <div className="inline-flex items-center  max-md:mt-10 gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 mb-8 animate-fade-in">
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-            <span className="text-sm text-white/80 font-medium">
-              Trusted by 10,000+ users
-            </span>
-          </div>
+  // Filter services based on selected category
+  const filteredServices =
+    selectedCategory === "All"
+      ? serviceImages
+      : serviceImages.filter(
+          (service) => service.category === selectedCategory,
+        );
 
-          <h1 className="text-4xl md:text-3xl lg:text-4xl font-bold mb-6 leading-tight animate-slide-up">
-            <span className="bg-linear-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent">
-              WorkLink Management System
-            </span>
-            <br />
-            <span className="bg-linear-to-r from-yellow-400 to-amber-400 bg-clip-text text-transparent">
-              Connect Services. Manage Workflows.
-            </span>
-          </h1>
+  const handleQuickView = async (serviceProviderId) => {
+    try {
+      const { data } = await axios.get(
+        `${backendUrl}/api/landingpage/serviceprovider/${serviceProviderId}`,
+      );
+      if (data.success) {
+        setSelectedProvider(data.data);
+        setShowProviderModal(true);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
-          <p
-            className="text-lg text-gray-300 mb-8 leading-relaxed animate-slide-up"
-            style={{ animationDelay: "200ms" }}
-          >
-            The all-in-one platform connecting customers with trusted local
-            service providers. Whether you need a service or want to grow your
-            business, we make it simple.
-          </p>
+  useEffect(() => {
+    fetchCategories();
+    fetchServices();
+  }, []);
 
-          {/* CTA Buttons */}
-          <div
-            className="flex flex-col sm:flex-row gap-4 mb-8 animate-slide-up"
-            style={{ animationDelay: "400ms" }}
-          >
+  // view of service provider modal
+  const ProviderDetailsModal = () => {
+    if (!selectedProvider) return null;
+
+    const provider = selectedProvider;
+    const info = provider.serviceProviderInfo || {};
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+          {/* Modal Header */}
+          <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-center">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {provider.name}
+              </h2>
+              <p className="text-gray-600 mt-1">{provider.email}</p>
+            </div>
             <button
               onClick={() => {
-                setAuthMode("Sign Up");
-                setShowAuthModal(true);
+                setShowProviderModal(false);
+                setSelectedProvider(null);
               }}
-              className="group relative bg-linear-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-white font-semibold py-4 px-8 rounded-xl text-lg transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-2xl"
+              className="text-gray-400 hover:text-gray-600"
             >
-              <div className="absolute inset-0 bg-white/20 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <span className="relative">Get Started Free</span>
-            </button>
-
-            <button
-              onClick={() => setShowLearnMore(true)}
-              className="group border border-white/30 hover:border-white/50 text-white font-medium py-4 px-8 rounded-xl text-lg transition-all duration-300 backdrop-blur-sm hover:bg-white/10"
-            >
-              Learn More
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
             </button>
           </div>
 
-          {/* Bottom CTA */}
-          <div className="flex justify-start mb-5">
-            <p className="text-gray-300  text-lg ">
-              Have an account?{" "}
-              <span
+          {/* Modal Content */}
+          <div className="p-6">
+            {/* Provider Profile */}
+            <div className="flex flex-col md:flex-row gap-8">
+              {/* Left Column - Profile */}
+              <div className="md:w-1/3">
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <div className="text-center">
+                    <img
+                      src={provider.image}
+                      alt={provider.name}
+                      className="w-32 h-32 rounded-full mx-auto object-cover border-4 border-white shadow"
+                    />
+                    <h3 className="text-xl font-bold mt-4">{provider.name}</h3>
+                    <div className="mt-2">
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-medium ${
+                          info.isVerified
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {info.isVerified
+                          ? "✓ Verified"
+                          : "Pending Verification"}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Contact Info */}
+                  <div className="mt-6 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <svg
+                        className="w-5 h-5 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                        />
+                      </svg>
+                      <span className="text-gray-700">{provider.phone}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <svg
+                        className="w-5 h-5 text-gray-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                        />
+                      </svg>
+                      <span className="text-gray-700">{provider.email}</span>
+                    </div>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="mt-6 grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 bg-white rounded-lg border">
+                      <div className="text-2xl font-bold text-gray-900">
+                        {info.completedJobs || 0}
+                      </div>
+                      <div className="text-sm text-gray-600">Jobs Done</div>
+                    </div>
+                    <div className="text-center p-3 bg-white rounded-lg border">
+                      <div className="text-2xl font-bold text-gray-900">
+                        {info.rating || 0}
+                      </div>
+                      <div className="text-sm text-gray-600">Rating</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column - Details */}
+              <div className="md:w-2/3">
+                {/* Verification Status */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-3">
+                    Verification Status
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-700">ID Verification</span>
+                      <span
+                        className={`font-medium ${
+                          info.idVerification?.status === "verified"
+                            ? "text-green-600"
+                            : "text-yellow-600"
+                        }`}
+                      >
+                        {info.idVerification?.status || "Not submitted"}
+                      </span>
+                    </div>
+                    {info.idVerification?.submittedAt && (
+                      <div className="text-sm text-gray-500">
+                        Submitted:{" "}
+                        {new Date(
+                          info.idVerification.submittedAt,
+                        ).toLocaleDateString()}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Services */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-3">
+                    Services Offered
+                  </h3>
+                  {info.services && info.services.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {info.services
+                        .filter((service) => service.serviceName) 
+                        .map((service, index) => (
+                          <span
+                            key={service._id || index}
+                            className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm"
+                          >
+                            {service.serviceName}
+                          </span>
+                        ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500">No services listed yet</p>
+                  )}
+                </div>
+
+                {/* About */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-3">
+                    About
+                  </h3>
+                  <p className="text-gray-700">
+                    Member since{" "}
+                    {new Date(provider.createdAt).toLocaleDateString()}
+                  </p>
+                  <p className="text-gray-700 mt-2">
+                    Status:{" "}
+                    <span className="font-medium capitalize">
+                      {provider.status}
+                    </span>
+                  </p>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-4 pt-6 border-t">
+                  <button
+                    onClick={() => {
+                      setAuthMode("Sign Up");
+                      setShowAuthModal(true);
+                      setShowProviderModal(false);
+                    }}
+                    className="flex-1 bg-gray-900 hover:bg-gray-800 text-white font-medium py-3 rounded-lg transition-colors"
+                  >
+                    Book This Provider
+                  </button>
+                  <button
+                    onClick={() => setShowProviderModal(false)}
+                    className="flex-1 border border-gray-300 hover:border-gray-400 text-gray-700 font-medium py-3 rounded-lg transition-colors"
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-white">
+      {/* Top Navigation Bar */}
+      <div className="sticky top-0 z-50 bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center mr-2">
+                  <span className="text-white font-bold">W</span>
+                </div>
+                <div className="text-2xl font-bold text-gray-900">WorkLink</div>
+              </div>
+            </div>
+
+            {/* Navigation Links */}
+            <div className="hidden md:flex items-center space-x-8">
+              <a
+                href="#categories"
+                className="text-gray-700 hover:text-gray-900 font-medium"
+              >
+                Categories
+              </a>
+              <a
+                href="#services"
+                className="text-gray-700 hover:text-gray-900 font-medium"
+              >
+                Services
+              </a>
+              <a
+                href="#providers"
+                className="text-gray-700 hover:text-gray-900 font-medium"
+              >
+                Providers
+              </a>
+              <button
+                onClick={() => setShowLearnMore(true)}
+                className="text-gray-700 hover:text-gray-900 font-medium"
+              >
+                How It Works
+              </button>
+            </div>
+
+            {/* Get Started Button in Navbar */}
+            <div className="flex items-center gap-4">
+              <button
                 onClick={() => {
                   setAuthMode("Login");
                   setShowAuthModal(true);
                 }}
-                className="text-blue-600 hover:text-blue-700 ml-2 cursor-pointer font-semibold transition-all duration-300 hover:underline underline-offset-4"
+                className="hidden sm:block text-gray-700 hover:text-gray-900 font-medium px-4 py-2 rounded-lg hover:bg-gray-100"
               >
-                Sign in
-              </span>
-            </p>
-          </div>
-
-          {/* Quick Stats */}
-          <div
-            className="flex items-center gap-6 text-sm text-gray-400 animate-fade-in"
-            style={{ animationDelay: "600ms" }}
-          >
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-1 bg-green-400 rounded-full"></div>
-              No credit card required
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-1 h-1 bg-blue-400 rounded-full"></div>
-              Set up in 5 minutes
+                Sign In
+              </button>
+              <button
+                onClick={() => {
+                  setAuthMode("Sign Up");
+                  setShowAuthModal(true);
+                }}
+                className="bg-gray-900 hover:bg-gray-800 text-white font-semibold px-6 py-2.5 rounded-lg transition-colors"
+              >
+                Get Started Free
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Right Column - Services & Features */}
-      <div className="flex-1 flex flex-col justify-center items-center p-8 lg:p-12 bg-linear-to-br from-slate-50 to-blue-50/30">
-        <div className="max-w-md w-full">
-          <h2 className="text-3xl lg:text-4xl font-bold mb-8 text-gray-900 text-center animate-fade-in">
-            Popular{" "}
-            <span className="bg-linear-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-              Services
-            </span>
-          </h2>
+      {/* Hero Banner */}
+      <div className="bg-gray-900 text-white py-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center">
+            <div className="inline-block mb-6 px-4 py-2 bg-gray-800 rounded-full border border-gray-700">
+              <span className="text-sm font-medium">
+                ✨ Trusted by 10+ professionals
+              </span>
+            </div>
 
-          {/* Service Images Grid */}
-          <div className="grid grid-cols-2 gap-4 mb-12">
-            {serviceImages.map((service, index) => (
-              <div
-                key={index}
-                className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 transform hover:scale-105 cursor-pointer"
+            <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-8 leading-tight">
+              Find Trusted{" "}
+              <span className="text-white">
+                Home Mantainance Service Providers
+              </span>
+            </h1>
+
+            <p className="text-lg text-gray-300 max-w-3xl mx-auto mb-10 leading-relaxed">
+              Connect with verified professionals for all your needs. Browse
+              categories, compare prices, and book quality services with
+              confidence.
+            </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <button
+                onClick={() => {
+                  setAuthMode("Sign Up");
+                  setShowAuthModal(true);
+                }}
+                className="bg-gray-800 hover:bg-gray-700 text-white font-bold text-lg px-8 py-4 rounded-lg transition-colors flex items-center gap-2"
               >
-                <div className="aspect-square overflow-hidden">
-                  <img
-                    src={service.url}
-                    alt={service.title}
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                <span>Get Started Free</span>
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M13 7l5 5m0 0l-5 5m5-5H6"
                   />
-                </div>
-                <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent opacity-80 group-hover:opacity-60 transition-all duration-500 rounded-2xl"></div>
-                <div className="absolute bottom-4 left-4 right-4">
-                  <h3 className="text-white font-semibold text-lg drop-shadow-2xl transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                    {service.title}
-                  </h3>
-                  <div className="w-0 group-hover:w-8 h-0.5 bg-yellow-400 mt-2 transition-all duration-300"></div>
-                </div>
-              </div>
-            ))}
-          </div>
+                </svg>
+              </button>
 
-          {/* Features List */}
-          <div className="space-y-4 mb-12">
-            <h3 className="text-xl font-semibold text-gray-900 mb-6 text-center">
-              Why Choose Us
-            </h3>
-            {[
-              {
-                icon: "⚡",
-                text: "Instant booking & real-time availability",
-                delay: "100",
-              },
-              {
-                icon: "📊",
-                text: "Smart business management tools",
-                delay: "200",
-              },
-              {
-                icon: "💰",
-                text: "Secure payments & financial tracking",
-                delay: "300",
-              },
-              {
-                icon: "🛟",
-                text: "24/7 dedicated customer support",
-                delay: "400",
-              },
-            ].map((item, index) => (
-              <div
-                key={index}
-                className="flex items-center space-x-4 p-4 rounded-xl bg-white/50 backdrop-blur-sm border border-white/50 hover:bg-white/80 hover:border-white/80 transition-all duration-300 transform hover:translate-x-2 group cursor-pointer"
+              <button
+                onClick={() => setShowLearnMore(true)}
+                className="bg-white text-gray-900 font-bold text-lg px-8 py-4 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-2"
               >
-                <div className="text-2xl group-hover:scale-110 transition-transform duration-300">
-                  {item.icon}
-                </div>
-                <span className="text-gray-700 font-medium">{item.text}</span>
-              </div>
-            ))}
+                <span>Learn More</span>
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* Stats Section */}
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-8 border border-white/50 shadow-lg">
-            <div className="grid grid-cols-2 gap-6 text-center">
-              <div
-                className="animate-count-up"
-                style={{ animationDelay: "100ms" }}
-              >
-                <AnimatedCounter
-                  target={500}
-                  suffix="+"
-                  duration={2000}
-                  className="text-2xl lg:text-3xl font-bold text-gray-900"
-                />
-                <div className="text-sm text-gray-600 mt-2 font-medium">
-                  Services Available
+          <div className="mt-16 bg-gray-800 rounded-lg p-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              <div className="text-center">
+                <div className="text-3xl lg:text-4xl font-bold mb-2 text-white">
+                  <AnimatedCounter target={50} suffix="+" duration={2000} />
                 </div>
+                <div className="text-sm text-gray-300">Services Available</div>
               </div>
-              <div
-                className="animate-count-up"
-                style={{ animationDelay: "300ms" }}
-              >
-                <AnimatedCounter
-                  target={10000}
-                  suffix="+"
-                  duration={2000}
-                  className="text-2xl lg:text-3xl font-bold text-gray-900"
-                />
-                <div className="text-sm text-gray-600 mt-2 font-medium">
-                  Happy Customers
+              <div className="text-center">
+                <div className="text-3xl lg:text-4xl font-bold mb-2 text-white">
+                  <AnimatedCounter target={20} suffix="+" duration={2000} />
                 </div>
+                <div className="text-sm text-gray-300">Happy Customers</div>
               </div>
-              <div
-                className="animate-count-up"
-                style={{ animationDelay: "500ms" }}
-              >
-                <AnimatedCounter
-                  target={98}
-                  suffix="%"
-                  duration={2000}
-                  className="text-2xl lg:text-3xl font-bold text-gray-900"
-                />
-                <div className="text-sm text-gray-600 mt-2 font-medium">
-                  Satisfaction Rate
+              <div className="text-center">
+                <div className="text-3xl lg:text-4xl font-bold mb-2 text-white">
+                  <AnimatedCounter target={98} suffix="%" duration={2000} />
                 </div>
+                <div className="text-sm text-gray-300">Satisfaction Rate</div>
               </div>
-              <div
-                className="animate-count-up"
-                style={{ animationDelay: "700ms" }}
-              >
-                <div className="text-2xl lg:text-3xl font-bold text-gray-900">
+              <div className="text-center">
+                <div className="text-3xl lg:text-4xl font-bold mb-2 text-white">
                   24/7
                 </div>
-                <div className="text-sm text-gray-600 mt-2 font-medium">
-                  Support Available.
+                <div className="text-sm text-gray-300">Support Available</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content - Sidebar Layout */}
+      <div
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
+        id="categories"
+      >
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Left Sidebar - Categories */}
+          <div className="lg:w-1/3">
+            <div className="sticky top-24 bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+              <h2 className="text-xl font-bold text-gray-900 mb-6">
+                Browse Categories
+              </h2>
+
+              {/* Categories mapping */}
+              <div className="space-y-2">
+                {categories.map((category) => (
+                  <button
+                    key={category._id}
+                    onClick={() => setSelectedCategory(category.name)}
+                    className={`w-full flex items-center gap-4 p-4 rounded-lg text-left ${
+                      selectedCategory === category.name
+                        ? "bg-gray-100 border border-gray-300"
+                        : "hover:bg-gray-50"
+                    }`}
+                  >
+                    {/* Category Image - fixed to use img tag */}
+                    {category.image ? (
+                      <img
+                        src={category.image}
+                        alt={category.name}
+                        className="w-10 h-10 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div
+                        className={`w-10 h-10 flex items-center justify-center rounded-lg ${
+                          selectedCategory === category.name
+                            ? "bg-gray-900 text-white"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
+                        <span className="font-bold">
+                          {category.name?.charAt(0)}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex-1 min-w-0">
+                      <h3
+                        className={`font-medium ${
+                          selectedCategory === category.name
+                            ? "text-gray-900"
+                            : "text-gray-700"
+                        }`}
+                      >
+                        {category.name}
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {category.description}
+                      </p>
+                    </div>
+
+                    {selectedCategory === category.name && (
+                      <div className="text-gray-900">
+                        <svg
+                          className="w-4 h-4"
+                          fill="currentColor"
+                          viewBox="0 0 20 20"
+                        >
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+
+              {/* Category Stats */}
+              <div className="mt-8 pt-6 border-t border-gray-200 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">
+                    Selected Category:
+                  </span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {selectedCategory}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600">
+                    Services Available:
+                  </span>
+                  <span className="text-sm font-medium text-gray-900 px-2 py-1 bg-gray-100 rounded">
+                    {filteredServices.length}
+                  </span>
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Right Main Content - Services */}
+          <div className="lg:w-3/4" id="services">
+            {/* Selected Category Header */}
+            <div className="mb-10">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
+                <div>
+                  <div className="inline-block px-3 py-1 rounded-full bg-gray-100 text-gray-700 text-sm font-medium mb-3">
+                    {selectedCategory === "All"
+                      ? "All Categories"
+                      : selectedCategory}
+                  </div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                    {selectedCategory === "All"
+                      ? "Discover All Services"
+                      : selectedCategory}
+                  </h1>
+                  <p className="text-gray-600">
+                    {selectedCategory === "All"
+                      ? "Browse all professional services from verified providers"
+                      : `Top-rated ${selectedCategory.toLowerCase()} professionals ready to help`}
+                  </p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="hidden sm:block text-sm text-gray-500 px-3 py-1 bg-gray-100 rounded">
+                    <span className="font-medium text-gray-900">
+                      {filteredServices.length}
+                    </span>{" "}
+                    services
+                  </div>
+                  <button
+                    onClick={() => {
+                      setAuthMode("Sign Up");
+                      setShowAuthModal(true);
+                    }}
+                    className="bg-gray-900 hover:bg-gray-800 text-white font-medium px-6 py-3 rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                    Post a Request
+                  </button>
+                </div>
+              </div>
+
+              {/* Filter Bar */}
+              <div className="flex flex-wrap gap-2 mb-8">
+                {["All", "Popular", "Available Now"].map((filter) => (
+                  <button
+                    key={filter}
+                    className={`px-3 py-2 font-medium rounded-lg border ${
+                      filter === "All"
+                        ? "bg-gray-900 text-white border-gray-900"
+                        : "bg-white text-gray-700 border-gray-300 hover:border-gray-400"
+                    }`}
+                  >
+                    {filter}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Services Grid */}
+            {filteredServices.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredServices.map((service, index) => (
+                  <div
+                    key={index}
+                    className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 overflow-hidden transition-colors"
+                  >
+                    <div
+                      onClick={() => handleQuickView(service.serviceProvider)}
+                      className="relative overflow-hidden h-48"
+                    >
+                      <img
+                        src={service.image}
+                        alt={service.serviceName}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute top-3 right-3">
+                        <span className="bg-white text-gray-900 text-xs font-medium px-2 py-1 rounded">
+                          {service.category.charAt(0).toUpperCase() +
+                            service.category.slice(1)}
+                        </span>
+                      </div>
+                      <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-black/70 text-white px-2 py-1 rounded text-sm">
+                        <span className="font-bold">★</span>
+                        <span className="font-medium">
+                          {service.rating || "4.9"}
+                        </span>
+                        <span className="text-gray-300 text-xs">
+                          ({service.reviews || "400"})
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="p-5">
+                      <div className="flex items-start justify-between mb-3">
+                        <h3 className="text-lg font-bold text-gray-900">
+                          {service.serviceName}
+                        </h3>
+                        <div className="flex flex-col items-end">
+                          <span className="text-xl font-bold text-gray-900">
+                            {service.amount}
+                          </span>
+                          <span className="text-xs text-gray-500">
+                            starting price
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* <div className="flex flex-wrap gap-1 mb-4">
+                        {service.tags.slice(0, 2).map((tag, i) => (
+                          <span
+                            key={i}
+                            className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </div> */}
+
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                        <button
+                          onClick={() =>
+                            handleQuickView(service.serviceProvider)
+                          }
+                          className="text-gray-600 hover:text-gray-900 font-medium text-sm"
+                        >
+                          Quick View
+                        </button>
+                        <button
+                          onClick={() => {
+                            setAuthMode("Sign Up");
+                            setShowAuthModal(true);
+                          }}
+                          className="bg-gray-900 hover:bg-gray-800 text-white font-medium px-4 py-2 rounded transition-colors"
+                        >
+                          Book Now
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 bg-gray-50 rounded-lg">
+                <div className="text-6xl mb-4 text-gray-300">🔍</div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                  No services found
+                </h3>
+                <p className="text-gray-600 mb-6">
+                  Try selecting a different category
+                </p>
+                <button
+                  onClick={() => setSelectedCategory("All")}
+                  className="bg-gray-900 hover:bg-gray-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+                >
+                  Browse All Services
+                </button>
+              </div>
+            )}
+
+            {/* Features Section */}
+            <div className="mt-16">
+              <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+                Why Choose WorkLink
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {[
+                  {
+                    icon: "🔒",
+                    title: "Verified Providers",
+                    description:
+                      "All service providers are background-checked and verified",
+                  },
+                  {
+                    icon: "💳",
+                    title: "Secure Payments",
+                    description:
+                      "Protected transactions with money-back guarantee",
+                  },
+                  {
+                    icon: "⭐",
+                    title: "Quality Guaranteed",
+                    description: "5-star service quality with customer reviews",
+                  },
+                ].map((feature, index) => (
+                  <div
+                    key={index}
+                    className="bg-white p-6 rounded-lg border border-gray-200"
+                  >
+                    <div className="text-2xl mb-4">{feature.icon}</div>
+                    <h3 className="text-lg font-bold text-gray-900 mb-2">
+                      {feature.title}
+                    </h3>
+                    <p className="text-gray-600">{feature.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Footer */}
+      <div className="bg-gray-50 py-16 px-4 sm:px-6 lg:px-8 mt-12">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-gray-900 mb-6">
+            Ready to Find Your Perfect Service?
+          </h2>
+          <p className="text-lg text-gray-600 mb-8">
+            Join thousands of satisfied customers who found their trusted
+            service providers on WorkLink
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={() => {
+                setAuthMode("Sign Up");
+                setShowAuthModal(true);
+              }}
+              className="bg-gray-900 hover:bg-gray-800 text-white font-bold text-lg px-8 py-4 rounded-lg transition-colors"
+            >
+              Get Started Free
+            </button>
+            <button
+              onClick={() => setShowLearnMore(true)}
+              className="bg-white text-gray-900 font-bold text-lg px-8 py-4 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-colors"
+            >
+              Learn More
+            </button>
+          </div>
+
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-gray-500">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+              <span className="text-sm">No credit card required</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+              <span className="text-sm">Free trial</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+              <span className="text-sm">Cancel anytime</span>
             </div>
           </div>
         </div>
@@ -264,8 +836,8 @@ const LandingPage = () => {
 
       {/* Auth Modal */}
       {showAuthModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
-          <div className="m-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="m-4 w-full max-w-md">
             <LoginSignUp
               initialState={authMode}
               setShowAuthModal={setShowAuthModal}
@@ -273,6 +845,9 @@ const LandingPage = () => {
           </div>
         </div>
       )}
+
+      {/* Provider Details Modal */}
+      {showProviderModal && <ProviderDetailsModal />}
 
       {showLearnMore && (
         <LearnMore
