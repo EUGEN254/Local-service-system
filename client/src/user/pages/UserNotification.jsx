@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { FaCheckCircle, FaTrash, FaBell } from "react-icons/fa";
 import { toast } from "react-toastify";
 import { ShareContext } from "../../sharedcontext/SharedContext";
+import { useNotifications } from "../../hooks/useNotifications";
 
 const categories = ["All", "Booking", "Transaction"];
 
@@ -11,8 +12,10 @@ const UserNotification = () => {
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
 
+  const { user, backendUrl } = useContext(ShareContext);
+  
+  // Use the notifications hook directly
   const {
-    user,
     notificationUnreadCount,
     notifications,
     fetchNotifications,
@@ -21,7 +24,7 @@ const UserNotification = () => {
     deleteNotification,
     fetchNotificationUnreadCount,
     deleteAllNotifications,
-  } = useContext(ShareContext);
+  } = useNotifications(backendUrl);
 
   const currentUser = user;
 

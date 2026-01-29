@@ -11,7 +11,8 @@ import {
 } from "react-icons/fa";
 import { FiMessageCircle } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import * as serviceService from "../../services/serviceService";
+import { fetchLandingCategories } from "../../services/landingPageService";
 import { ShareContext } from "../../sharedcontext/SharedContext";
 
 const BrowseServices = () => {
@@ -33,46 +34,31 @@ const BrowseServices = () => {
     hasPrevPage: false,
   });
 
-  // Fetch services from API with pagination
+  // Fetch services from API with pagination (uses service layer)
   const fetchServices = async (page = 1, limit = pagination.limit) => {
     try {
       setLoading(true);
-      
-      // Build query parameters
-      const params = new URLSearchParams({
-        page: page,
-        limit: limit,
-      });
 
-      // Add filters if they exist
-      if (searchTerm) {
-        params.append("search", searchTerm);
-      }
-
-      if (selectedCategory !== "All") {
-        params.append("category", selectedCategory);
-      }
-
-      const { data } = await axios.get(
-        `${backendUrl}/api/customer/services?${params.toString()}`
+      const result = await serviceService.fetchPublicServices(
+        backendUrl,
+        page,
+        limit,
+        searchTerm,
+        selectedCategory
       );
-      
-      if (data.success) {
-        setServices(data.services || []);
-        setPagination({
-          currentPage: data.pagination?.currentPage || 1,
-          totalPages: data.pagination?.totalPages || 1,
-          totalServices: data.pagination?.totalServices || 0,
-          limit: data.pagination?.limit || limit,
-          hasNextPage: data.pagination?.hasNextPage || false,
-          hasPrevPage: data.pagination?.hasPrevPage || false,
-        });
-      } else {
-        console.error("Failed to fetch services:", data.message);
-        setServices([]);
-      }
+
+      setServices(result.services || []);
+      setPagination((prev) => ({
+        ...prev,
+        currentPage: result.pagination?.currentPage || 1,
+        totalPages: result.pagination?.totalPages || 1,
+        totalServices: result.pagination?.totalServices || 0,
+        limit: result.pagination?.limit || limit,
+        hasNextPage: result.pagination?.hasNextPage || false,
+        hasPrevPage: result.pagination?.hasPrevPage || false,
+      }));
     } catch (err) {
-      console.error("Error fetching services:", err.message);
+      console.error("Error fetching services:", err);
       setServices([]);
     } finally {
       setLoading(false);
@@ -103,21 +89,17 @@ const BrowseServices = () => {
     }
   }, [pagination.currentPage, pagination.limit]);
 
-  // Fetch categories
+  // Fetch categories (uses landingPageService)
   useEffect(() => {
-    const fetchCategories = async () => {
+    const loadCategories = async () => {
       try {
-        const { data } = await axios.get(
-          `${backendUrl}/api/landingpage/categories`
-        );
-        if (data.success) {
-          setCategories(data.data);
-        }
+        const cats = await fetchLandingCategories(backendUrl);
+        setCategories(cats || []);
       } catch (error) {
-        console.error("Error fetching categories:", error.message);
+        console.error("Error fetching categories:", error);
       }
     };
-    fetchCategories();
+    loadCategories();
   }, []);
 
   // Pagination handlers

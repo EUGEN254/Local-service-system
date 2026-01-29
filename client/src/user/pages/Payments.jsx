@@ -11,8 +11,9 @@ import {
   FiArrowLeft,
 } from "react-icons/fi";
 import { FaStar } from "react-icons/fa";
-import axios from "axios";
 import { ShareContext } from "../../sharedcontext/SharedContext";
+import * as bookingService from "../../services/bookingService";
+import * as paymentService from "../../services/paymentService";
 import { formatDateForInput } from "../../utils/formatDateHelper.js";
 
 const Payments = () => {
@@ -61,47 +62,42 @@ const Payments = () => {
 
       if (!isExistingBooking) {
         setMessage("Creating booking record...");
-        const bookingRes = await axios.post(
-          `${backendUrl}/api/customer/create`,
-          {
-            serviceId: displayService._id || displayService.id,
-            serviceProvider: displayService.serviceProviderName,
-            serviceName: displayService.serviceName,
-            categoryName: displayService.category,
-            amount: displayService.amount,
-            image: displayService.image,
-            address: formData.address,
-            city: formData.city,
-            phone: formData.phone,
-            delivery_date: formData.delivery_date,
-            paymentMethod: "Mpesa",
-            is_paid: false,
-            status: "Pending",
-          },
-          { withCredentials: true },
-        );
-        bookingId = bookingRes.data.booking._id;
+        const bookingRes = await bookingService.createBooking(backendUrl, {
+          serviceId: displayService._id || displayService.id,
+          serviceProvider: displayService.serviceProviderName,
+          serviceName: displayService.serviceName,
+          categoryName: displayService.category,
+          amount: displayService.amount,
+          image: displayService.image,
+          address: formData.address,
+          city: formData.city,
+          phone: formData.phone,
+          delivery_date: formData.delivery_date,
+          paymentMethod: "Mpesa",
+          is_paid: false,
+          status: "Pending",
+        });
+        bookingId =
+          bookingRes.booking?._id || bookingRes.bookingId || bookingId;
       }
 
       setMessage("Sending M-Pesa request to your phone...");
-      console.log("Initiating M-Pesa payment for booking ID:", formData.phone);
-      const mpesaRes = await axios.post(
-        `${backendUrl}/api/mpesa/stkpush`,
-        {
-          amount: displayService.amount,
-          phone: formData.phone,
-          serviceId: displayService._id || displayService.id,
-          serviceName: displayService.serviceName,
-          bookingId,
-        },
-        { withCredentials: true },
-      );
+      const mpesaRes = await paymentService.initiateMpesa(backendUrl, {
+        amount: displayService.amount,
+        phone: formData.phone,
+        serviceId: displayService._id || displayService.id,
+        serviceName: displayService.serviceName,
+        bookingId,
+      });
 
-      if (!mpesaRes.data.success) {
-        throw new Error("Failed to initiate M-Pesa payment");
+      if (!mpesaRes.success) {
+        throw new Error(
+          mpesaRes.message || "Failed to initiate M-Pesa payment",
+        );
       }
 
-      const checkoutRequestId = mpesaRes.data.data?.CheckoutRequestID;
+      const checkoutRequestId =
+        mpesaRes.data?.checkoutRequestID || mpesaRes.checkoutRequestID;
       if (!checkoutRequestId) {
         throw new Error("Missing payment reference");
       }
@@ -117,38 +113,35 @@ const Payments = () => {
         if (!pollingActive) return;
 
         try {
-          const statusRes = await axios.get(
-            `${backendUrl}/api/mpesa/status/${checkoutRequestId}`,
+          const statusRes = await paymentService.checkMpesaStatus(
+            backendUrl,
+            checkoutRequestId,
           );
-          const status = statusRes.data.status;
+          const status =
+            statusRes.status ||
+            statusRes.data?.status ||
+            statusRes.data?.Status ||
+            null;
 
           if (status === "completed") {
             pollingActive = false;
             setMessage("Payment confirmed! Redirecting...");
             setError("");
 
-            await axios.put(
-              `${backendUrl}/api/customer/update-booking-status/${bookingId}`,
-              {
-                is_paid: true,
-                status: "Waiting for Work",
-              },
-              { withCredentials: true },
-            );
+            await bookingService.updateBookingStatus(backendUrl, bookingId, {
+              is_paid: true,
+              status: "Waiting for Work",
+            });
 
             setTimeout(() => navigate("/user/my-bookings"), 1500);
           } else if (status === "failed") {
             pollingActive = false;
             setMessage("");
             setError("Payment was not completed. Please try again.");
-            await axios.put(
-              `${backendUrl}/api/customer/update-booking-status/${bookingId}`,
-              {
-                is_paid: false,
-                status: "Payment Failed",
-              },
-              { withCredentials: true },
-            );
+            await bookingService.updateBookingStatus(backendUrl, bookingId, {
+              is_paid: false,
+              status: "Payment Failed",
+            });
             setLoading(false);
           } else if (attempts < maxAttempts) {
             attempts++;
@@ -157,18 +150,13 @@ const Payments = () => {
             pollingActive = false;
             setMessage("");
             setError("Payment timeout. Please check your phone or try again.");
-            await axios.put(
-              `${backendUrl}/api/customer/update-booking-status/${bookingId}`,
-              {
-                is_paid: false,
-                status: "Payment Failed",
-              },
-              { withCredentials: true },
-            );
+            await bookingService.updateBookingStatus(backendUrl, bookingId, {
+              is_paid: false,
+              status: "Payment Failed",
+            });
             setLoading(false);
           }
         } catch (err) {
-          console.error("Polling error:", err);
           pollingActive = false;
           setMessage("");
           setError("Error checking payment status");
@@ -193,26 +181,22 @@ const Payments = () => {
       setError("");
       setMessage("Creating booking...");
 
-      const bookingRes = await axios.post(
-        `${backendUrl}/api/customer/create`,
-        {
-          serviceId: displayService._id || displayService.id,
-          serviceProvider: displayService.serviceProviderName,
-          serviceName: displayService.serviceName,
-          categoryName: displayService.category,
-          amount: displayService.amount,
-          image: displayService.image,
-          address: formData.address,
-          city: formData.city,
-          phone: formData.phone,
-          delivery_date: formData.delivery_date,
-          paymentMethod: "Cash",
-          is_paid: false,
-        },
-        { withCredentials: true },
-      );
+      const bookingRes = await bookingService.createBooking(backendUrl, {
+        serviceId: displayService._id || displayService.id,
+        serviceProvider: displayService.serviceProviderName,
+        serviceName: displayService.serviceName,
+        categoryName: displayService.category,
+        amount: displayService.amount,
+        image: displayService.image,
+        address: formData.address,
+        city: formData.city,
+        phone: formData.phone,
+        delivery_date: formData.delivery_date,
+        paymentMethod: "Cash",
+        is_paid: false,
+      });
 
-      if (bookingRes.data.success) {
+      if (bookingRes.success) {
         setMessage("Booking confirmed! Redirecting...");
         setTimeout(() => navigate("/user/my-bookings"), 1500);
       } else {

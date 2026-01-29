@@ -16,7 +16,7 @@ import {
   CartesianGrid
 } from "recharts";
 import { ShareContext } from "../../sharedcontext/SharedContext";
-import axios from "axios";
+import * as bookingService from "../../services/bookingService";
 import { 
   HiDownload, 
   HiCalendar, 
@@ -41,10 +41,10 @@ const Analytics = () => {
     const fetchBookings = async () => {
       try {
         setLoading(true);
-        const { data } = await axios.get(
-          `${backendUrl}/api/serviceprovider/mybookings`,
-          { withCredentials: true }
-        );
+        const data = await bookingService.fetchProviderBookings(backendUrl, {
+          page: 1,
+          limit: 1000
+        });
         if (data.success) {
           setBookings(data.bookings);
           computeAnalytics(data.bookings, timeRange);

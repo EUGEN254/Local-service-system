@@ -11,6 +11,7 @@ import {
   Cell,
 } from "recharts";
 import { ShareContext } from "../../sharedcontext/SharedContext";
+import * as bookingService from "../../services/bookingService";
 import axios from "axios";
 import {
   HiClipboardList,
@@ -57,15 +58,15 @@ const Dashboard = () => {
 
   const buttonRefs = useRef({});
 
-  // Fetch bookings
+  // Fetch bookings using fetchProviderBookings for service providers
   useEffect(() => {
     const fetchBookings = async () => {
       try {
         setLoading(true);
-        const { data } = await axios.get(
-          `${backendUrl}/api/serviceprovider/mybookings`,
-          { withCredentials: true }
-        );
+        const data = await bookingService.fetchProviderBookings(backendUrl, {
+          page: 1,
+          limit: 1000
+        });
         if (data.success) {
           setBookings(data.bookings || []);
           const totalBookings = data.bookings?.length || 0;

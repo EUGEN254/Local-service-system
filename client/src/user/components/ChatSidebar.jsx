@@ -10,7 +10,7 @@ const ChatSidebar = ({
   onRemoveService,
   onClearAll 
 }) => {
-  const { user, socket, onlineUsers, unreadBySender, markAsRead } = useContext(ShareContext);
+  const { user, socket, onlineUsers, unreadBySender, markChatAsRead } = useContext(ShareContext);
   const [showConfirmClear, setShowConfirmClear] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
@@ -66,7 +66,7 @@ const ChatSidebar = ({
     }
 
     // ✅ Mark messages as read when selecting the user
-    markAsRead(serviceProvider._id);
+    markChatAsRead(serviceProvider._id);
   };
 
   const handleRemoveService = (e, serviceId) => {
@@ -77,7 +77,7 @@ const ChatSidebar = ({
     
     //Mark messages as read before removing the service
     if (serviceToRemove && serviceToRemove.serviceProvider) {
-      markAsRead(serviceToRemove.serviceProvider._id);
+      markChatAsRead(serviceToRemove.serviceProvider._id);
     }
     
     onRemoveService(serviceId);
@@ -89,7 +89,7 @@ const ChatSidebar = ({
       services.forEach(service => {
         const { serviceProvider } = service;
         if (serviceProvider && serviceProvider._id) {
-          markAsRead(serviceProvider._id);
+          markChatAsRead(serviceProvider._id);
         }
       });
       setShowConfirmClear(true);

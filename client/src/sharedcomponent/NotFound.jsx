@@ -8,7 +8,7 @@ const NotFound = () => {
       <p className="text-2xl text-gray-600 mb-6">Page Not Found</p>
       <Link
         to="/"
-        className="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-semibold py-2 px-4 rounded-lg transition"
+        className="bg-gray-400 hover:bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg transition"
       >
         Go Back Home
       </Link>

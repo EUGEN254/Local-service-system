@@ -4,29 +4,31 @@ import cors from "cors";
 import "dotenv/config";
 import http from "http";
 import cookieParser from "cookie-parser";
-import connectDb from "./configs/mongodb.js";
-import connectCloudinary from "./configs/cloudinary.js";
-import userRouter from "./routes/userRoutes.js";
-import serviceRouter from "./routes/serviceProviderRoute.js";
-import customerRouter from "./routes/customeRoutes.js";
-import mpesaRouter from "./routes/mpesaRoutes.js";
-import chatRouter from "./routes/chatRoutes.js";
-import Chat from "./models/Chat.js";
+import { connectDb, connectCloudinary } from "./src/config/index.js";
+import {
+  userRouter,
+  serviceRouter,
+  customerRouter,
+  mpesaRouter,
+  chatRouter,
+  adminRouter,
+  categoryRouter,
+  notificationRouter,
+  supportRouter,
+  landipageDetailsRouter,
+} from "./src/routes/index.js";
+import { Chat } from "./src/models/index.js";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
-import User from "./models/userSchema.js";
-import adminRouter from "./routes/adminRoutes.js";
-import categoryRouter from "./routes/categoryRoutes.js";
-import notificationRouter from "./routes/notificationRoutes.js";
-import supportRouter from "./routes/supportRoutes.js";
-import landipageDetailsRouter from "./routes/landipageDetails.js";
+import { User } from "./src/models/index.js";
+
+// Import from new src structure
+import { errorHandler } from "./src/middleware/index.js";
 
 // -------------------- EXPRESS + HTTP --------------------
 const app = express();
 const server = http.createServer(app); // needed for Socket.IO
 const port = process.env.PORT || 4000;
-
-
 
 // -------------------- MIDDLEWARE --------------------
 connectCloudinary();
@@ -43,7 +45,7 @@ app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 // Test route
 app.use("/api/status", (req, res) =>
-  res.send("😁 SERVER IS LIVE - Programmer Eugen")
+  res.send("😁 SERVER IS LIVE - Programmer Eugen"),
 );
 
 // -------------------- MONGODB --------------------
@@ -90,31 +92,36 @@ io.on("connection", (socket) => {
   // New socket connected: socket.id available on socket object (logging removed)
 
   // ---------------- JOIN USER ROOM (COMBINED FOR CHAT & NOTIFICATIONS) ----------------
-  socket.on("joinUserRoom", ({ userId, userName, userRole, roomProvider, serviceName, roomId }) => {
-    // Only allow the socket to join the user room if it matches the authenticated socket user
-    const authUserId = socket.user?._id?.toString();
-    const targetId = userId?.toString();
+  socket.on(
+    "joinUserRoom",
+    ({ userId, userName, userRole, roomProvider, serviceName, roomId }) => {
+      // Only allow the socket to join the user room if it matches the authenticated socket user
+      const authUserId = socket.user?._id?.toString();
+      const targetId = userId?.toString();
 
-    if (!targetId || !authUserId || targetId !== authUserId) {
-      console.warn(`Socket ${socket.id} attempted to join user room for ${userId} (auth ${authUserId})`);
-      return; // don't allow impersonation
-    }
+      if (!targetId || !authUserId || targetId !== authUserId) {
+        console.warn(
+          `Socket ${socket.id} attempted to join user room for ${userId} (auth ${authUserId})`,
+        );
+        return; // don't allow impersonation
+      }
 
-    if (!connectedUsers[targetId]) connectedUsers[targetId] = new Set();
-    connectedUsers[targetId].add(socket.id);
+      if (!connectedUsers[targetId]) connectedUsers[targetId] = new Set();
+      connectedUsers[targetId].add(socket.id);
 
-    // Join user's personal room for notifications (using userId)
-    socket.join(targetId);
-    
-    // Also join chat room if provided
-    if (roomId) {
-      socket.join(roomId);
-    }
+      // Join user's personal room for notifications (using userId)
+      socket.join(targetId);
 
-    // User joined notification room (logging removed)
+      // Also join chat room if provided
+      if (roomId) {
+        socket.join(roomId);
+      }
 
-    io.emit("onlineUsers", Object.keys(connectedUsers));
-  });
+      // User joined notification room (logging removed)
+
+      io.emit("onlineUsers", Object.keys(connectedUsers));
+    },
+  );
 
   // ---------------- JOIN / LEAVE ROOMS ----------------
   socket.on("joinRoom", (roomId) => {
@@ -152,8 +159,11 @@ io.on("connection", (socket) => {
       io.to(roomId).emit("receiveMessage", message);
 
       try {
-        let chat = await Chat.findOne({ participants: { $all: [sender, receiver] } });
-        if (!chat) chat = new Chat({ participants: [sender, receiver], messages: [] });
+        let chat = await Chat.findOne({
+          participants: { $all: [sender, receiver] },
+        });
+        if (!chat)
+          chat = new Chat({ participants: [sender, receiver], messages: [] });
 
         // Prevent duplicates
         const exists = chat.messages.find((m) => m.messageId === messageId);
@@ -174,7 +184,7 @@ io.on("connection", (socket) => {
       } catch (err) {
         console.error("❌ Error saving message:", err.message);
       }
-    }
+    },
   );
 
   // ---------------- BOOKING EVENTS ----------------
@@ -182,16 +192,22 @@ io.on("connection", (socket) => {
     // Emit to the specific service provider
     if (bookingData.providerId) {
       io.to(bookingData.providerId.toString()).emit("newBooking", bookingData);
-    } 
+    }
   });
 
   socket.on("bookingStatusUpdate", (updateData) => {
     // Emit to both customer and provider
     if (updateData.customerId) {
-      io.to(updateData.customerId.toString()).emit("bookingStatusUpdate", updateData);
+      io.to(updateData.customerId.toString()).emit(
+        "bookingStatusUpdate",
+        updateData,
+      );
     }
     if (updateData.providerId) {
-      io.to(updateData.providerId.toString()).emit("bookingStatusUpdate", updateData);
+      io.to(updateData.providerId.toString()).emit(
+        "bookingStatusUpdate",
+        updateData,
+      );
     }
   });
 
@@ -218,8 +234,8 @@ app.use("/api/notifications", notificationRouter);
 app.use("/api/support", supportRouter);
 app.use("/api/landingpage", landipageDetailsRouter);
 
-
-
+// -------------------- GLOBAL ERROR HANDLER --------------------
+app.use(errorHandler);
 
 // -------------------- EXPORT IO FOR USE IN OTHER FILES --------------------
 export { io };
@@ -228,7 +244,6 @@ export { io };
 server.listen(port, () => {
   console.log(`🚀 Server started on port ${port}`);
 });
-
 
 // -------------------- EXPORT FOR VERCEL --------------------
 export default server;

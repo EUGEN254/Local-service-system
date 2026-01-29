@@ -1,8 +1,10 @@
 import React, { useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { assets } from "../../assets/assets";
-import axios from "axios";
 import { toast } from "react-toastify";
+import * as spServicesService from "../../services/spServicesService";
 import { ShareContext } from "../../sharedcontext/SharedContext";
+import { useServices } from "../../hooks/useServices";
+import { useCategories } from "../../hooks/index";
 import {
   FaChevronLeft,
   FaChevronRight,
@@ -27,19 +29,27 @@ import { HiOutlinePhotograph } from "react-icons/hi";
 const MyServices = () => {
   const {
     backendUrl,
-    services,
-    fetchServices,
     currSymbol,
-    addService,
-    removeService,
     verified,
     user,
-    categories,
-    fetchCategories,
     fetchCurrentUser,
+  } = useContext(ShareContext);
+
+  // Use service and category hooks directly
+  const {
+    services,
+    fetchServices,
+    addService,
+    removeService,
     pagination,
     setPagination,
-  } = useContext(ShareContext);
+  } = useServices(backendUrl);
+
+  const {
+    categories,
+    fetchCategories,
+  } = useCategories(backendUrl);
+
 
   const [form, setForm] = useState({
     category: "",
@@ -323,14 +333,7 @@ const MyServices = () => {
 
     setLoading(true);
     try {
-      const { data } = await axios.post(
-        `${backendUrl}/api/serviceprovider/add-service`,
-        formData,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "multipart/form-data" },
-        },
-      );
+      const data = await spServicesService.addService(backendUrl, formData);
 
       if (!data.success)
         throw new Error(data.message || "Failed to add service");
@@ -396,14 +399,7 @@ const MyServices = () => {
 
     setLoading(true);
     try {
-      const { data } = await axios.put(
-        `${backendUrl}/api/serviceprovider/edit/${editModal._id}`,
-        formData,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "multipart/form-data" },
-        },
-      );
+      const data = await spServicesService.updateService(backendUrl, editModal._id, formData);
 
       if (!data.success)
         throw new Error(data.message || "Failed to update service");
@@ -427,10 +423,7 @@ const MyServices = () => {
     if (!deleteModal.serviceId) return;
     setLoading(true);
     try {
-      const { data } = await axios.delete(
-        `${backendUrl}/api/serviceprovider/delete/${deleteModal.serviceId}`,
-        { withCredentials: true },
-      );
+      const data = await spServicesService.deleteService(backendUrl, deleteModal.serviceId);
       if (!data.success)
         throw new Error(data.message || "Failed to delete service");
       
@@ -513,14 +506,7 @@ const MyServices = () => {
       formData.append("backImage", formId.backImage);
       formData.append("idType", "national-id");
 
-      const { data } = await axios.post(
-        `${backendUrl}/api/user/submit-id-verification`,
-        formData,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "multipart/form-data" },
-        },
-      );
+      const data = await spServicesService.submitIdVerification(backendUrl, formData);
 
       if (!data.success)
         throw new Error(data.message || "ID verification failed");

@@ -2,9 +2,9 @@ import React, { useContext, useRef, useState } from "react";
 import { FaHome } from "react-icons/fa";
 import { FiMail, FiLock, FiArrowLeft } from "react-icons/fi";
 import { NavLink, useNavigate } from "react-router-dom";
-import axios from "axios";
 import { toast } from "react-toastify";
 import { ShareContext } from "../../sharedcontext/SharedContext";
+import * as passwordResetService from "../../services/passwordResetService";
 import LoginSignUp from "../../sharedcomponent/LoginSignUp";
 
 const ForgetPassword = () => {
@@ -44,10 +44,7 @@ const ForgetPassword = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { data } = await axios.post(
-        `${backendUrl}/api/user/send-reset-otp`,
-        { email },
-      );
+      const data = await passwordResetService.sendResetOtp(backendUrl, email);
       if (data.success) {
         toast.success(data.message);
         setIsEmailSent(true);
@@ -64,10 +61,7 @@ const ForgetPassword = () => {
     const enteredOtp = inputRefs.current.map((e) => e.value).join("");
     setIsLoading(true);
     try {
-      const { data } = await axios.post(
-        `${backendUrl}/api/user/verify-reset-otp`,
-        { email, otp: enteredOtp },
-      );
+      const data = await passwordResetService.verifyResetOtp(backendUrl, email, enteredOtp);
       if (data.success) {
         toast.success("OTP Verified");
         setOtp(enteredOtp);
@@ -84,14 +78,7 @@ const ForgetPassword = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const { data } = await axios.post(
-        `${backendUrl}/api/user/reset-password`,
-        {
-          email,
-          otp,
-          newPassword,
-        },
-      );
+      const data = await passwordResetService.resetPassword(backendUrl, email, otp, newPassword);
       if (data.success) {
         toast.success(data.message);
         setAuthMode("Login");

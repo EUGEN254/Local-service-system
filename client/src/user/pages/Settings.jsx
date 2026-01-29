@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { assets } from "../../assets/assets";
 import { toast } from "react-toastify";
-import axios from "axios";
+import * as settingsService from "../../services/settingsService";
 
 const Settings = () => {
   const [previewImage, setPreviewImage] = useState(null);
@@ -43,23 +43,19 @@ const Settings = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const { data } = await axios.get("/api/serviceprovider/me", {
-          withCredentials: true,
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        const data = await settingsService.fetchProfile();
 
+        const user = data?.user || data;
         setProfile({
-          name: data?.user?.name || "",
-          email: data?.user?.email || "",
-          phone: data?.user?.phone || "",
-          bio: data?.user?.bio || "",
-          address: data?.user?.address || "",
-          image: data?.user?.image || null,
+          name: user?.name || "",
+          email: user?.email || "",
+          phone: user?.phone || "",
+          bio: user?.bio || "",
+          address: user?.address || "",
+          image: user?.image || null,
         });
 
-        if (data?.user?.image) setPreviewImage(data.user.image);
+        if (user?.image) setPreviewImage(user.image);
       } catch (err) {
         console.error("Failed to load profile:", err);
       }
@@ -97,18 +93,7 @@ const Settings = () => {
         formData.append("image", profile.image);
       }
 
-      const { data } = await axios.put(
-        "/api/serviceprovider/update-profile",
-        formData,
-        {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
+      const data = await settingsService.updateProfile(formData);
       toast.success(data.message || "Profile updated successfully!");
     } catch (err) {
       console.error("Error updating profile:", err);

@@ -1,7 +1,7 @@
 // components/chat/SpChatSidebar.jsx
 import React, { useEffect, useState, useContext } from "react";
 import { assets } from "../../assets/assets.js";
-import axios from "axios";
+import * as chatService from "../../services/chatService";
 import { ShareContext } from "../../sharedcontext/SharedContext.jsx";
 
 const SpChatSidebar = ({ selectedUser, setSelectedUser }) => {
@@ -15,9 +15,7 @@ const SpChatSidebar = ({ selectedUser, setSelectedUser }) => {
   useEffect(() => {
     const fetchCustomers = async () => {
       try {
-        const { data } = await axios.get(`${backendUrl}/api/chat/my-customers`, {
-          withCredentials: true,
-        });
+        const data = await chatService.fetchMyCustomers(backendUrl);
         if (data.success) setCustomers(data.customers);
       } catch (err) {
         console.error(err);
@@ -30,22 +28,16 @@ const SpChatSidebar = ({ selectedUser, setSelectedUser }) => {
 
   // Fetch unread counts
   useEffect(() => {
-    const fetchUnreadCounts = async () => {
+    const fetchCounts = async () => {
       try {
-        const { data } = await axios.get(`${backendUrl}/api/chat/unread-count`, {
-          withCredentials: true,
-        });
-        if (data.success) {
-          const counts = {};
-          data.unreadCounts.forEach((u) => (counts[u._id] = u.count));
-          setUnreadCounts(counts);
-        }
+        const { countsMap } = await chatService.fetchUnreadCounts(backendUrl);
+        setUnreadCounts(countsMap);
       } catch (err) {
         console.error(err);
       }
     };
-    fetchUnreadCounts();
-    const interval = setInterval(fetchUnreadCounts, 10000);
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 10000);
     return () => clearInterval(interval);
   }, [backendUrl]);
 

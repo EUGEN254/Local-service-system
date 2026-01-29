@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
-import axios from "axios";
+import * as chatService from "../../services/chatService";
 import { ShareContext } from "../../sharedcontext/SharedContext.jsx";
 import { assets } from "../../assets/assets";
 import { formatMessageTime } from "../../service-provider/libs/Utils.js";
@@ -7,7 +7,7 @@ import { v4 as uuidv4 } from "uuid";
 import { FaImage, FaPaperPlane, FaTimes, FaCircleNotch } from "react-icons/fa";
 
 const ChatContainer = ({ selectedUser, setSelectedUser }) => {
-  const { user, backendUrl, socket, onlineUsers, messages, setMessages, markAsRead, setActiveRoomId } = useContext(ShareContext);
+  const { user, backendUrl, socket, onlineUsers, messages, setMessages, markChatAsRead, setActiveRoomId } = useContext(ShareContext);
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -35,16 +35,9 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
     const fetchMessages = async () => {
       setLoading(true);
       try {
-        const { data } = await axios.get(
-          `${backendUrl}/api/chat/messages/${selectedUser._id}`,
-          { withCredentials: true }
-        );
+        const data = await chatService.fetchMessages(backendUrl, selectedUser._id);
         if (data.success) {
-          // Update context with fetched messages
-          setMessages(prev => ({
-            ...prev,
-            [currentChatId]: data.messages
-          }));
+          setMessages((prev) => ({ ...prev, [currentChatId]: data.messages }));
         }
       } catch (err) {
         console.error("❌ Error fetching messages:", err);
@@ -88,7 +81,7 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
         // immediately mark it as read so unread counters update correctly.
         if (msg.receiver === user._id && selectedUser && msg.sender === selectedUser._id) {
           // fire-and-forget — mark read will update local state and call backend
-          markAsRead(msg.sender).catch?.(() => {});
+          markChatAsRead(msg.sender).catch?.(() => {});
         }
 
         return {
@@ -154,7 +147,7 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
       };
 
       try {
-        await axios.post(`${backendUrl}/api/chat/send`, messagePayload, { withCredentials: true });
+        await chatService.sendMessage(backendUrl, messagePayload);
         socket.current.emit("sendMessage", messagePayload);
         
         // Update context with new message
@@ -187,17 +180,7 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
       formData.append('messageId', messageId);
       formData.append('text', newMessage || "📷 Image");
 
-      const { data } = await axios.post(
-        `${backendUrl}/api/chat/send-image`,
-        formData,
-        {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-
+      const data = await chatService.sendImage(backendUrl, formData);
       if (data.success) {
         const messagePayload = {
           messageId,

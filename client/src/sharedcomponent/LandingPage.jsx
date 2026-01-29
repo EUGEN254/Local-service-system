@@ -3,9 +3,10 @@ import LoginSignUp from "./LoginSignUp";
 import AnimatedCounter from "./AnimatedCounter";
 import LearnMore from "./LearnMore";
 import { ShareContext } from "../sharedcontext/SharedContext";
-import axios from "axios";
+import * as landingPageService from "../services/landingPageService";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+import { useLandingPage, useCategories } from "../hooks/index";
 import {
   FaSignOutAlt,
   FaChevronDown,
@@ -19,20 +20,45 @@ const LandingPage = () => {
   const [authMode, setAuthMode] = useState("Sign Up");
   const [showLearnMore, setShowLearnMore] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const { 
-    user, 
-    logoutUser, 
-    landingCategories, 
-    landingServices, 
+  const { user, logoutUser, backendUrl } = useContext(ShareContext);
+
+  // Use hooks directly
+  const {
+    landingCategories,
+    landingServices,
     loadingLandingData,
-    backendUrl
-  } = useContext(ShareContext);
+    fetchLandingData,
+  } = useLandingPage(backendUrl);
+
+  const { fetchCategories } = useCategories(backendUrl);
+
   const [showProviderModal, setShowProviderModal] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
+  // Helper function to get correct dashboard path based on user role
+  const getDashboardPath = () => {
+    if (user?.role === "serviceprovider" || user?.role === "service-provider") {
+      return "/sp/dashboard";
+    }
+    return "/user/dashboard";
+  };
 
-  // Use landing data from shared context
+  // Helper function to get correct settings path based on user role
+  const getSettingsPath = () => {
+    if (user?.role === "serviceprovider" || user?.role === "service-provider") {
+      return "/sp/settings";
+    }
+    return "/user/settings";
+  };
+
+  // Fetch landing data and categories on mount
+  useEffect(() => {
+    fetchLandingData();
+    fetchCategories();
+  }, [fetchLandingData, fetchCategories]);
+
+  // Use landing data from hook
   useEffect(() => {
     if (landingCategories.length > 0) {
       setSelectedCategory("All");
@@ -49,8 +75,9 @@ const LandingPage = () => {
 
   const handleQuickView = async (serviceProviderId) => {
     try {
-      const { data } = await axios.get(
-        `${backendUrl}/api/landingpage/serviceprovider/${serviceProviderId}`,
+      const data = await landingPageService.fetchProviderDetails(
+        backendUrl,
+        serviceProviderId,
       );
       if (data.success) {
         setSelectedProvider(data.data);
@@ -61,6 +88,55 @@ const LandingPage = () => {
     } catch (error) {
       toast.error(error.message);
     }
+  };
+
+  // Handle booking attempt from provider modal
+  const handleBookClick = (provider) => {
+    // If not logged in, show signup/login
+    if (!user) {
+      setAuthMode("Sign Up");
+      setShowAuthModal(true);
+      setShowProviderModal(false);
+      return;
+    }
+
+    // Prevent booking own services
+    const userId = user?._id || user?.id || user?.userId;
+    const providerId = provider?._id || provider?.id || provider?._id;
+    if (userId && providerId && userId.toString() === providerId.toString()) {
+      toast.error("You can't book your own service.");
+      return;
+    }
+
+    // If signed in as a service provider, show warning and CTA to switch role
+    if (user?.role === "service-provider" || user?.role === "serviceprovider") {
+      toast.warn(
+        <div>
+          <div>
+            You're signed in as a Service Provider. Switch to a Customer account
+            to make a booking.
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <button
+              onClick={() => {
+                navigate(getSettingsPath());
+                toast.dismiss();
+              }}
+              className="px-3 py-1 bg-white text-sm rounded border"
+            >
+              Switch to Customer
+            </button>
+          </div>
+        </div>,
+        { autoClose: 6000 },
+      );
+      return;
+    }
+
+    // Default: proceed to booking flow (navigate to a booking page or open auth modal)
+    // Fallback — navigate to dashboard where booking flow can continue
+    navigate(`/user/dashboard`);
+    setShowProviderModal(false);
   };
 
   // view of service provider modal
@@ -261,11 +337,7 @@ const LandingPage = () => {
                 {/* Action Buttons */}
                 <div className="flex gap-4 pt-6 border-t">
                   <button
-                    onClick={() => {
-                      setAuthMode("Sign Up");
-                      setShowAuthModal(true);
-                      setShowProviderModal(false);
-                    }}
+                    onClick={() => handleBookClick(provider)}
                     className="flex-1 bg-gray-900 hover:bg-gray-800 text-white font-medium py-3 rounded-lg transition-colors"
                   >
                     Book This Provider
@@ -331,7 +403,7 @@ const LandingPage = () => {
               <div className="flex items-center gap-6">
                 {/* Dashboard button */}
                 <button
-                  onClick={() => navigate("/user/dashboard")}
+                  onClick={() => navigate(getDashboardPath())}
                   className="hidden md:block text-gray-700 hover:text-gray-900 font-medium  px-4 py-2  hover:bg-gray-100"
                 >
                   Dashboard
@@ -365,7 +437,7 @@ const LandingPage = () => {
                       <div className="py-1">
                         <button
                           onClick={() => {
-                            navigate("/user/dashboard");
+                            navigate(getDashboardPath());
                             setDropdownOpen(false);
                           }}
                           className="w-full flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-sm"
@@ -375,7 +447,7 @@ const LandingPage = () => {
                         </button>
                         <button
                           onClick={() => {
-                            navigate("/user/settings");
+                            navigate(getSettingsPath());
                             setDropdownOpen(false);
                           }}
                           className="w-full flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-sm"
@@ -540,7 +612,10 @@ const LandingPage = () => {
                 {loadingLandingData ? (
                   <div className="space-y-2">
                     {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                      <div
+                        key={i}
+                        className="h-12 bg-gray-200 rounded-lg animate-pulse"
+                      ></div>
                     ))}
                   </div>
                 ) : landingCategories.length > 0 ? (
@@ -608,7 +683,9 @@ const LandingPage = () => {
                     </button>
                   ))
                 ) : (
-                  <p className="text-gray-500 text-center py-4">No categories available</p>
+                  <p className="text-gray-500 text-center py-4">
+                    No categories available
+                  </p>
                 )}
               </div>
 
@@ -793,8 +870,14 @@ const LandingPage = () => {
                         {user ? (
                           <button
                             onClick={() => {
-                              navigate("/user/payment", { state: { service } });
-                              window.scrollTo(0, 0);
+                              if (user?.role === "customer") {
+                                navigate("/user/payment", {
+                                  state: { service },
+                                });
+                                window.scrollTo(0, 0);
+                              } else {
+                                toast.info("kindly register as a customer");
+                              }
                             }}
                             className="bg-gray-900 hover:bg-gray-800 text-white font-medium px-4 py-2 rounded transition-colors"
                           >

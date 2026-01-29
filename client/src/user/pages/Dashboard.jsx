@@ -11,7 +11,8 @@ import {
   Cell,
 } from "recharts";
 import { ShareContext } from "../../sharedcontext/SharedContext";
-import axios from "axios";
+import * as bookingService from "../../services/bookingService";
+import { fetchProviderDetails } from "../../services/landingPageService";
 import {
   HiClipboardList,
   HiCog,
@@ -60,10 +61,10 @@ const Dashboard = () => {
     const fetchBookings = async () => {
       try {
         setLoading(true);
-        const { data } = await axios.get(
-          `${backendUrl}/api/customer/mybookings`,
-          { withCredentials: true },
-        );
+        const data = await bookingService.fetchMyBookings(backendUrl, {
+          page: 1,
+          limit: 1000
+        });
 
         if (data.success) {
           setBookings(data.bookings || []);
@@ -401,12 +402,9 @@ const Dashboard = () => {
 
   const handleView = async (serviceId, index) => {
     try {
-      const { data } = await axios.get(
-        `${backendUrl}/api/serviceprovider/details/${serviceId}`,
-        { withCredentials: true },
-      );
+      const data = await fetchProviderDetails(backendUrl, serviceId);
       if (data.success) {
-        setSelectedService(data.data);
+        setSelectedService(data.data || data);
         const button = buttonRefs.current[index];
         if (button) {
           const rect = button.getBoundingClientRect();

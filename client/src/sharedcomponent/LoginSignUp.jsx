@@ -1,7 +1,7 @@
 import React, { useContext, useState } from "react";
 import { FiMail, FiLock, FiUserPlus, FiAlertTriangle } from "react-icons/fi";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import axios from "axios";
+import * as authService from "../services/authService";
 import { toast } from "react-toastify";
 import { ShareContext } from "../sharedcontext/SharedContext";
 import { GoogleLogin } from "@react-oauth/google";
@@ -66,19 +66,9 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
     try {
       let data;
       if (currState === "Sign Up") {
-        const response = await axios.post(
-          `${backendUrl}/api/user/register`,
-          { name, email, password, termsAccepted, role },
-          { withCredentials: true }
-        );
-        data = response.data;
+        data = await authService.register(backendUrl, { name, email, password, termsAccepted, role });
       } else {
-        const response = await axios.post(
-          `${backendUrl}/api/user/login`,
-          { email, password, role },
-          { withCredentials: true, validateStatus: () => true }
-        );
-        data = response.data;
+        data = await authService.login(backendUrl, { email, password, role });
       }
 
       if (data.success) {
@@ -107,17 +97,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
 
     setGoogleLoading(true);
     try {
-      const response = await axios.post(
-        `${backendUrl}/api/user/google-login`,
-        {
-          token: credentialResponse.credential,
-          role: role,
-        },
-        { withCredentials: true }
-      );
-
-      const data = response.data;
-
+      const data = await authService.googleLogin(backendUrl, { token: credentialResponse.credential, role });
       if (data.success) {
         toast.success("Logged in with Google successfully!");
         await fetchCurrentUser();
@@ -129,8 +109,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
       }
     } catch (err) {
       console.error("Google login error:", err);
-      const errorMessage =
-        err.response?.data?.message || "Google login failed. Please try again.";
+      const errorMessage = err.response?.data?.message || "Google login failed. Please try again.";
       toast.error(errorMessage);
     } finally {
       setGoogleLoading(false);

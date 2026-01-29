@@ -1,19 +1,14 @@
 // sharedcontext/SharedContext.jsx
-import { createContext, useEffect, useState, useRef } from "react";
+import { createContext, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
 
-export const ShareContext = createContext();
+// Import custom hooks
+import { useAuth } from "../hooks/useAuth";
+import { useChat } from "../hooks/useChat";
 
-// Helper function to check if user is a service provider
-const isServiceProvider = (user) => {
-  return (
-    user &&
-    (user.role === "serviceprovider" || user.role === "service-provider")
-  );
-};
+export const ShareContext = createContext();
 
 // the main component
 const AppContextProvider = (props) => {
@@ -21,277 +16,67 @@ const AppContextProvider = (props) => {
   const navigate = useNavigate();
   const currSymbol = "KES";
 
-  const cachedUser = localStorage.getItem("user"); 
-  const [user, setUser] = useState(cachedUser ? JSON.parse(cachedUser) : null);
-  const [authLoading, setAuthLoading] = useState(false);
-  const [verified, setIsVerified] = useState(false);
+  // Initialize essential hooks
+  const authState = useAuth(backendUrl, navigate);
+  const { user, authLoading, verified, fetchCurrentUser, logoutUser } =
+    authState;
 
-  const [services, setServices] = useState([]);
-  const [loadingServices, setLoadingServices] = useState(false);
-  const [categories, setCategories] = useState([]);
-  const [showCustomCategory, setShowCustomCategory] = useState(false);
-
-  // Landing page specific data
-  const [landingCategories, setLandingCategories] = useState([]);
-  const [landingServices, setLandingServices] = useState([]);
-  const [loadingLandingData, setLoadingLandingData] = useState(false);
-
-   // Pagination state
-    const [pagination, setPagination] = useState({
-      currentPage: 1,
-      totalPages: 1,
-      totalServices: 0,
-      limit: 10,
-      hasNextPage: false,
-      hasPrevPage: false,
-    });
+  const chatState = useChat(backendUrl, user);
+  const {
+    unreadBySender,
+    setUnreadBySender,
+    totalUnread,
+    setTotalUnread,
+    bookingNotifications,
+    setBookingNotifications,
+    unreadBookingCount,
+    setUnreadBookingCount,
+    fetchUnreadCounts,
+    fetchBookingNotifications,
+    markBookingNotificationAsRead,
+    markAllBookingNotificationsAsRead,
+    markChatAsRead,
+  } = chatState;
 
   // Online users
-  const [onlineUsers, setOnlineUsers] = useState([]);
-
-  // Chat unread messages
-  const [unreadBySender, setUnreadBySender] = useState({});
-  const [totalUnread, setTotalUnread] = useState(0);
-  const [bookingNotifications, setBookingNotifications] = useState([]);
-  const [unreadBookingCount, setUnreadBookingCount] = useState(0);
-
-
-  const [notificationUnreadCount, setNotificationUnreadCount] = useState(0);
-  const [notifications, setNotifications] = useState([]);
+  const onlineUsersRef = useRef([]);
 
   // Messages state for all chats
-  const [messages, setMessages] = useState({}); // { chatId: [messages] }
+  const messagesRef = useRef({});
+  const setMessages = (value) => {
+    if (typeof value === "function") {
+      messagesRef.current = value(messagesRef.current);
+    } else {
+      messagesRef.current = value;
+    }
+  };
 
- 
-  const [activeRoomId, setActiveRoomId] = useState(null);
   const activeRoomIdRef = useRef(null);
+  const activeRoomId = activeRoomIdRef.current;
+  const setActiveRoomId = (value) => {
+    activeRoomIdRef.current = value;
+  };
 
   const socket = useRef();
 
-  // ---------------- NOTIFICATION SYSTEM FUNCTIONS ----------------
-
-  // Fetch notification unread count
-  const fetchNotificationUnreadCount = async () => {
-    if (!user) return; //function should run only if user is logged in
-
-    try {
-      const { data } = await axios.get(
-        `${backendUrl}/api/notifications/unread-count`,
-        { withCredentials: true },
-      );
-
-      if (data.success) {
-        setNotificationUnreadCount(data.unreadCount); //update count
-      }
-    } catch (error) {
-      console.error("Failed to fetch notification unread count:", error);
-    }
+  // Helper function to check if user is a service provider
+  const isServiceProvider = (user) => {
+    return (
+      user &&
+      (user.role === "serviceprovider" || user.role === "service-provider")
+    );
   };
 
-  // Fetch notifications with optional category filter
-  const fetchNotifications = async (category = "All") => {
-    if (!user) return;
-
-    try {
-      const { data } = await axios.get(
-        `${backendUrl}/api/notifications?category=${category === "All" ? "" : category}`,
-        { withCredentials: true },
-      );
-
-      if (data.success) {
-        setNotifications(data.notifications);
-      }
-      return data;
-    } catch (error) {
-      console.error("Failed to fetch notifications:", error);
-      throw error;
-    }
+  // Helper to get messages
+  const messages = messagesRef.current;
+  
+  // Online users for context
+  const onlineUsers = onlineUsersRef.current;
+  const setOnlineUsers = (users) => {
+    onlineUsersRef.current = users.map((id) => id.toString());
   };
 
-  // Mark single notification as read
-  const markNotificationAsRead = async (notificationId) => {
-    try {
-      const { data } = await axios.put(
-        `${backendUrl}/api/notifications/mark-read/${notificationId}`,
-        {},
-        { withCredentials: true },
-      );
-
-      if (data.success) {
-        setNotifications(
-          (
-            prev, //taking initial value of array
-          ) =>
-            prev.map(
-              (
-                n, //creating a new array going through each notification
-              ) => (n._id === notificationId ? { ...n, read: true } : n),
-            ),
-        );
-        setNotificationUnreadCount((prev) => Math.max(0, prev - 1));
-      }
-      return data;
-    } catch (error) {
-      console.error("Failed to mark notification as read:", error);
-      throw error;
-    }
-  };
-
-  // Mark all notifications as read
-  const markAllNotificationsAsRead = async () => {
-    try {
-      const { data } = await axios.put(
-        `${backendUrl}/api/notifications/mark-all-read`,
-        {},
-        { withCredentials: true },
-      );
-
-      if (data.success) {
-        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
-        setNotificationUnreadCount(0);
-      }
-      return data;
-    } catch (error) {
-      console.error("Failed to mark all notifications as read:", error);
-      throw error;
-    }
-  };
-
-  // Delete notification
-  const deleteNotification = async (notificationId) => {
-    try {
-      const { data } = await axios.delete(
-        `${backendUrl}/api/notifications/${notificationId}`,
-        { withCredentials: true },
-      );
-
-      if (data.success) {
-        setNotifications((prev) =>
-          prev.filter((n) => n._id !== notificationId),
-        );
-        // Update unread count if the deleted notification was unread
-        const deletedNotification = notifications.find(
-          (n) => n._id === notificationId,
-        );
-        if (deletedNotification && !deletedNotification.read) {
-          setNotificationUnreadCount((prev) => Math.max(0, prev - 1));
-        }
-      }
-      return data;
-    } catch (error) {
-      console.error("Failed to delete notification:", error);
-      throw error;
-    }
-  };
-
-  // Delete all notifications
-  const deleteAllNotifications = async () => {
-    try {
-      const { data } = await axios.delete(
-        `${backendUrl}/api/notifications/bulk/delete-all`,
-        { withCredentials: true },
-      );
-
-      if (data.success) {
-        // Clear ALL notifications from state
-        setNotifications([]);
-
-        // Reset unread count to 0 (since all are gone)
-        setNotificationUnreadCount(0);
-      }
-      return data;
-    } catch (error) {
-      console.error("Failed to delete all notifications:", error);
-      throw error;
-    }
-  };
-
-  // ---------------- CHAT UNREAD COUNTS ----------------
-  const fetchUnreadCounts = async () => {
-    if (!user) return;
-
-    try {
-      const { data } = await axios.get(`${backendUrl}/api/chat/unread-count`, {
-        withCredentials: true, //include login infromation that were create by cookie
-      });
-
-      if (data.success) {
-        const countsMap = {}; //preparing storage
-        let total = 0;
-
-        data.unreadCounts.forEach((entry) => {
-          countsMap[entry._id] = entry.count;
-          total += entry.count;
-        });
-
-        setUnreadBySender(countsMap);
-        setTotalUnread(total);
-      }
-    } catch (err) {
-      console.error("Failed to fetch unread counts:", err.message);
-    }
-  };
-
-  // ---------------- FETCH BOOKING NOTIFICATIONS ----------------
-  const fetchBookingNotifications = async () => {
-    if (!isServiceProvider(user)) return;
-
-    try {
-      const { data } = await axios.get(
-        `${backendUrl}/api/chat/booking-notifications`,
-        {
-          withCredentials: true,
-        },
-      );
-
-      if (data.success) {
-        setBookingNotifications(data.notifications);
-        setUnreadBookingCount(data.unreadCount);
-      }
-    } catch (err) {
-      console.error("Failed to fetch booking notifications:", err);
-    }
-  };
-
-  // ---------------- MARK BOOKING NOTIFICATION AS READ ----------------
-  const markBookingNotificationAsRead = async (notificationId) => {
-    try {
-      await axios.post(
-        `${backendUrl}/api/chat/mark-notification-read`,
-        { notificationId },
-        { withCredentials: true },
-      );
-
-      setBookingNotifications((prev) =>
-        prev.map((notif) =>
-          notif._id === notificationId ? { ...notif, read: true } : notif,
-        ),
-      );
-      setUnreadBookingCount((prev) => Math.max(0, prev - 1));
-    } catch (err) {
-      console.error("Failed to mark notification as read:", err);
-    }
-  };
-
-  // ---------------- MARK ALL NOTIFICATIONS AS READ ----------------
-  const markAllBookingNotificationsAsRead = async () => {
-    try {
-      await axios.post(
-        `${backendUrl}/api/chat/mark-all-notifications-read`,
-        {},
-        { withCredentials: true },
-      );
-
-      setBookingNotifications((prev) =>
-        prev.map((notif) => ({ ...notif, read: true })),
-      );
-      setUnreadBookingCount(0);
-    } catch (err) {
-      console.error("Failed to mark all notifications as read:", err);
-    }
-  };
-
-  // ---------------- SOCKET & REAL-TIME UPDATES ----------------
+  // ---------- SOCKET SETUP & REAL-TIME UPDATES ----------
   useEffect(() => {
     if (!user) return;
 
@@ -306,14 +91,12 @@ const AppContextProvider = (props) => {
 
     // Listen for online users
     socket.current.on("onlineUsers", (users) => {
-      setOnlineUsers(users.map((id) => id.toString()));
+      setOnlineUsers(users);
     });
 
     // Listen for new messages
     socket.current.on("receiveMessage", (message) => {
       if (message.receiver === user._id) {
-        // If the message belongs to the currently open chat, don't increment unread
-        // counts — the chat container will handle marking it as read.
         if (
           activeRoomIdRef.current &&
           activeRoomIdRef.current === message.roomId
@@ -321,7 +104,6 @@ const AppContextProvider = (props) => {
           return;
         }
 
-        // Update unread counts immediately when new message arrives
         setUnreadBySender((prev) => {
           const newCount = (prev[message.sender] || 0) + 1;
           return { ...prev, [message.sender]: newCount };
@@ -330,25 +112,7 @@ const AppContextProvider = (props) => {
       }
     });
 
-    // Listen for new notifications
-    socket.current.on("newNotification", (notificationData) => {
-      // Add new notification
-      setNotifications((prev) => {
-        const newNotifications = [notificationData, ...prev];
-        return newNotifications;
-      });
-
-      // Update unread count
-      setNotificationUnreadCount((prev) => {
-        const newCount = prev + 1;
-        return newCount;
-      });
-
-      // Show toast notification
-      toast.info(notificationData.message || "New notification received");
-    });
-
-    //socket handler with proper role checking
+    // Listen for new bookings
     socket.current.on("newBooking", (bookingData) => {
       const shouldReceiveNotification =
         isServiceProvider(user) &&
@@ -356,20 +120,10 @@ const AppContextProvider = (props) => {
           bookingData.providerName?.trim().toLowerCase();
 
       if (shouldReceiveNotification) {
-        // Add new notification
-        setBookingNotifications((prev) => {
-          const newNotifications = [bookingData, ...prev];
-          return newNotifications;
-        });
-
-        setUnreadBookingCount((prev) => {
-          const newCount = prev + 1;
-          return newCount;
-        });
-
-        // Show toast notification
+        setBookingNotifications((prev) => [bookingData, ...prev]);
+        setUnreadBookingCount((prev) => prev + 1);
         toast.info(
-          `New booking: ${bookingData.serviceName} from ${bookingData.customerName}`,
+          `New booking: ${bookingData.serviceName} from ${bookingData.customerName}`
         );
       }
     });
@@ -377,291 +131,72 @@ const AppContextProvider = (props) => {
     return () => {
       socket.current.disconnect();
     };
-  }, [user]);
+  }, [user, isServiceProvider, setUnreadBySender, setTotalUnread, setBookingNotifications, setUnreadBookingCount]);
 
-  // Keep ref in sync with activeRoomId so socket listener access is stable
-  useEffect(() => {
-    activeRoomIdRef.current = activeRoomId;
-  }, [activeRoomId]);
-
-  // ---------------- PERIODIC UNREAD COUNT FETCHING ----------------
+  // ---------- PERIODIC UNREAD COUNT FETCHING ----------
   useEffect(() => {
     if (!user) return;
 
     // Fetch immediately
     fetchUnreadCounts();
-    fetchNotificationUnreadCount();
 
-    // Then fetch every 10 seconds for chat, 30 seconds for notifications
+    // Then fetch every 10 seconds for chat
     const chatInterval = setInterval(fetchUnreadCounts, 10000);
-    const notificationInterval = setInterval(
-      fetchNotificationUnreadCount,
-      30000,
-    );
 
     return () => {
       clearInterval(chatInterval);
-      clearInterval(notificationInterval);
     };
-  }, [user]);
+  }, [user, fetchUnreadCounts]);
 
-  // ---------------- AUTH & USER ----------------
-  const fetchCurrentUser = async (showLoader = true) => {
-    try {
-      if (showLoader) setAuthLoading(true);
-
-      const { data } = await axios.get(`${backendUrl}/api/user/me`, {
-        withCredentials: true,
-      });
-
-      if (data.success && data.user) {
-        setUser(data.user);
-
-        // ✅ Set verified status based on the user data from backend
-        const isUserVerified = data.user.isVerified === true;
-        setIsVerified(isUserVerified);
-
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("role", data.user.role);
-      } else {
-        setUser(null);
-        setIsVerified(false);
-        localStorage.removeItem("user");
-        localStorage.removeItem("role");
-      }
-    } catch (err) {
-      setUser(null);
-      setIsVerified(false);
-      localStorage.removeItem("user");
-      localStorage.removeItem("role");
-    } finally {
-      if (showLoader) setTimeout(() => setAuthLoading(false), 150);
-    }
-  };
-
-  // Fetch notifications when user logs in
+  // ---------- FETCH BOOKING NOTIFICATIONS FOR SERVICE PROVIDERS ----------
   useEffect(() => {
     if (isServiceProvider(user)) {
       fetchBookingNotifications();
-
-      // Set up interval to fetch notifications periodically
-      const interval = setInterval(fetchBookingNotifications, 30000); // Every 30 seconds
+      const interval = setInterval(fetchBookingNotifications, 30000);
       return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user, isServiceProvider, fetchBookingNotifications]);
 
-  // ---------------- SERVICES ----------------
-  const fetchServices = async (page = 1, limit = pagination.limit) => {
-  setLoadingServices(true);
-  try {
-    const params = new URLSearchParams({
-      page: page,
-      limit: limit,
-    });
-
-    const { data } = await axios.get(
-      `${backendUrl}/api/serviceprovider/my-services?${params.toString()}`,
-      { withCredentials: true }
-    );
-    
-    if (data.success) {
-      setServices(data.services || []);
-      setPagination(data.pagination || {
-        currentPage: 1,
-        totalPages: 1,
-        totalServices: 0,
-        limit: limit,
-        hasNextPage: false,
-        hasPrevPage: false,
-      });
-    }
-  } catch (err) {
-    toast.error("Failed to load services");
-  } finally {
-    setLoadingServices(false);
-  }
-};
-
-  const addService = (service) => setServices((prev) => [service, ...prev]);
-  const removeService = (id) =>
-    setServices((prev) => prev.filter((s) => s._id !== id));
-
-  // ---------------- MARK AS READ ----------------
-  const markAsRead = async (senderId) => {
-    if (!user || !senderId) return;
-
-    try {
-      // Update local state immediately
-      setUnreadBySender((prev) => {
-        const newCounts = { ...prev };
-        if (newCounts[senderId]) {
-          setTotalUnread((prevTotal) => prevTotal - newCounts[senderId]);
-          delete newCounts[senderId];
-        }
-        return newCounts;
-      });
-
-      // Call API to mark as read
-      await axios.post(
-        `${backendUrl}/api/chat/mark-read`,
-        { senderId },
-        { withCredentials: true },
-      );
-    } catch (err) {
-      console.error("Failed to mark messages as read:", err);
-    }
-  };
-
-  // ---------------- LOGOUT ----------------
-  const logoutUser = async () => {
-    try {
-      const { data } = await axios.post(
-        `${backendUrl}/api/user/logout`,
-        {},
-        { withCredentials: true },
-      );
-
-      setUser(null);
-      localStorage.removeItem("user");
-      localStorage.removeItem("role");
-      socket.current?.disconnect();
-
-      if (data.success) {
-        navigate("/", { replace: true });
-        setTimeout(() => toast.success(data.message), 100);
-      }
-    } catch (err) {
-      setUser(null);
-      localStorage.removeItem("user");
-      localStorage.removeItem("role");
-      socket.current?.disconnect();
-      navigate("/", { replace: true });
-    }
-  };
-
-  // Add this function to fetch categories
-  const fetchCategories = async () => {
-    try {
-      const { data } = await axios.get(`${backendUrl}/api/categories`, {
-        withCredentials: true,
-      });
-      if (data.success) {
-        setCategories(data.categories);
-      }
-    } catch (err) {
-      console.error("Failed to fetch categories:", err);
-      toast.error("Failed to load categories");
-    }
-  };
-
-  // Fetch landing page categories
-  const fetchLandingCategories = async () => {
-    try {
-      const { data } = await axios.get(
-        `${backendUrl}/api/landingpage/categories`,
-      );
-      if (data.success) {
-        setLandingCategories(data.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch landing categories:", error);
-    }
-  };
-
-  // Fetch landing page services
-  const fetchLandingServices = async () => {
-    try {
-      const { data } = await axios.get(
-        `${backendUrl}/api/landingpage/services`,
-      );
-      if (data.success) {
-        setLandingServices(data.data);
-      }
-    } catch (error) {
-      console.error("Failed to fetch landing services:", error);
-    }
-  };
-
-  // Fetch all landing page data at once
-  const fetchLandingData = async () => {
-    setLoadingLandingData(true);
-    try {
-      await Promise.all([
-        fetchLandingCategories(),
-        fetchLandingServices(),
-      ]);
-    } catch (error) {
-      console.error("Failed to fetch landing page data:", error);
-    } finally {
-      setLoadingLandingData(false);
-    }
-  };
-
-  // ---------------- VERIFY SESSION ----------------
+  // ---------- VERIFY SESSION ----------
   useEffect(() => {
     fetchCurrentUser(false);
-    fetchCategories();
-    fetchLandingData();
-  }, []);
+  }, [fetchCurrentUser]);
 
+  // ---------- CONTEXT VALUE ----------
   const value = {
+    // Essential global items
     backendUrl,
-    user,
-    setUser,
-    fetchCategories,
-    categories,
-    fetchCurrentUser,
-    showCustomCategory,
-    logoutUser,
-    authLoading,
-    pagination,
-    setPagination,
-    setAuthLoading,
-    services,
-    loadingServices,
-    fetchServices,
-    verified,
-    addService,
-    removeService,
     currSymbol,
+    user,
+    authLoading,
+    verified,
+    fetchCurrentUser,
+    logoutUser,
+
+    // Socket & Real-time communication
     socket,
     onlineUsers,
-    unreadBySender,
-    totalUnread,
     messages,
     setMessages,
-    fetchUnreadCounts,
-    markAsRead,
+    activeRoomId,
+    setActiveRoomId,
+
+    // Chat/Messaging
+    unreadBySender,
     setUnreadBySender,
+    totalUnread,
     setTotalUnread,
+    fetchUnreadCounts,
+    markChatAsRead,
+
+    // Booking Notifications (service providers)
     bookingNotifications,
+    setBookingNotifications,
     unreadBookingCount,
+    setUnreadBookingCount,
     fetchBookingNotifications,
     markBookingNotificationAsRead,
     markAllBookingNotificationsAsRead,
-
-    // Landing page data
-    landingCategories,
-    landingServices,
-    loadingLandingData,
-    fetchLandingCategories,
-    fetchLandingServices,
-    fetchLandingData,
-
-    // ✅ ADDED: Notification system functions and states
-    notificationUnreadCount,
-    setNotificationUnreadCount,
-    notifications,
-    setNotifications,
-    // currently-open chat room id (used by chat containers)
-    activeRoomId,
-    setActiveRoomId,
-    fetchNotificationUnreadCount,
-    fetchNotifications,
-    markNotificationAsRead,
-    markAllNotificationsAsRead,
-    deleteNotification,
-    deleteAllNotifications,
   };
 
   return (

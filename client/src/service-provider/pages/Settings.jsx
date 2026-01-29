@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from "react";
 import { assets } from "../../assets/assets";
 import { toast } from "react-toastify";
-import axios from "axios";
+import * as settingsService from "../../services/settingsService";
 import { ShareContext } from "../../sharedcontext/SharedContext";
 
 const Settings = () => {
@@ -76,16 +76,7 @@ const Settings = () => {
         formData.append("image", profile.image);
       }
 
-      const { data } = await axios.put(
-        `${backendUrl}/api/serviceprovider/update-profile`,
-        formData,
-        {
-          withCredentials: true,
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        }
-      );
+      const data = await settingsService.updateProfile(formData);
       await fetchCurrentUser();
 
       toast.success(data.message || "Profile updated successfully!");

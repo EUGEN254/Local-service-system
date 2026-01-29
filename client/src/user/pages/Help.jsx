@@ -1,7 +1,7 @@
 import React, { useState, useContext } from 'react';
 import { ShareContext } from '../../sharedcontext/SharedContext';
-import axios from 'axios'
 import { toast } from "react-toastify";
+import * as supportService from "../../services/supportService";
 
 const Help = () => {
   const [activeTab, setActiveTab] = useState('faq');
@@ -52,15 +52,11 @@ const Help = () => {
     
     setIsSubmitting(true);
     try {
-      const { data } = await axios.post(
-        `${backendUrl}/api/support/submit`,
-        {
-          category: selectedCategory,
-          subject,
-          message
-        },
-        { withCredentials: true }
-      );
+      const data = await supportService.submitSupportTicket(backendUrl, {
+        category: selectedCategory,
+        subject,
+        message
+      });
   
       if (data.success) {
         toast.success('Help ticket submitted successfully! Our team will contact you within 2 hours.');

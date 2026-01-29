@@ -1,7 +1,7 @@
 // serviceprovider/Notification.jsx
 import React, { useContext, useEffect, useState, useRef } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
+import { fetchCustomerDetails } from "../../services/landingPageService";
 import {
   FaBell,
   FaCalendarAlt,
@@ -88,10 +88,7 @@ const Notification = () => {
         return;
       }
 
-      const { data } = await axios.get(
-        `${backendUrl}/api/serviceprovider/customer/${notification.customerId}`,
-        { withCredentials: true }
-      );
+      const data = await fetchCustomerDetails(backendUrl, notification.customerId);
 
       if (data.success) {
         setSelectedCustomer(data.customer);

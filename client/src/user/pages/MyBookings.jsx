@@ -1,5 +1,4 @@
 import React, { useEffect, useState, useContext, useRef, useCallback } from "react";
-import axios from "axios";
 import { Link } from "react-router-dom";
 import {
   FaCalendarAlt,
@@ -22,6 +21,8 @@ import {
   FaBars,
 } from "react-icons/fa";
 import { ShareContext } from "../../sharedcontext/SharedContext";
+import * as bookingService from "../../services/bookingService";
+import { fetchProviderDetails } from "../../services/landingPageService";
 
 const MyBookings = () => {
   const { backendUrl, currSymbol } = useContext(ShareContext);
@@ -81,39 +82,22 @@ const MyBookings = () => {
       if (window.controller) {
         window.controller.abort();
       }
-      
+
       const controller = new AbortController();
       window.controller = controller;
 
       setLoading(true);
 
-      // Build query parameters
-      const params = new URLSearchParams({
-        page: page,
+      const params = {
+        page,
         limit: pagination.limit,
+        search: debouncedSearchTerm,
+        paymentStatus: statusFilter,
+        dateTo,
         sort: sortBy,
-      });
+      };
 
-      // Add filters if they exist
-      if (debouncedSearchTerm) {
-        params.append("search", debouncedSearchTerm);
-      }
-
-      if (statusFilter !== "all") {
-        params.append("paymentStatus", statusFilter);
-      }
-
-      if (dateTo) {
-        params.append("dateTo", dateTo);
-      }
-
-      const { data } = await axios.get(
-        `${backendUrl}/api/customer/mybookings?${params.toString()}`,
-        {
-          withCredentials: true,
-          signal: controller.signal,
-        },
-      );
+      const data = await bookingService.fetchMyBookings(backendUrl, params, { signal: controller.signal });
 
       if (data.success) {
         setBookings(data.bookings || []);
@@ -133,8 +117,9 @@ const MyBookings = () => {
         setBookings([]);
       }
     } catch (err) {
-      if (axios.isCancel(err)) {
-        console.log('Request canceled:', err.message);
+      // Abort errors are expected when canceling
+      if (err.name === 'CanceledError' || err.name === 'AbortError') {
+        console.log('Request canceled:', err.message || err);
       } else {
         console.error("Error fetching bookings:", err);
         setBookings([]);
@@ -201,13 +186,10 @@ const MyBookings = () => {
   // Handle View Provider button click
   const handleViewProvider = async (serviceId, index) => {
     try {
-      const { data } = await axios.get(
-        `${backendUrl}/api/customer/details/${serviceId}`,
-        { withCredentials: true },
-      );
+      const data = await fetchProviderDetails(backendUrl, serviceId);
 
       if (data.success) {
-        setSelectedService(data.data);
+        setSelectedService(data.data || data);
 
         const button = buttonRefs.current[index];
         if (button) {
