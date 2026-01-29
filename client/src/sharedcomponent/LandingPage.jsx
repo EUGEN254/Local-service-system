@@ -19,52 +19,31 @@ const LandingPage = () => {
   const [authMode, setAuthMode] = useState("Sign Up");
   const [showLearnMore, setShowLearnMore] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const { backendUrl, user, logoutUser } = useContext(ShareContext);
-  const [categories, setCategories] = useState([]);
-  const [serviceImages, setServicesImages] = useState([]);
+  const { 
+    user, 
+    logoutUser, 
+    landingCategories, 
+    landingServices, 
+    loadingLandingData,
+    backendUrl
+  } = useContext(ShareContext);
   const [showProviderModal, setShowProviderModal] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
 
-  // fetch categories from backend
-  const fetchCategories = async () => {
-    try {
-      const { data } = await axios.get(
-        `${backendUrl}/api/landingpage/categories`,
-      );
-      if (data.success) {
-        setCategories(data.data);
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
+  // Use landing data from shared context
+  useEffect(() => {
+    if (landingCategories.length > 0) {
+      setSelectedCategory("All");
     }
-  };
-
-  // fetch services
-  const fetchServices = async () => {
-    try {
-      const { data } = await axios.get(
-        `${backendUrl}/api/landingpage/services`,
-      );
-
-      if (data.success) {
-        setServicesImages(data.data);
-      } else {
-        toast.error(data.message);
-      }
-    } catch (error) {
-      toast.error(error.message);
-    }
-  };
+  }, [landingCategories]);
 
   // Filter services based on selected category
   const filteredServices =
     selectedCategory === "All"
-      ? serviceImages
-      : serviceImages.filter(
+      ? landingServices
+      : landingServices.filter(
           (service) => service.category === selectedCategory,
         );
 
@@ -83,11 +62,6 @@ const LandingPage = () => {
       toast.error(error.message);
     }
   };
-
-  useEffect(() => {
-    fetchCategories();
-    fetchServices();
-  }, []);
 
   // view of service provider modal
   const ProviderDetailsModal = () => {
@@ -563,69 +537,79 @@ const LandingPage = () => {
 
               {/* Categories mapping */}
               <div className="space-y-2">
-                {categories.map((category) => (
-                  <button
-                    key={category._id}
-                    onClick={() => setSelectedCategory(category.name)}
-                    className={`w-full flex items-center gap-4 p-4 rounded-lg text-left ${
-                      selectedCategory === category.name
-                        ? "bg-gray-100 border border-gray-300"
-                        : "hover:bg-gray-50"
-                    }`}
-                  >
-                    {/* Category Image - fixed to use img tag */}
-                    {category.image ? (
-                      <img
-                        src={category.image}
-                        alt={category.name}
-                        className="w-10 h-10 object-cover rounded-lg"
-                      />
-                    ) : (
-                      <div
-                        className={`w-10 h-10 flex items-center justify-center rounded-lg ${
-                          selectedCategory === category.name
-                            ? "bg-gray-900 text-white"
-                            : "bg-gray-100 text-gray-700"
-                        }`}
-                      >
-                        <span className="font-bold">
-                          {category.name?.charAt(0)}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="flex-1 min-w-0">
-                      <h3
-                        className={`font-medium ${
-                          selectedCategory === category.name
-                            ? "text-gray-900"
-                            : "text-gray-700"
-                        }`}
-                      >
-                        {category.name}
-                      </h3>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {category.description}
-                      </p>
-                    </div>
-
-                    {selectedCategory === category.name && (
-                      <div className="text-gray-900">
-                        <svg
-                          className="w-4 h-4"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
+                {loadingLandingData ? (
+                  <div className="space-y-2">
+                    {[1, 2, 3, 4].map((i) => (
+                      <div key={i} className="h-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                    ))}
+                  </div>
+                ) : landingCategories.length > 0 ? (
+                  landingCategories.map((category) => (
+                    <button
+                      key={category._id}
+                      onClick={() => setSelectedCategory(category.name)}
+                      className={`w-full flex items-center gap-4 p-4 rounded-lg text-left ${
+                        selectedCategory === category.name
+                          ? "bg-gray-100 border border-gray-300"
+                          : "hover:bg-gray-50"
+                      }`}
+                    >
+                      {/* Category Image - fixed to use img tag */}
+                      {category.image ? (
+                        <img
+                          src={category.image}
+                          alt={category.name}
+                          className="w-10 h-10 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div
+                          className={`w-10 h-10 flex items-center justify-center rounded-lg ${
+                            selectedCategory === category.name
+                              ? "bg-gray-900 text-white"
+                              : "bg-gray-100 text-gray-700"
+                          }`}
                         >
-                          <path
-                            fillRule="evenodd"
-                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
+                          <span className="font-bold">
+                            {category.name?.charAt(0)}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex-1 min-w-0">
+                        <h3
+                          className={`font-medium ${
+                            selectedCategory === category.name
+                              ? "text-gray-900"
+                              : "text-gray-700"
+                          }`}
+                        >
+                          {category.name}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {category.description}
+                        </p>
                       </div>
-                    )}
-                  </button>
-                ))}
+
+                      {selectedCategory === category.name && (
+                        <div className="text-gray-900">
+                          <svg
+                            className="w-4 h-4"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        </div>
+                      )}
+                    </button>
+                  ))
+                ) : (
+                  <p className="text-gray-500 text-center py-4">No categories available</p>
+                )}
               </div>
 
               {/* Category Stats */}
@@ -722,7 +706,23 @@ const LandingPage = () => {
             </div>
 
             {/* Services Grid */}
-            {filteredServices.length > 0 ? (
+            {loadingLandingData ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-lg border border-gray-200 overflow-hidden"
+                  >
+                    <div className="h-48 bg-gray-200 animate-pulse"></div>
+                    <div className="p-5 space-y-3">
+                      <div className="h-6 bg-gray-200 rounded animate-pulse w-3/4"></div>
+                      <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+                      <div className="h-10 bg-gray-200 rounded animate-pulse mt-4"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredServices.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredServices.map((service, index) => (
                   <div

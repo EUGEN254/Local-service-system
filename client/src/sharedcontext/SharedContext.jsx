@@ -31,6 +31,11 @@ const AppContextProvider = (props) => {
   const [categories, setCategories] = useState([]);
   const [showCustomCategory, setShowCustomCategory] = useState(false);
 
+  // Landing page specific data
+  const [landingCategories, setLandingCategories] = useState([]);
+  const [landingServices, setLandingServices] = useState([]);
+  const [loadingLandingData, setLoadingLandingData] = useState(false);
+
   // Online users
   const [onlineUsers, setOnlineUsers] = useState([]);
 
@@ -485,36 +490,27 @@ const AppContextProvider = (props) => {
   // ---------------- LOGOUT ----------------
   const logoutUser = async () => {
     try {
-      setAuthLoading(true);
-      
-      // Call logout endpoint FIRST to clear server-side session
       const { data } = await axios.post(
         `${backendUrl}/api/user/logout`,
         {},
         { withCredentials: true },
       );
 
-      // Clear local state and storage AFTER backend confirms logout
       setUser(null);
       localStorage.removeItem("user");
       localStorage.removeItem("role");
-      socket.current?.disconnect()
+      socket.current?.disconnect();
 
       if (data.success) {
         navigate("/", { replace: true });
         setTimeout(() => toast.success(data.message), 100);
       }
-      
     } catch (err) {
-      console.error("Logout error:", err);
-      // Still clear local state even if backend fails
       setUser(null);
       localStorage.removeItem("user");
       localStorage.removeItem("role");
       socket.current?.disconnect();
       navigate("/", { replace: true });
-    } finally {
-      setTimeout(() => setAuthLoading(false), 150);
     }
   };
 
@@ -533,10 +529,54 @@ const AppContextProvider = (props) => {
     }
   };
 
+  // Fetch landing page categories
+  const fetchLandingCategories = async () => {
+    try {
+      const { data } = await axios.get(
+        `${backendUrl}/api/landingpage/categories`,
+      );
+      if (data.success) {
+        setLandingCategories(data.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch landing categories:", error);
+    }
+  };
+
+  // Fetch landing page services
+  const fetchLandingServices = async () => {
+    try {
+      const { data } = await axios.get(
+        `${backendUrl}/api/landingpage/services`,
+      );
+      if (data.success) {
+        setLandingServices(data.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch landing services:", error);
+    }
+  };
+
+  // Fetch all landing page data at once
+  const fetchLandingData = async () => {
+    setLoadingLandingData(true);
+    try {
+      await Promise.all([
+        fetchLandingCategories(),
+        fetchLandingServices(),
+      ]);
+    } catch (error) {
+      console.error("Failed to fetch landing page data:", error);
+    } finally {
+      setLoadingLandingData(false);
+    }
+  };
+
   // ---------------- VERIFY SESSION ----------------
   useEffect(() => {
     fetchCurrentUser(false);
     fetchCategories();
+    fetchLandingData();
   }, []);
 
   const value = {
@@ -572,6 +612,14 @@ const AppContextProvider = (props) => {
     fetchBookingNotifications,
     markBookingNotificationAsRead,
     markAllBookingNotificationsAsRead,
+
+    // Landing page data
+    landingCategories,
+    landingServices,
+    loadingLandingData,
+    fetchLandingCategories,
+    fetchLandingServices,
+    fetchLandingData,
 
     // ✅ ADDED: Notification system functions and states
     notificationUnreadCount,
