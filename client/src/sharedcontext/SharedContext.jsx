@@ -498,7 +498,7 @@ const AppContextProvider = (props) => {
       setUser(null);
       localStorage.removeItem("user");
       localStorage.removeItem("role");
-      socket.current?.disconnect();
+      socket.current?.disconnect()
 
       if (data.success) {
         navigate("/", { replace: true });
