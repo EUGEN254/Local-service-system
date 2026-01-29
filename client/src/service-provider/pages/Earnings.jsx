@@ -1,5 +1,11 @@
 import React, { useContext, useEffect, useState } from "react";
-import { FaDollarSign, FaCheckCircle, FaWallet, FaCalendarAlt, FaChartLine } from "react-icons/fa";
+import {
+  FaDollarSign,
+  FaCheckCircle,
+  FaWallet,
+  FaCalendarAlt,
+  FaChartLine,
+} from "react-icons/fa";
 import { ShareContext } from "../../sharedcontext/SharedContext";
 import axios from "axios";
 
@@ -15,9 +21,9 @@ const Earnings = () => {
         setLoading(true);
         const { data } = await axios.get(
           `${backendUrl}/api/serviceprovider/mybookings`,
-          { withCredentials: true }
+          { withCredentials: true },
         );
-        
+
         if (data.success) setBookings(data.bookings);
       } catch (err) {
         console.error("Error fetching bookings:", err);
@@ -31,21 +37,27 @@ const Earnings = () => {
   // Filter bookings based on time period
   const getFilteredBookings = () => {
     const now = new Date();
-    const completedBookings = bookings.filter(b => b.status === "Completed" && b.is_paid);
+    const completedBookings = bookings.filter(
+      (b) => b.status === "Completed" && b.is_paid,
+    );
 
     switch (timeFilter) {
       case "today":
-        return completedBookings.filter(b => {
+        return completedBookings.filter((b) => {
           const bookingDate = new Date(b.updatedAt);
           return bookingDate.toDateString() === now.toDateString();
         });
       case "week": {
         const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        return completedBookings.filter(b => new Date(b.updatedAt) >= weekAgo);
+        return completedBookings.filter(
+          (b) => new Date(b.updatedAt) >= weekAgo,
+        );
       }
       case "month": {
         const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        return completedBookings.filter(b => new Date(b.updatedAt) >= monthAgo);
+        return completedBookings.filter(
+          (b) => new Date(b.updatedAt) >= monthAgo,
+        );
       }
       default:
         return completedBookings;
@@ -53,12 +65,20 @@ const Earnings = () => {
   };
 
   const filteredBookings = getFilteredBookings();
-  const allCompletedBookings = bookings.filter(b => b.status === "Completed" && b.is_paid);
+  const allCompletedBookings = bookings.filter(
+    (b) => b.status === "Completed" && b.is_paid,
+  );
 
   // Calculate earnings data
   // Ensure any amounts are treated as numbers to avoid string concatenation
-  const totalEarnings = filteredBookings.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-  const totalAllTimeEarnings = allCompletedBookings.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const totalEarnings = filteredBookings.reduce(
+    (sum, b) => sum + (Number(b.amount) || 0),
+    0,
+  );
+  const totalAllTimeEarnings = allCompletedBookings.reduce(
+    (sum, b) => sum + (Number(b.amount) || 0),
+    0,
+  );
   const completedServices = filteredBookings.length;
   const totalServicesCompleted = allCompletedBookings.length;
 
@@ -66,60 +86,80 @@ const Earnings = () => {
   // NOTE: the actual payout logic depends on your backend schema.
   // Here we treat completed & paid bookings that haven't been processed for payout
   // (i.e. `payoutProcessed` !== true) as available for payout. Adjust as needed.
-  const pendingPayoutBookings = bookings.filter(b =>
-    b.status === "Completed" && b.is_paid && !b.payoutProcessed
+  const pendingPayoutBookings = bookings.filter(
+    (b) => b.status === "Completed" && b.is_paid && !b.payoutProcessed,
   );
-  const pendingPayout = pendingPayoutBookings.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const pendingPayout = pendingPayoutBookings.reduce(
+    (sum, b) => sum + (Number(b.amount) || 0),
+    0,
+  );
 
   // Calculate this month's growth
-  const thisMonthBookings = allCompletedBookings.filter(b => {
+  const thisMonthBookings = allCompletedBookings.filter((b) => {
     const bookingDate = new Date(b.updatedAt);
     const now = new Date();
-    return bookingDate.getMonth() === now.getMonth() && 
-           bookingDate.getFullYear() === now.getFullYear();
+    return (
+      bookingDate.getMonth() === now.getMonth() &&
+      bookingDate.getFullYear() === now.getFullYear()
+    );
   });
-  const lastMonthBookings = allCompletedBookings.filter(b => {
+  const lastMonthBookings = allCompletedBookings.filter((b) => {
     const bookingDate = new Date(b.updatedAt);
     const now = new Date();
     const lastMonth = now.getMonth() === 0 ? 11 : now.getMonth() - 1;
-    const lastMonthYear = now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
-    return bookingDate.getMonth() === lastMonth && 
-           bookingDate.getFullYear() === lastMonthYear;
+    const lastMonthYear =
+      now.getMonth() === 0 ? now.getFullYear() - 1 : now.getFullYear();
+    return (
+      bookingDate.getMonth() === lastMonth &&
+      bookingDate.getFullYear() === lastMonthYear
+    );
   });
 
-  const thisMonthEarnings = thisMonthBookings.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-  const lastMonthEarnings = lastMonthBookings.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-  const growthPercentage = lastMonthEarnings > 0 
-    ? ((thisMonthEarnings - lastMonthEarnings) / lastMonthEarnings * 100).toFixed(1)
-    : thisMonthEarnings > 0 ? 100 : 0;
+  const thisMonthEarnings = thisMonthBookings.reduce(
+    (sum, b) => sum + (Number(b.amount) || 0),
+    0,
+  );
+  const lastMonthEarnings = lastMonthBookings.reduce(
+    (sum, b) => sum + (Number(b.amount) || 0),
+    0,
+  );
+  const growthPercentage =
+    lastMonthEarnings > 0
+      ? (
+          ((thisMonthEarnings - lastMonthEarnings) / lastMonthEarnings) *
+          100
+        ).toFixed(1)
+      : thisMonthEarnings > 0
+        ? 100
+        : 0;
 
   const summaryCards = [
     {
       title: "Total Earnings",
       value: `${currSymbol}${totalEarnings}`,
       description: `All time: ${currSymbol}${totalAllTimeEarnings}`,
-      bgColor: "bg-gradient-to-r from-yellow-500 to-orange-500",
+      bgColor: "bg-gray-500",
       icon: <FaDollarSign className="text-2xl" />,
     },
     {
       title: "Services Completed",
       value: completedServices,
       description: `Total: ${totalServicesCompleted} services`,
-      bgColor: "bg-gradient-to-r from-green-500 to-emerald-600",
+      bgColor: "bg-gray-500",
       icon: <FaCheckCircle className="text-2xl" />,
     },
     {
       title: "Available for Payout",
       value: `${currSymbol}${pendingPayout}`,
       description: "Ready to withdraw",
-      bgColor: "bg-gradient-to-r from-blue-500 to-cyan-600",
+      bgColor: "bg-gray-500",
       icon: <FaWallet className="text-2xl" />,
     },
     {
       title: "Monthly Growth",
       value: `${growthPercentage}%`,
       description: "vs last month",
-      bgColor: "bg-gradient-to-r from-purple-500 to-pink-600",
+      bgColor: "bg-gray-500",
       icon: <FaChartLine className="text-2xl" />,
     },
   ];
@@ -132,7 +172,7 @@ const Earnings = () => {
         serviceName,
         count: 0,
         totalAmount: 0,
-        category: booking.categoryName || "Uncategorized"
+        category: booking.categoryName || "Uncategorized",
       };
     }
     acc[serviceName].count += 1;
@@ -146,7 +186,7 @@ const Earnings = () => {
     <div className="space-y-6 p-4 sm:p-6 h-[calc(100vh-4rem)] overflow-y-auto scrollbar-none">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <p className="text-xl font-semibold text-gray-800">Earnings Overview</p>
-        
+
         {/* Time Filter */}
         <div className="flex gap-2">
           <select
@@ -165,7 +205,7 @@ const Earnings = () => {
       {/* Loading State */}
       {loading ? (
         <div className="flex justify-center items-center h-40">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-500"></div>
         </div>
       ) : (
         <>
@@ -180,12 +220,16 @@ const Earnings = () => {
                   >
                     <div className="flex justify-between items-start mb-2">
                       <div>
-                        <p className="text-sm font-medium opacity-90">{card.title}</p>
+                        <p className="text-sm font-medium opacity-90">
+                          {card.title}
+                        </p>
                         <p className="text-xl font-bold mt-1">{card.value}</p>
                       </div>
                       {card.icon}
                     </div>
-                    <p className="text-xs opacity-80 mt-2">{card.description}</p>
+                    <p className="text-xs opacity-80 mt-2">
+                      {card.description}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -199,7 +243,9 @@ const Earnings = () => {
                 >
                   <div className="flex justify-between items-start mb-2">
                     <div>
-                      <p className="text-sm font-medium opacity-90">{card.title}</p>
+                      <p className="text-sm font-medium opacity-90">
+                        {card.title}
+                      </p>
                       <p className="text-xl font-bold mt-1">{card.value}</p>
                     </div>
                     {card.icon}
@@ -215,18 +261,28 @@ const Earnings = () => {
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
               Earnings Breakdown by Service
             </h3>
-            
+
             {earningsByServiceArray.length > 0 ? (
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <div className="max-h-[400px] overflow-x-auto overflow-y-auto scrollbar-thin">
                   <table className="w-full min-w-[600px]">
                     <thead className="bg-gray-50">
                       <tr className="border-b border-gray-300">
-                        <th className="p-3 text-left text-sm font-semibold text-gray-700">Service</th>
-                        <th className="p-3 text-left text-sm font-semibold text-gray-700">Category</th>
-                        <th className="p-3 text-left text-sm font-semibold text-gray-700">Jobs Completed</th>
-                        <th className="p-3 text-left text-sm font-semibold text-gray-700">Total Earnings</th>
-                        <th className="p-3 text-left text-sm font-semibold text-gray-700">Average per Job</th>
+                        <th className="p-3 text-left text-sm font-semibold text-gray-700">
+                          Service
+                        </th>
+                        <th className="p-3 text-left text-sm font-semibold text-gray-700">
+                          Category
+                        </th>
+                        <th className="p-3 text-left text-sm font-semibold text-gray-700">
+                          Jobs Completed
+                        </th>
+                        <th className="p-3 text-left text-sm font-semibold text-gray-700">
+                          Total Earnings
+                        </th>
+                        <th className="p-3 text-left text-sm font-semibold text-gray-700">
+                          Average per Job
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -242,24 +298,35 @@ const Earnings = () => {
                             {service.count}
                           </td>
                           <td className="p-3 text-sm text-gray-900 font-semibold">
-                            {currSymbol}{service.totalAmount}
+                            {currSymbol}
+                            {service.totalAmount}
                           </td>
-                                              <td className="p-3 text-sm text-gray-900">
-                                                {currSymbol}{service.count > 0 ? (service.totalAmount / service.count).toFixed(2) : '0.00'}
+                          <td className="p-3 text-sm text-gray-900">
+                            {currSymbol}
+                            {service.count > 0
+                              ? (service.totalAmount / service.count).toFixed(2)
+                              : "0.00"}
                           </td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot className="bg-gray-50">
                       <tr className="border-t border-gray-300">
-                        <td colSpan="3" className="p-3 text-sm font-semibold text-gray-700 text-right">
+                        <td
+                          colSpan="3"
+                          className="p-3 text-sm font-semibold text-gray-700 text-right"
+                        >
                           Total:
                         </td>
                         <td className="p-3 text-sm font-semibold text-yellow-600">
-                          {currSymbol}{totalEarnings}
+                          {currSymbol}
+                          {totalEarnings}
                         </td>
                         <td className="p-3 text-sm text-gray-900">
-                          {currSymbol}{completedServices > 0 ? (totalEarnings / completedServices).toFixed(2) : '0.00'}
+                          {currSymbol}
+                          {completedServices > 0
+                            ? (totalEarnings / completedServices).toFixed(2)
+                            : "0.00"}
                         </td>
                       </tr>
                     </tfoot>
@@ -276,26 +343,39 @@ const Earnings = () => {
 
           {/* Recent Transactions */}
           <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Completed Jobs</h3>
-            
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">
+              Recent Completed Jobs
+            </h3>
+
             {filteredBookings.length > 0 ? (
               <div className="space-y-3">
                 {filteredBookings.slice(0, 5).map((booking, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                  >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                         <FaCheckCircle className="text-green-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{booking.serviceName}</p>
+                        <p className="font-medium text-gray-900">
+                          {booking.serviceName}
+                        </p>
                         <p className="text-sm text-gray-500">
-                          {new Date(booking.updatedAt).toLocaleDateString()} • {booking.customer?.name || "Customer"}
+                          {new Date(booking.updatedAt).toLocaleDateString()} •{" "}
+                          {booking.customer?.name || "Customer"}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold text-green-600">{currSymbol}{booking.amount}</p>
-                      <p className="text-xs text-gray-500 capitalize">{booking.paymentMethod?.toLowerCase()}</p>
+                      <p className="font-semibold text-green-600">
+                        {currSymbol}
+                        {booking.amount}
+                      </p>
+                      <p className="text-xs text-gray-500 capitalize">
+                        {booking.paymentMethod?.toLowerCase()}
+                      </p>
                     </div>
                   </div>
                 ))}

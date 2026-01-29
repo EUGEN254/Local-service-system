@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState, useRef } from "react";
+import React, { useContext, useEffect, useState, useRef, useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -23,6 +23,13 @@ import {
   HiCheckCircle,
   HiExclamationCircle,
 } from "react-icons/hi";
+import {
+  FaChevronLeft,
+  FaChevronRight,
+  FaAngleDoubleLeft,
+  FaAngleDoubleRight,
+  FaEye,
+} from "react-icons/fa";
 
 const Dashboard = () => {
   const { backendUrl, currSymbol } = useContext(ShareContext);
@@ -38,6 +45,17 @@ const Dashboard = () => {
   const [modalPosition, setModalPosition] = useState({ top: 0, right: 0 });
   const buttonRefs = useRef({});
 
+  // Pagination state
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalBookings: 0,
+    limit: 10,
+    hasNextPage: false,
+    hasPrevPage: false,
+  });
+
+  // Fetch bookings from API
   useEffect(() => {
     const fetchBookings = async () => {
       try {
@@ -47,9 +65,31 @@ const Dashboard = () => {
           { withCredentials: true },
         );
 
-        if (data.success) setBookings(data.bookings);
+        if (data.success) {
+          setBookings(data.bookings || []);
+          const totalBookings = data.bookings?.length || 0;
+          const totalPages = Math.ceil(totalBookings / pagination.limit);
+          
+          setPagination({
+            currentPage: 1,
+            totalPages: totalPages,
+            totalBookings: totalBookings,
+            limit: pagination.limit,
+            hasNextPage: totalPages > 1,
+            hasPrevPage: false,
+          });
+        }
       } catch (err) {
         console.error("Error fetching bookings:", err);
+        setBookings([]);
+        setPagination({
+          currentPage: 1,
+          totalPages: 1,
+          totalBookings: 0,
+          limit: 10,
+          hasNextPage: false,
+          hasPrevPage: false,
+        });
       } finally {
         setLoading(false);
       }
@@ -58,7 +98,55 @@ const Dashboard = () => {
     fetchBookings();
   }, [backendUrl]);
 
-  const computeChartData = (bookings, timeFilter) => {
+  // Memoize filtered requests to prevent recalculations
+  const filteredRequests = useMemo(() => {
+    return bookings.filter((b) =>
+      (statusFilter === "" || b.status === statusFilter) &&
+      (paymentFilter === "" || 
+        (paymentFilter === "Paid" ? b.is_paid : 
+         paymentFilter === "Cash" ? b.paymentMethod === "Cash" : 
+         paymentFilter === "Not Paid" ? !b.is_paid : true))
+    );
+  }, [bookings, statusFilter, paymentFilter]);
+
+  // Memoize current page data
+  const currentPageData = useMemo(() => {
+    const startIndex = (pagination.currentPage - 1) * pagination.limit;
+    const endIndex = startIndex + pagination.limit;
+    return filteredRequests.slice(startIndex, endIndex).map((req, idx) => ({
+      no: startIndex + idx + 1,
+      serviceId: req.serviceId,
+      service: req.serviceName,
+      status: req.status,
+      payment: req.is_paid
+        ? "Paid"
+        : req.paymentMethod === "Cash"
+          ? "Cash"
+          : "Not Paid",
+      location: req.city,
+      date: new Date(req.delivery_date).toLocaleDateString(),
+      amount: req.amount,
+      provider: req.providerName || "N/A",
+    }));
+  }, [filteredRequests, pagination.currentPage, pagination.limit]);
+
+  // Update pagination when filters or limit changes
+  useEffect(() => {
+    const totalFiltered = filteredRequests.length;
+    const totalPages = Math.ceil(totalFiltered / pagination.limit);
+    const currentPage = Math.min(pagination.currentPage, Math.max(1, totalPages));
+    
+    setPagination(prev => ({
+      ...prev,
+      totalPages: totalPages,
+      totalBookings: totalFiltered,
+      currentPage: totalFiltered > 0 ? currentPage : 1,
+      hasNextPage: currentPage < totalPages,
+      hasPrevPage: currentPage > 1,
+    }));
+  }, [filteredRequests]); // Removed pagination.limit from dependencies
+
+  const computeChartData = useMemo(() => {
     const grouped = {};
     bookings.forEach((b) => {
       const localDate = new Date(b.delivery_date);
@@ -115,10 +203,6 @@ const Dashboard = () => {
         "In Progress": grouped[key]["In Progress"],
         Cancelled: grouped[key].Cancelled,
       }));
-  };
-
-  useEffect(() => {
-    setChartData(computeChartData(bookings, timeFilter));
   }, [bookings, timeFilter]);
 
   // Enhanced summary cards for users - Updated colors to match theme
@@ -190,7 +274,7 @@ const Dashboard = () => {
   }, [bookings, currSymbol]);
 
   // Pie chart data for service status distribution
-  const pieChartData = [
+  const pieChartData = useMemo(() => [
     {
       name: "Completed",
       value: bookings.filter((b) => b.status === "Completed").length,
@@ -213,7 +297,75 @@ const Dashboard = () => {
       value: bookings.filter((b) => b.status === "Cancelled").length,
       color: "#EF4444", // Red
     },
-  ];
+  ], [bookings]);
+
+  // Pagination handlers
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= pagination.totalPages) {
+      setPagination(prev => ({ ...prev, currentPage: page }));
+      // Scroll to top of table
+      const tableContainer = document.querySelector('.table-container');
+      if (tableContainer) {
+        tableContainer.scrollTop = 0;
+      }
+    }
+  };
+
+  const handleLimitChange = (newLimit) => {
+    const limit = parseInt(newLimit);
+    const totalPages = Math.ceil(filteredRequests.length / limit);
+    
+    setPagination(prev => ({
+      ...prev,
+      limit: limit,
+      currentPage: 1,
+      totalPages: totalPages,
+      hasNextPage: totalPages > 1,
+      hasPrevPage: false,
+    }));
+  };
+
+  // Generate page numbers for pagination controls
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    const { currentPage, totalPages } = pagination;
+
+    if (totalPages <= maxVisiblePages) {
+      // Show all pages
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      // Show limited pages with ellipsis
+      if (currentPage <= 3) {
+        // Near the start
+        for (let i = 1; i <= maxVisiblePages - 1; i++) {
+          pages.push(i);
+        }
+        pages.push("...");
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        // Near the end
+        pages.push(1);
+        pages.push("...");
+        for (let i = totalPages - (maxVisiblePages - 2); i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        // In the middle
+        pages.push(1);
+        pages.push("...");
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push("...");
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
 
   const renderCustomizedLabel = ({
     cx,
@@ -246,28 +398,6 @@ const Dashboard = () => {
       </text>
     );
   };
-
-  const filteredRequests = bookings
-    .map((b, idx) => ({
-      no: idx + 1,
-      serviceId: b.serviceId,
-      service: b.serviceName,
-      status: b.status,
-      payment: b.is_paid
-        ? "Paid"
-        : b.paymentMethod === "Cash"
-          ? "Cash"
-          : "Not Paid",
-      location: b.city,
-      date: new Date(b.delivery_date).toLocaleDateString(),
-      amount: b.amount,
-      provider: b.providerName || "N/A",
-    }))
-    .filter(
-      (req) =>
-        (statusFilter === "" || req.status === statusFilter) &&
-        (paymentFilter === "" || req.payment === paymentFilter),
-    );
 
   const handleView = async (serviceId, index) => {
     try {
@@ -332,6 +462,17 @@ const Dashboard = () => {
     }
   };
 
+  // Clear all filters
+  const clearAllFilters = () => {
+    setStatusFilter("");
+    setPaymentFilter("");
+  };
+
+  // Check if any filter is active
+  const hasActiveFilters = useMemo(() => {
+    return statusFilter || paymentFilter;
+  }, [statusFilter, paymentFilter]);
+
   return (
     <div className="min-h-screen bg-white">
       {/* Scrollable content container */}
@@ -352,11 +493,12 @@ const Dashboard = () => {
                 </p>
               </div>
               <div className="flex items-center gap-4">
-                <div className="hidden sm:block text-sm text-gray-500 px-3 py-1 bg-gray-100 rounded">
-                  <span className="font-medium text-gray-900">
-                    {bookings.length}
+                <div className="text-sm text-gray-500 bg-white px-3 py-1.5 rounded-lg border border-gray-200">
+                  Total:{" "}
+                  <span className="font-bold text-gray-800">
+                    {pagination.totalBookings}
                   </span>{" "}
-                  total service{bookings.length !== 1 ? "s" : ""}
+                  bookings
                 </div>
               </div>
             </div>
@@ -387,159 +529,357 @@ const Dashboard = () => {
           </div>
 
           {/* Service Requests Table */}
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden mb-8">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden mb-8 flex flex-col" style={{ height: '600px' }}>
+            <div className="p-6 border-b border-gray-200 shrink-0">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <h2 className="text-xl font-bold text-gray-900">
                   My Service Requests
                 </h2>
-                <div className="flex gap-4">
+                <div className="flex items-center gap-4">
+                  {/* Active filters indicator */}
+                  {hasActiveFilters && (
+                    <button
+                      onClick={clearAllFilters}
+                      className="text-sm text-red-600 hover:text-red-700 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg border border-red-200 transition-colors flex items-center gap-2"
+                    >
+                      <span>Clear Filters</span>
+                      <HiXCircle className="w-3 h-3" />
+                    </button>
+                  )}
+                  <div className="flex gap-4">
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent w-full sm:w-auto"
+                    >
+                      <option value="">All Status</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Waiting for Work">Waiting for Work</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                    <select
+                      value={paymentFilter}
+                      onChange={(e) => setPaymentFilter(e.target.value)}
+                      className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent w-full sm:w-auto"
+                    >
+                      <option value="">All Payment</option>
+                      <option value="Paid">Paid</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Not Paid">Not Paid</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Pagination Controls - Top */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4">
+                {/* Items per page selector */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-gray-600">Show</span>
                   <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent w-full sm:w-auto"
+                    value={pagination.limit}
+                    onChange={(e) => handleLimitChange(e.target.value)}
+                    className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="">All Status</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Waiting for Work">Waiting for Work</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Cancelled">Cancelled</option>
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                    <option value="20">20</option>
                   </select>
-                  <select
-                    value={paymentFilter}
-                    onChange={(e) => setPaymentFilter(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-gray-900 focus:border-transparent w-full sm:w-auto"
+                  <span className="text-sm text-gray-600">requests per page</span>
+                </div>
+
+                {/* Page info */}
+                <div className="text-sm text-gray-600">
+                  Showing{" "}
+                  <span className="font-semibold text-gray-800">
+                    {filteredRequests.length === 0 ? 0 : 
+                      (pagination.currentPage - 1) * pagination.limit + 1}-
+                    {Math.min(
+                      pagination.currentPage * pagination.limit,
+                      filteredRequests.length
+                    )}
+                  </span>{" "}
+                  of{" "}
+                  <span className="font-semibold text-gray-800">
+                    {filteredRequests.length}
+                  </span>{" "}
+                  filtered requests
+                </div>
+
+                {/* Page navigation */}
+                <div className="flex items-center gap-1">
+                  {/* First page */}
+                  <button
+                    onClick={() => handlePageChange(1)}
+                    disabled={!pagination.hasPrevPage || pagination.currentPage === 1}
+                    className={`p-2 rounded-lg transition-colors ${
+                      !pagination.hasPrevPage || pagination.currentPage === 1
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                    }`}
+                    title="First page"
                   >
-                    <option value="">All Payment</option>
-                    <option value="Paid">Paid</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Not Paid">Not Paid</option>
-                  </select>
+                    <FaAngleDoubleLeft />
+                  </button>
+
+                  {/* Previous page */}
+                  <button
+                    onClick={() => handlePageChange(pagination.currentPage - 1)}
+                    disabled={!pagination.hasPrevPage}
+                    className={`p-2 rounded-lg transition-colors ${
+                      !pagination.hasPrevPage
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                    }`}
+                    title="Previous page"
+                  >
+                    <FaChevronLeft />
+                  </button>
+
+                  {/* Page numbers */}
+                  <div className="flex items-center gap-1">
+                    {getPageNumbers().map((pageNum, index) => (
+                      <React.Fragment key={index}>
+                        {pageNum === "..." ? (
+                          <span className="px-2 text-gray-400">...</span>
+                        ) : (
+                          <button
+                            onClick={() => handlePageChange(pageNum)}
+                            className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                              pagination.currentPage === pageNum
+                                ? "bg-blue-600 text-white shadow-sm"
+                                : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        )}
+                      </React.Fragment>
+                    ))}
+                  </div>
+
+                  {/* Next page */}
+                  <button
+                    onClick={() => handlePageChange(pagination.currentPage + 1)}
+                    disabled={!pagination.hasNextPage}
+                    className={`p-2 rounded-lg transition-colors ${
+                      !pagination.hasNextPage
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                    }`}
+                    title="Next page"
+                  >
+                    <FaChevronRight />
+                  </button>
+
+                  {/* Last page */}
+                  <button
+                    onClick={() => handlePageChange(pagination.totalPages)}
+                    disabled={
+                      !pagination.hasNextPage ||
+                      pagination.currentPage === pagination.totalPages
+                    }
+                    className={`p-2 rounded-lg transition-colors ${
+                      !pagination.hasNextPage ||
+                      pagination.currentPage === pagination.totalPages
+                        ? "text-gray-300 cursor-not-allowed"
+                        : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                    }`}
+                    title="Last page"
+                  >
+                    <FaAngleDoubleRight />
+                  </button>
                 </div>
               </div>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr className="border-b border-gray-200">
-                    <th className="p-4 text-left text-sm font-semibold text-gray-700">
-                      #
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-gray-700">
-                      Service
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-gray-700">
-                      Provider
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-gray-700">
-                      Status
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-gray-700">
-                      Payment
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-gray-700">
-                      Amount
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-gray-700">
-                      Location
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-gray-700">
-                      Date
-                    </th>
-                    <th className="p-4 text-left text-sm font-semibold text-gray-700">
-                      Action
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {loading ? (
-                    <tr>
-                      <td
-                        colSpan={9}
-                        className="text-center py-10 text-gray-500"
-                      >
-                        <div className="flex justify-center items-center">
-                          <HiClock className="animate-spin text-2xl mr-2 text-gray-900" />
-                          Loading your bookings...
-                        </div>
-                      </td>
+            {/* SCROLLABLE TABLE CONTENT */}
+            <div className="flex-1 overflow-y-auto table-container">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 sticky top-0 z-10">
+                    <tr className="border-b border-gray-200">
+                      <th className="p-4 text-left text-sm font-semibold text-gray-700">
+                        #
+                      </th>
+                      <th className="p-4 text-left text-sm font-semibold text-gray-700">
+                        Service
+                      </th>
+                      <th className="p-4 text-left text-sm font-semibold text-gray-700">
+                        Provider
+                      </th>
+                      <th className="p-4 text-left text-sm font-semibold text-gray-700">
+                        Status
+                      </th>
+                      <th className="p-4 text-left text-sm font-semibold text-gray-700">
+                        Payment
+                      </th>
+                      <th className="p-4 text-left text-sm font-semibold text-gray-700">
+                        Amount
+                      </th>
+                      <th className="p-4 text-left text-sm font-semibold text-gray-700">
+                        Location
+                      </th>
+                      <th className="p-4 text-left text-sm font-semibold text-gray-700">
+                        Date
+                      </th>
+                      <th className="p-4 text-left text-sm font-semibold text-gray-700">
+                        Action
+                      </th>
                     </tr>
-                  ) : filteredRequests.length > 0 ? (
-                    filteredRequests.map((req, idx) => (
-                      <tr
-                        key={idx}
-                        className="hover:bg-gray-50 transition-colors"
-                      >
-                        <td className="p-4 text-sm text-gray-900 font-medium">
-                          {req.no}
-                        </td>
-                        <td className="p-4 text-sm text-gray-900">
-                          {req.service}
-                        </td>
-                        <td className="p-4 text-sm text-gray-900">
-                          {req.provider}
-                        </td>
-                        <td className="p-4 text-sm">
-                          <span
-                            className={`font-semibold ${getStatusColor(
-                              req.status,
-                            )}`}
-                          >
-                            {req.status}
-                          </span>
-                        </td>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {loading ? (
+                      <tr>
                         <td
-                          className={`p-4 text-sm font-semibold ${
-                            req.payment === "Paid"
-                              ? "text-green-600"
-                              : req.payment === "Cash"
-                                ? "text-blue-600"
-                                : "text-red-600"
-                          }`}
+                          colSpan={9}
+                          className="text-center py-10 text-gray-500"
                         >
-                          {req.payment}
-                        </td>
-                        <td className="p-4 text-sm text-gray-900 font-semibold">
-                          {currSymbol} {req.amount || "0"}
-                        </td>
-                        <td className="p-4 text-sm text-gray-900">
-                          {req.location}
-                        </td>
-                        <td className="p-4 text-sm text-gray-900">
-                          {req.date}
-                        </td>
-                        <td className="p-4 whitespace-nowrap">
-                          <button
-                            ref={(el) => (buttonRefs.current[idx] = el)}
-                            onClick={() => handleView(req.serviceId, idx)}
-                            className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm rounded-lg transition-colors"
-                          >
-                            Details
-                          </button>
+                          <div className="flex justify-center items-center">
+                            <HiClock className="animate-spin text-2xl mr-2 text-gray-900" />
+                            Loading your bookings...
+                          </div>
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan={9}
-                        className="text-center py-10 text-gray-500"
-                      >
-                        <div className="flex flex-col items-center">
-                          <HiExclamationCircle className="text-3xl text-gray-400 mb-2" />
-                          <p>No service requests found for selected filters.</p>
-                          <p className="text-sm mt-1">
-                            Try changing your filter criteria.
-                          </p>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    ) : currentPageData.length > 0 ? (
+                      currentPageData.map((req, idx) => (
+                        <tr
+                          key={idx}
+                          className="hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="p-4 text-sm text-gray-900 font-medium">
+                            {req.no}
+                          </td>
+                          <td className="p-4 text-sm text-gray-900">
+                            {req.service}
+                          </td>
+                          <td className="p-4 text-sm text-gray-900">
+                            {req.provider}
+                          </td>
+                          <td className="p-4 text-sm">
+                            <span
+                              className={`font-semibold ${getStatusColor(
+                                req.status,
+                              )}`}
+                            >
+                              {req.status}
+                            </span>
+                          </td>
+                          <td
+                            className={`p-4 text-sm font-semibold ${
+                              req.payment === "Paid"
+                                ? "text-green-600"
+                                : req.payment === "Cash"
+                                  ? "text-blue-600"
+                                  : "text-red-600"
+                            }`}
+                          >
+                            {req.payment}
+                          </td>
+                          <td className="p-4 text-sm text-gray-900 font-semibold">
+                            {currSymbol} {req.amount || "0"}
+                          </td>
+                          <td className="p-4 text-sm text-gray-900">
+                            {req.location}
+                          </td>
+                          <td className="p-4 text-sm text-gray-900">
+                            {req.date}
+                          </td>
+                          <td className="p-4 whitespace-nowrap">
+                            <button
+                              ref={(el) => (buttonRefs.current[idx] = el)}
+                              onClick={() => handleView(req.serviceId, idx)}
+                              className="flex items-center gap-2 px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-sm rounded-lg transition-colors"
+                            >
+                              <FaEye className="text-sm" /> Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={9}
+                          className="text-center py-10 text-gray-500"
+                        >
+                          <div className="flex flex-col items-center">
+                            <HiExclamationCircle className="text-3xl text-gray-400 mb-2" />
+                            <p>No service requests found for selected filters.</p>
+                            <p className="text-sm mt-1">
+                              Try changing your filter criteria.
+                            </p>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
+
+            {/* Pagination Controls - Bottom */}
+            {filteredRequests.length > 0 && (
+              <div className="border-t border-gray-200 bg-gray-50 p-4 shrink-0">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="text-sm text-gray-600">
+                    Page {pagination.currentPage} of {pagination.totalPages}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handlePageChange(1)}
+                      disabled={!pagination.hasPrevPage || pagination.currentPage === 1}
+                      className={`px-3 py-1.5 rounded-lg transition-colors ${
+                        !pagination.hasPrevPage || pagination.currentPage === 1
+                          ? "text-gray-300 cursor-not-allowed"
+                          : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                      }`}
+                    >
+                      First
+                    </button>
+                    <button
+                      onClick={() => handlePageChange(pagination.currentPage - 1)}
+                      disabled={!pagination.hasPrevPage}
+                      className={`px-3 py-1.5 rounded-lg transition-colors ${
+                        !pagination.hasPrevPage
+                          ? "text-gray-300 cursor-not-allowed"
+                          : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                      }`}
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={() => handlePageChange(pagination.currentPage + 1)}
+                      disabled={!pagination.hasNextPage}
+                      className={`px-3 py-1.5 rounded-lg transition-colors ${
+                        !pagination.hasNextPage
+                          ? "text-gray-300 cursor-not-allowed"
+                          : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                      }`}
+                    >
+                      Next
+                    </button>
+                    <button
+                      onClick={() => handlePageChange(pagination.totalPages)}
+                      disabled={
+                        !pagination.hasNextPage ||
+                        pagination.currentPage === pagination.totalPages
+                      }
+                      className={`px-3 py-1.5 rounded-lg transition-colors ${
+                        !pagination.hasNextPage ||
+                        pagination.currentPage === pagination.totalPages
+                          ? "text-gray-300 cursor-not-allowed"
+                          : "text-gray-600 hover:text-blue-600 hover:bg-blue-50"
+                      }`}
+                    >
+                      Last
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Charts Section */}
@@ -583,7 +923,7 @@ const Dashboard = () => {
               <div className="w-full h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={chartData}
+                    data={computeChartData}
                     margin={{ top: 20, bottom: 5 }}
                     barSize={12}
                   >

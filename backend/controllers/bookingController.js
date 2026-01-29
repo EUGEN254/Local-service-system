@@ -44,7 +44,7 @@ export const createBooking = async (req, res) => {
     // Populate customer details for socket emission
     const populatedBooking = await Booking.findById(booking._id).populate(
       "customer",
-      "name email"
+      "name email",
     );
 
     // Create notification for CUSTOMER
@@ -144,19 +144,54 @@ export const createBooking = async (req, res) => {
   }
 };
 
-// Get all bookings for current user
+// Get all bookings for current user with pagination
 export const getUserBookings = async (req, res) => {
   try {
     const customerId = req.user._id;
-    const bookings = await Booking.find({ customer: customerId }).sort({
-      createdAt: -1,
+
+    // Get pagination parameters from query string (with defaults)
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
+    const skip = (page - 1) * limit;
+
+    // Get total count for pagination info
+    const totalBookings = await Booking.countDocuments({
+      customer: customerId,
     });
-    res.status(200).json({ success: true, bookings });
+
+    // Get paginated bookings
+    const bookings = await Booking.find({ customer: customerId })
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Calculate total pages
+    const totalPages = Math.ceil(totalBookings / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    res.status(200).json({
+      success: true,
+      bookings,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalBookings,
+        limit,
+        hasNextPage,
+        hasPrevPage,
+        nextPage: hasNextPage ? page + 1 : null,
+        prevPage: hasPrevPage ? page - 1 : null,
+      },
+    });
   } catch (error) {
     console.error("Fetch bookings error:", error);
-    res
-      .status(500)
-      .json({ success: false, message: "Failed to fetch bookings", error });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch bookings",
+      error: error.message,
+    });
   }
 };
 
@@ -175,7 +210,7 @@ export const getServiceProviderDetails = async (req, res) => {
 
     // Get service provider details from User collection
     const serviceProvider = await User.findById(service.serviceProvider).select(
-      "name email phone address bio image"
+      "name email phone address bio image",
     );
 
     if (!serviceProvider) {
@@ -203,17 +238,15 @@ export const updatePaymentStatus = async (req, res) => {
     const booking = await Booking.findByIdAndUpdate(
       bookingId,
       { is_paid },
-      { new: true }
+      { new: true },
     );
     res.status(200).json({ success: true, booking });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Failed to update payment status",
-        error,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Failed to update payment status",
+      error,
+    });
   }
 };
 
@@ -235,12 +268,10 @@ export const updateFailedBooking = async (req, res) => {
     const isAdmin = req.user.role === "admin";
 
     if (!isOwner && !isProvider && !isAdmin) {
-      return res
-        .status(403)
-        .json({
-          success: false,
-          message: "Not authorized to update this booking",
-        });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to update this booking",
+      });
     }
 
     booking.is_paid = req.body.is_paid;

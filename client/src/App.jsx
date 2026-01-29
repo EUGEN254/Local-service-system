@@ -38,21 +38,8 @@ import AllProviders from "./user/pages/AllProviders";
 import ScrollToTop from "./sharedcomponent/ScrollToTop";
 
 const App = () => {
-  const { user, authLoading } = useContext(ShareContext);
+  const { user } = useContext(ShareContext);
   const role = user?.role;
-
-  if (authLoading) {
-    // Return a full-screen loader while checking auth (prevents flicker)
-    return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-900 text-white">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-yellow-400"></div>
-        <span className="ml-3 text-lg">Loading...</span>
-      </div>
-    );
-  }
-
-
-
 
   return (
     <>
@@ -67,11 +54,11 @@ const App = () => {
         toastStyle={{
           height: "50px",
           minHeight: "50px",
-          fontSize: "14px", 
-          lineHeight: "1.2", 
+          fontSize: "14px",
+          lineHeight: "1.2",
         }}
       />
-        <ScrollToTop/>
+      <ScrollToTop />
 
       <Routes>
         {/* Public routes - exact paths */}

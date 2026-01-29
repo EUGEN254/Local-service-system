@@ -97,7 +97,7 @@ const Navbar = ({ onMenuClick }) => {
             className="flex items-center gap-1 bg-gray-100 px-3 py-2 rounded-full hover:bg-gray-200 transition-colors"
             onClick={() => setDropdownOpen(!dropdownOpen)}
           >
-            <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+            <div className="w-6 h-6 bg-gray-500 text-white rounded-full flex items-center justify-center font-semibold text-sm">
               {user?.name?.charAt(0).toUpperCase() || "U"}
             </div>
 

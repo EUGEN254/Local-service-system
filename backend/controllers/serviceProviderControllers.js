@@ -64,16 +64,41 @@ export const addService = async (req, res) => {
 // Get all services for the logged-in service provider
 export const getMyServices = async (req, res) => {
   try {
+    // Get pagination parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    
+    // Get total count
+    const totalServices = await plumbingServiceSchema.countDocuments({ 
+      serviceProvider: req.user._id 
+    });
+    
+    // Fetch services with pagination
     const services = await plumbingServiceSchema
       .find({ serviceProvider: req.user._id })
-      .sort({ dateAdded: -1 });
+      .sort({ dateAdded: -1 })
+      .skip(skip)
+      .limit(limit);
 
-    res.json({ success: true, services });
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalServices / limit);
+    
+    res.json({ 
+      success: true, 
+      services,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalServices: totalServices,
+        limit: limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      }
+    });
   } catch (err) {
     console.error(err);
-    res
-      .status(500)
-      .json({ success: false, message: "Failed to fetch services" });
+    res.status(500).json({ success: false, message: "Failed to fetch services" });
   }
 };
 

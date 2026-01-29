@@ -17,11 +17,11 @@ const isServiceProvider = (user) => {
 
 // the main component
 const AppContextProvider = (props) => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL; //getting the server address
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
   const currSymbol = "KES";
 
-  const cachedUser = localStorage.getItem("user"); //check if userDat exist in browser
+  const cachedUser = localStorage.getItem("user"); 
   const [user, setUser] = useState(cachedUser ? JSON.parse(cachedUser) : null);
   const [authLoading, setAuthLoading] = useState(false);
   const [verified, setIsVerified] = useState(false);
@@ -36,6 +36,16 @@ const AppContextProvider = (props) => {
   const [landingServices, setLandingServices] = useState([]);
   const [loadingLandingData, setLoadingLandingData] = useState(false);
 
+   // Pagination state
+    const [pagination, setPagination] = useState({
+      currentPage: 1,
+      totalPages: 1,
+      totalServices: 0,
+      limit: 10,
+      hasNextPage: false,
+      hasPrevPage: false,
+    });
+
   // Online users
   const [onlineUsers, setOnlineUsers] = useState([]);
 
@@ -45,15 +55,14 @@ const AppContextProvider = (props) => {
   const [bookingNotifications, setBookingNotifications] = useState([]);
   const [unreadBookingCount, setUnreadBookingCount] = useState(0);
 
-  // ✅ ADDED: Notification system states
+
   const [notificationUnreadCount, setNotificationUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
 
   // Messages state for all chats
   const [messages, setMessages] = useState({}); // { chatId: [messages] }
 
-  // Track the currently open chat room id (so incoming messages for the open chat
-  // don't increment unread counters)
+ 
   const [activeRoomId, setActiveRoomId] = useState(null);
   const activeRoomIdRef = useRef(null);
 
@@ -442,20 +451,36 @@ const AppContextProvider = (props) => {
   }, [user]);
 
   // ---------------- SERVICES ----------------
-  const fetchServices = async () => {
-    setLoadingServices(true);
-    try {
-      const { data } = await axios.get(
-        `${backendUrl}/api/serviceprovider/my-services`,
-        { withCredentials: true },
-      );
-      if (data.success) setServices(data.services);
-    } catch (err) {
-      toast.error("Failed to load services");
-    } finally {
-      setLoadingServices(false);
+  const fetchServices = async (page = 1, limit = pagination.limit) => {
+  setLoadingServices(true);
+  try {
+    const params = new URLSearchParams({
+      page: page,
+      limit: limit,
+    });
+
+    const { data } = await axios.get(
+      `${backendUrl}/api/serviceprovider/my-services?${params.toString()}`,
+      { withCredentials: true }
+    );
+    
+    if (data.success) {
+      setServices(data.services || []);
+      setPagination(data.pagination || {
+        currentPage: 1,
+        totalPages: 1,
+        totalServices: 0,
+        limit: limit,
+        hasNextPage: false,
+        hasPrevPage: false,
+      });
     }
-  };
+  } catch (err) {
+    toast.error("Failed to load services");
+  } finally {
+    setLoadingServices(false);
+  }
+};
 
   const addService = (service) => setServices((prev) => [service, ...prev]);
   const removeService = (id) =>
@@ -589,6 +614,8 @@ const AppContextProvider = (props) => {
     showCustomCategory,
     logoutUser,
     authLoading,
+    pagination,
+    setPagination,
     setAuthLoading,
     services,
     loadingServices,

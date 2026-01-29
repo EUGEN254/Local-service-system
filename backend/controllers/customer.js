@@ -3,14 +3,42 @@ import plumbingServiceSchema from "../models/plumbingServiceSchema.js";
 // Fetch all services for customers
 export const getServicesForCustomer = async (req, res) => {
   try {
-    // Fetch all active services and populate service provider details including bio
+    // Get pagination parameters
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 9;
+    const skip = (page - 1) * limit;
+    
+    // Build query based on filters
+    let query = { status: "Active" };
+    
+    // Search filter
+    if (req.query.search) {
+      const searchRegex = new RegExp(req.query.search, 'i');
+      query.$or = [
+        { serviceName: searchRegex },
+        { category: searchRegex },
+        { serviceProviderName: searchRegex }
+      ];
+    }
+    
+    // Category filter
+    if (req.query.category && req.query.category !== "All") {
+      query.category = req.query.category;
+    }
+    
+    // Get total count
+    const totalServices = await plumbingServiceSchema.countDocuments(query);
+    
+    // Fetch services with pagination
     const services = await plumbingServiceSchema
-      .find({ status: "Active" })
+      .find(query)
       .sort({ dateAdded: -1 })
-      .populate("serviceProvider", "name email bio image") // Populate with the fields you want
-      .select("category serviceName amount image serviceProviderName serviceProvider"); 
+      .skip(skip)
+      .limit(limit)
+      .populate("serviceProvider", "name email bio image")
+      .select("category serviceName amount image serviceProviderName serviceProvider");
 
-    // Format the response to include bio
+    // Format the response
     const formattedServices = services.map(service => ({
       _id: service._id,
       category: service.category,
@@ -29,7 +57,21 @@ export const getServicesForCustomer = async (req, res) => {
       }
     }));
 
-    res.status(200).json({ success: true, services: formattedServices });
+    // Calculate pagination info
+    const totalPages = Math.ceil(totalServices / limit);
+    
+    res.status(200).json({ 
+      success: true, 
+      services: formattedServices,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalServices: totalServices,
+        limit: limit,
+        hasNextPage: page < totalPages,
+        hasPrevPage: page > 1
+      }
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Failed to fetch services" });
