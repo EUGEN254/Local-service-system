@@ -855,6 +855,7 @@ export const logoutUser = (req, res) => {
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
     path: "/",
+    maxAge: 0,
   });
   res.json({
     success: true,
@@ -869,6 +870,7 @@ export const logoutAdmin = (req, res) => {
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
     path: "/",
+    maxAge: 0,
   });
   res.json({
     success: true,

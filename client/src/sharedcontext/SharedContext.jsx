@@ -486,17 +486,20 @@ const AppContextProvider = (props) => {
   const logoutUser = async () => {
     try {
       setAuthLoading(true);
-      setUser(null);
-      localStorage.removeItem("user");
-      localStorage.removeItem("role");
-
-      socket.current?.disconnect();
-
+      
+      // Call logout endpoint FIRST to clear server-side session
       const { data } = await axios.post(
         `${backendUrl}/api/user/logout`,
         {},
         { withCredentials: true },
       );
+
+      // Clear local state and storage AFTER backend confirms logout
+      setUser(null);
+      localStorage.removeItem("user");
+      localStorage.removeItem("role");
+      socket.current?.disconnect();
+
       if (data.success) {
         navigate("/", { replace: true });
         setTimeout(() => toast.success(data.message), 100);
@@ -504,6 +507,12 @@ const AppContextProvider = (props) => {
       
     } catch (err) {
       console.error("Logout error:", err);
+      // Still clear local state even if backend fails
+      setUser(null);
+      localStorage.removeItem("user");
+      localStorage.removeItem("role");
+      socket.current?.disconnect();
+      navigate("/", { replace: true });
     } finally {
       setTimeout(() => setAuthLoading(false), 150);
     }
