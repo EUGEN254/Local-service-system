@@ -15,14 +15,13 @@ const isServiceProvider = (user) => {
   );
 };
 
-
-// the main component 
+// the main component
 const AppContextProvider = (props) => {
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;//getting the server address 
+  const backendUrl = import.meta.env.VITE_BACKEND_URL; //getting the server address
   const navigate = useNavigate();
   const currSymbol = "KES";
 
-  const cachedUser = localStorage.getItem("user");//check if userDat exist in browser
+  const cachedUser = localStorage.getItem("user"); //check if userDat exist in browser
   const [user, setUser] = useState(cachedUser ? JSON.parse(cachedUser) : null);
   const [authLoading, setAuthLoading] = useState(false);
   const [verified, setIsVerified] = useState(false);
@@ -59,16 +58,16 @@ const AppContextProvider = (props) => {
 
   // Fetch notification unread count
   const fetchNotificationUnreadCount = async () => {
-    if (!user) return;//function should run only if user is logged in
+    if (!user) return; //function should run only if user is logged in
 
     try {
       const { data } = await axios.get(
         `${backendUrl}/api/notifications/unread-count`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
-        setNotificationUnreadCount(data.unreadCount);//update count 
+        setNotificationUnreadCount(data.unreadCount); //update count
       }
     } catch (error) {
       console.error("Failed to fetch notification unread count:", error);
@@ -82,7 +81,7 @@ const AppContextProvider = (props) => {
     try {
       const { data } = await axios.get(
         `${backendUrl}/api/notifications?category=${category === "All" ? "" : category}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
@@ -101,16 +100,21 @@ const AppContextProvider = (props) => {
       const { data } = await axios.put(
         `${backendUrl}/api/notifications/mark-read/${notificationId}`,
         {},
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
-        setNotifications(prev =>//taking initial value of array
-          prev.map(n =>//creating a new array going through each notification
-            n._id === notificationId ? { ...n, read: true } : n
-          )
+        setNotifications(
+          (
+            prev, //taking initial value of array
+          ) =>
+            prev.map(
+              (
+                n, //creating a new array going through each notification
+              ) => (n._id === notificationId ? { ...n, read: true } : n),
+            ),
         );
-        setNotificationUnreadCount(prev => Math.max(0, prev - 1));
+        setNotificationUnreadCount((prev) => Math.max(0, prev - 1));
       }
       return data;
     } catch (error) {
@@ -125,13 +129,11 @@ const AppContextProvider = (props) => {
       const { data } = await axios.put(
         `${backendUrl}/api/notifications/mark-all-read`,
         {},
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
-        setNotifications(prev =>
-          prev.map(n => ({ ...n, read: true }))
-        );
+        setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
         setNotificationUnreadCount(0);
       }
       return data;
@@ -146,17 +148,19 @@ const AppContextProvider = (props) => {
     try {
       const { data } = await axios.delete(
         `${backendUrl}/api/notifications/${notificationId}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
-        setNotifications(prev =>
-          prev.filter(n => n._id !== notificationId)
+        setNotifications((prev) =>
+          prev.filter((n) => n._id !== notificationId),
         );
         // Update unread count if the deleted notification was unread
-        const deletedNotification = notifications.find(n => n._id === notificationId);
+        const deletedNotification = notifications.find(
+          (n) => n._id === notificationId,
+        );
         if (deletedNotification && !deletedNotification.read) {
-          setNotificationUnreadCount(prev => Math.max(0, prev - 1));
+          setNotificationUnreadCount((prev) => Math.max(0, prev - 1));
         }
       }
       return data;
@@ -170,14 +174,14 @@ const AppContextProvider = (props) => {
   const deleteAllNotifications = async () => {
     try {
       const { data } = await axios.delete(
-        `${backendUrl}/api/notifications/bulk/delete-all`, 
-        { withCredentials: true }
+        `${backendUrl}/api/notifications/bulk/delete-all`,
+        { withCredentials: true },
       );
 
       if (data.success) {
         // Clear ALL notifications from state
         setNotifications([]);
-        
+
         // Reset unread count to 0 (since all are gone)
         setNotificationUnreadCount(0);
       }
@@ -188,19 +192,17 @@ const AppContextProvider = (props) => {
     }
   };
 
-
-
   // ---------------- CHAT UNREAD COUNTS ----------------
   const fetchUnreadCounts = async () => {
     if (!user) return;
 
     try {
       const { data } = await axios.get(`${backendUrl}/api/chat/unread-count`, {
-        withCredentials: true,//include login infromation that were create by cookie
+        withCredentials: true, //include login infromation that were create by cookie
       });
 
       if (data.success) {
-        const countsMap = {};//preparing storage
+        const countsMap = {}; //preparing storage
         let total = 0;
 
         data.unreadCounts.forEach((entry) => {
@@ -225,7 +227,7 @@ const AppContextProvider = (props) => {
         `${backendUrl}/api/chat/booking-notifications`,
         {
           withCredentials: true,
-        }
+        },
       );
 
       if (data.success) {
@@ -243,13 +245,13 @@ const AppContextProvider = (props) => {
       await axios.post(
         `${backendUrl}/api/chat/mark-notification-read`,
         { notificationId },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       setBookingNotifications((prev) =>
         prev.map((notif) =>
-          notif._id === notificationId ? { ...notif, read: true } : notif
-        )
+          notif._id === notificationId ? { ...notif, read: true } : notif,
+        ),
       );
       setUnreadBookingCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
@@ -263,11 +265,11 @@ const AppContextProvider = (props) => {
       await axios.post(
         `${backendUrl}/api/chat/mark-all-notifications-read`,
         {},
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       setBookingNotifications((prev) =>
-        prev.map((notif) => ({ ...notif, read: true }))
+        prev.map((notif) => ({ ...notif, read: true })),
       );
       setUnreadBookingCount(0);
     } catch (err) {
@@ -298,7 +300,10 @@ const AppContextProvider = (props) => {
       if (message.receiver === user._id) {
         // If the message belongs to the currently open chat, don't increment unread
         // counts — the chat container will handle marking it as read.
-        if (activeRoomIdRef.current && activeRoomIdRef.current === message.roomId) {
+        if (
+          activeRoomIdRef.current &&
+          activeRoomIdRef.current === message.roomId
+        ) {
           return;
         }
 
@@ -350,7 +355,7 @@ const AppContextProvider = (props) => {
 
         // Show toast notification
         toast.info(
-          `New booking: ${bookingData.serviceName} from ${bookingData.customerName}`
+          `New booking: ${bookingData.serviceName} from ${bookingData.customerName}`,
         );
       }
     });
@@ -375,7 +380,10 @@ const AppContextProvider = (props) => {
 
     // Then fetch every 10 seconds for chat, 30 seconds for notifications
     const chatInterval = setInterval(fetchUnreadCounts, 10000);
-    const notificationInterval = setInterval(fetchNotificationUnreadCount, 30000);
+    const notificationInterval = setInterval(
+      fetchNotificationUnreadCount,
+      30000,
+    );
 
     return () => {
       clearInterval(chatInterval);
@@ -401,7 +409,6 @@ const AppContextProvider = (props) => {
 
         localStorage.setItem("user", JSON.stringify(data.user));
         localStorage.setItem("role", data.user.role);
-        
       } else {
         setUser(null);
         setIsVerified(false);
@@ -435,7 +442,7 @@ const AppContextProvider = (props) => {
     try {
       const { data } = await axios.get(
         `${backendUrl}/api/serviceprovider/my-services`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       if (data.success) setServices(data.services);
     } catch (err) {
@@ -468,7 +475,7 @@ const AppContextProvider = (props) => {
       await axios.post(
         `${backendUrl}/api/chat/mark-read`,
         { senderId },
-        { withCredentials: true }
+        { withCredentials: true },
       );
     } catch (err) {
       console.error("Failed to mark messages as read:", err);
@@ -485,13 +492,16 @@ const AppContextProvider = (props) => {
 
       socket.current?.disconnect();
 
-      await axios.post(
+      const { data } = await axios.post(
         `${backendUrl}/api/user/logout`,
         {},
-        { withCredentials: true }
+        { withCredentials: true },
       );
-      navigate("/", { replace: true });
-      setTimeout(() => toast.success("Logged out successfully"), 100);
+      if (data.success) {
+        navigate("/", { replace: true });
+        setTimeout(() => toast.success(data.message), 100);
+      }
+      
     } catch (err) {
       console.error("Logout error:", err);
     } finally {
@@ -513,14 +523,12 @@ const AppContextProvider = (props) => {
       toast.error("Failed to load categories");
     }
   };
-  
+
   // ---------------- VERIFY SESSION ----------------
   useEffect(() => {
     fetchCurrentUser(false);
-    fetchCategories()
+    fetchCategories();
   }, []);
-
-
 
   const value = {
     backendUrl,
@@ -555,7 +563,7 @@ const AppContextProvider = (props) => {
     fetchBookingNotifications,
     markBookingNotificationAsRead,
     markAllBookingNotificationsAsRead,
-    
+
     // ✅ ADDED: Notification system functions and states
     notificationUnreadCount,
     setNotificationUnreadCount,

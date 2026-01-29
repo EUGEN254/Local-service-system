@@ -66,7 +66,7 @@ export const registerUser = async (req, res) => {
   await createNotification(user._id, {
     title: "Welcome to Local Services System! 🎉",
     message: `Welcome ${name}! Your ${role} account has been created successfully. ${getRoleSpecificMessage(
-      role
+      role,
     )}`,
     type: "system",
     category: getNotificationCategory(role),
@@ -239,7 +239,7 @@ export const googleLoginUser = async (req, res) => {
       await createNotification(user._id, {
         title: "Welcome to Local Services System! 🎉",
         message: `Welcome ${name}! Your ${role} account has been created successfully with Google. ${getRoleSpecificMessage(
-          role
+          role,
         )}`,
         type: "system",
         category: "User",
@@ -479,7 +479,7 @@ export const updatePassword = async (req, res) => {
     // Verify current password
     const isCurrentPasswordValid = await bcrypt.compare(
       currentPassword,
-      user.password
+      user.password,
     );
     if (!isCurrentPasswordValid) {
       return res.status(400).json({
@@ -850,7 +850,12 @@ export const resetPassword = async (req, res) => {
 
 // User logout
 export const logoutUser = (req, res) => {
-  res.clearCookie("token");
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+    path: "/",
+  });
   res.json({
     success: true,
     message: "Logged out successfully",
@@ -859,7 +864,12 @@ export const logoutUser = (req, res) => {
 
 // Admin logout
 export const logoutAdmin = (req, res) => {
-  res.clearCookie("token");
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+    path: "/",
+  });
   res.json({
     success: true,
     message: "Logged out successfully",
