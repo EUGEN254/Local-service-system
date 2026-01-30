@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useContext, useRef, useCallback } from "react";
+import { toast } from "react-toastify";
 import { Link } from "react-router-dom";
 import {
   FaCalendarAlt,
@@ -116,12 +117,13 @@ const MyBookings = () => {
       } else {
         setBookings([]);
       }
-    } catch (err) {
+      } catch (err) {
       // Abort errors are expected when canceling
       if (err.name === 'CanceledError' || err.name === 'AbortError') {
         console.log('Request canceled:', err.message || err);
       } else {
-        console.error("Error fetching bookings:", err);
+        const msg = err?.response?.data?.message || err.message || 'Error fetching bookings';
+        toast.error(msg);
         setBookings([]);
       }
     } finally {
@@ -209,7 +211,8 @@ const MyBookings = () => {
         setServiceModalOpen(true);
       }
     } catch (err) {
-      console.error("Error fetching provider details:", err);
+      const msg = err?.response?.data?.message || err.message || 'Error fetching provider details';
+      toast.error(msg);
     }
   };
 

@@ -16,7 +16,7 @@ export const useCategories = (backendUrl) => {
       const data = await categoryService.fetchCategories(backendUrl);
       setCategories(data);
     } catch (error) {
-      console.error("Error fetching categories:", error);
+      toast.error(error.message);
     }
   }, [backendUrl]);
 

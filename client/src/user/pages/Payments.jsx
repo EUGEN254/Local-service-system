@@ -1,4 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
+import { toast } from "react-toastify";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   FiSmartphone,
@@ -51,7 +52,8 @@ const Payments = () => {
         setPaymentHistory(data.bookings || []);
       }
     } catch (err) {
-      console.error("Failed to fetch payment history:", err);
+      const msg = err?.response?.data?.message || err.message || 'Failed to fetch payment history';
+      toast.error(msg);
     } finally {
       setLoadingHistory(false);
     }
@@ -200,11 +202,10 @@ const Payments = () => {
 
       checkStatus();
     } catch (err) {
-      console.error("M-Pesa Error:", err);
+      const msg = err?.response?.data?.message || err.message || 'Payment failed. Please try again.';
+      toast.error(msg);
       setMessage("");
-      setError(
-        err.response?.data?.message || "Payment failed. Please try again.",
-      );
+      setError(msg);
       setLoading(false);
     }
   };

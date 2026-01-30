@@ -108,7 +108,6 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
         toast.error(data.message);
       }
     } catch (err) {
-      console.error("Google login error:", err);
       const errorMessage = err.response?.data?.message || "Google login failed. Please try again.";
       toast.error(errorMessage);
     } finally {

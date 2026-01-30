@@ -35,9 +35,9 @@ const getNotificationCategory = (userRole) => {
 
 // Register new user
 export const registerUser = async (req, res) => {
-  const { name, email, password, role } = req.body;
+  const { name, email, password, role, termsAccepted } = req.body;
 
-  if (!name || !email || !password || !role) {
+  if (!name || !email || !password || !role || termsAccepted !== true) {
     return res.status(400).json({
       success: false,
       message: "All fields are required",
@@ -60,6 +60,7 @@ export const registerUser = async (req, res) => {
     email,
     password: hashedPassword,
     role,
+    termsAccepted,
   });
 
   // Send welcome notification
@@ -114,6 +115,7 @@ export const registerUser = async (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
   res.status(201).json({
@@ -190,6 +192,7 @@ export const loginUser = async (req, res) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
   });
 
   const { password: _, ...userWithoutPassword } = user;
@@ -229,7 +232,7 @@ export const googleLoginUser = async (req, res) => {
         name,
         email,
         password: null,
-        image: picture, // Store Google profile image
+        image: picture,
         role,
         emailVerified: email_verified || false,
         googleId: sub,
@@ -280,7 +283,14 @@ export const googleLoginUser = async (req, res) => {
         }
       }
     } else {
-      // Existing user - verify role match
+      
+      if (user.role === "admin") {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid credentials.",
+        });
+      }
+
       if (user.role !== role) {
         return res.status(400).json({
           success: false,

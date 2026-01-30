@@ -19,7 +19,6 @@ export const fetchLandingServices = async (backendUrl) => {
     const { data } = await axios.get(
       `${backendUrl}/api/landingpage/services`
     );
-    console.log("Landing Services Data:", data);
     return data.success ? data.data : [];
   } catch (error) {
     console.error("Failed to fetch landing services:", error);

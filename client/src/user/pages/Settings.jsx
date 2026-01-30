@@ -57,7 +57,8 @@ const Settings = () => {
 
         if (user?.image) setPreviewImage(user.image);
       } catch (err) {
-        console.error("Failed to load profile:", err);
+        const msg = err?.response?.data?.message || err.message || 'Failed to load profile';
+        toast.error(msg);
       }
     };
 
@@ -96,11 +97,8 @@ const Settings = () => {
       const data = await settingsService.updateProfile(formData);
       toast.success(data.message || "Profile updated successfully!");
     } catch (err) {
-      console.error("Error updating profile:", err);
-      toast.error(
-        err.response?.data?.message ||
-          "Error updating service provider profile!"
-      );
+      const msg = err.response?.data?.message || err.message || "Error updating service provider profile!";
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }

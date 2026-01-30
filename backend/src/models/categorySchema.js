@@ -7,28 +7,25 @@ const categorySchema = new mongoose.Schema(
       type: String,
       required: true,
       unique: true,
-      trim: true
+      trim: true,
     },
     description: {
       type: String,
       required: true,
-      trim: true
+      trim: true,
     },
     image: {
-      type: String, // Cloudinary URL
-      default: ""
+      type: String,
+      default: "",
     },
     isActive: {
       type: Boolean,
-      default: true
+      default: true,
     },
-    servicesCount: {
-      type: Number,
-      default: 0
-    }
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-const Category = mongoose.models.Category || mongoose.model("Category", categorySchema);
+const Category =
+  mongoose.models.Category || mongoose.model("Category", categorySchema);
 export default Category;

@@ -1,4 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
+import { toast } from "react-toastify";
 import * as chatService from "../../services/chatService";
 import { ShareContext } from "../../sharedcontext/SharedContext.jsx";
 import { assets } from "../../assets/assets";
@@ -40,7 +41,8 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
           setMessages((prev) => ({ ...prev, [currentChatId]: data.messages }));
         }
       } catch (err) {
-        console.error("❌ Error fetching messages:", err);
+        const msg = err?.response?.data?.message || err.message || 'Failed to fetch messages';
+        toast.error(msg);
       } finally {
         setLoading(false);
       }
@@ -149,16 +151,16 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
       try {
         await chatService.sendMessage(backendUrl, messagePayload);
         socket.current.emit("sendMessage", messagePayload);
-        
-        // Update context with new message
+
         setMessages(prev => ({
           ...prev,
           [currentChatId]: [...(prev[currentChatId] || []), messagePayload]
         }));
-        
+
         setNewMessage("");
       } catch (err) {
-        console.error("❌ Error sending message:", err);
+        const msg = err?.response?.data?.message || err.message || 'Failed to send message';
+        toast.error(msg);
       } finally {
         setIsSending(false);
       }
@@ -206,8 +208,8 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
         setShowPreview(false);
       }
     } catch (err) {
-      console.error("❌ Error sending image:", err);
-      alert('Failed to send image');
+      const msg = err?.response?.data?.message || err.message || 'Failed to send image';
+      toast.error(msg);
     } finally {
       setUploading(false);
       setIsSending(false);

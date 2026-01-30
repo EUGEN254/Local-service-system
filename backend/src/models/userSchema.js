@@ -15,6 +15,7 @@ const userSchema = new mongoose.Schema(
     phone: { type: String },
     bio: { type: String, maxlength: 500 },
     address: { type: String },
+    termsAccepted: { type: Boolean, required: true },
     image: {
       type: String,
       default: "",

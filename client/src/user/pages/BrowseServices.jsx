@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import { toast } from "react-toastify";
 import { 
   FaStar, 
   FaFilter, 
@@ -58,7 +59,8 @@ const BrowseServices = () => {
         hasPrevPage: result.pagination?.hasPrevPage || false,
       }));
     } catch (err) {
-      console.error("Error fetching services:", err);
+      const msg = err?.response?.data?.message || err.message || 'Error fetching services';
+      toast.error(msg);
       setServices([]);
     } finally {
       setLoading(false);
@@ -96,7 +98,8 @@ const BrowseServices = () => {
         const cats = await fetchLandingCategories(backendUrl);
         setCategories(cats || []);
       } catch (error) {
-        console.error("Error fetching categories:", error);
+        const msg = error?.response?.data?.message || error.message || 'Error fetching categories';
+        toast.error(msg);
       }
     };
     loadCategories();

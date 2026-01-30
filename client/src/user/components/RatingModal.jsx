@@ -37,7 +37,6 @@ const RatingModal = ({ backendUrl, provider, onClose, onRated }) => {
       const msg = err?.response?.data?.message || err.message || 'Failed to submit rating';
       setError(msg);
       toast.error(msg);
-      console.error('Rating submit error', err);
     }
   };
 

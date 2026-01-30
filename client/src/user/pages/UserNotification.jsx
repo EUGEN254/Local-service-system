@@ -56,7 +56,6 @@ const UserNotification = () => {
         fetchNotificationUnreadCount(),
       ]);
     } catch (error) {
-      console.error("Failed to fetch data:", error);
       toast.error("Failed to load notifications");
     } finally {
       setLoading(false);
@@ -68,7 +67,6 @@ const UserNotification = () => {
       await markNotificationAsRead(notificationId);
       toast.success("Notification marked as read");
     } catch (error) {
-      console.error("Failed to mark as read:", error);
       toast.error("Failed to mark notification as read");
     }
   };
@@ -78,7 +76,6 @@ const UserNotification = () => {
       await markAllNotificationsAsRead();
       toast.success("All notifications marked as read");
     } catch (error) {
-      console.error("Failed to mark all as read:", error);
       toast.error("Failed to mark all notifications as read");
     }
   };
@@ -88,7 +85,6 @@ const UserNotification = () => {
       await deleteNotification(notificationId);
       toast.success("Notification deleted");
     } catch (error) {
-      console.error("Failed to delete notification:", error);
       toast.error("Failed to delete notification");
     }
   };
@@ -137,7 +133,6 @@ const UserNotification = () => {
       toast.success("All notifications deleted");
       closeDeleteAllModal();
     } catch (error) {
-      console.error("Failed to delete all notifications:", error);
       toast.error("Failed to delete all notifications");
     } finally {
       setIsDeletingAll(false);

@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState, useRef, useMemo } from "react";
+import { toast } from "react-toastify";
 import {
   BarChart,
   Bar,
@@ -81,7 +82,8 @@ const Dashboard = () => {
           });
         }
       } catch (err) {
-        console.error("Error fetching bookings:", err);
+        const msg = err?.response?.data?.message || err.message || 'Error fetching bookings';
+        toast.error(msg);
         setBookings([]);
         setPagination({
           currentPage: 1,
@@ -427,7 +429,8 @@ const Dashboard = () => {
         setServiceModalOpen(true);
       }
     } catch (err) {
-      console.error("Error fetching service details:", err);
+      const msg = err?.response?.data?.message || err.message || 'Error fetching service details';
+      toast.error(msg);
     }
   };
 

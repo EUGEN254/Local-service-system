@@ -1,4 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
+import { toast } from "react-toastify";
 import * as allProviders from "../../services/allProviders.js";
 import * as ratingService from '../../services/ratingService';
 import RatingModal from '../components/RatingModal.jsx';
@@ -58,8 +59,9 @@ const AllProviders = () => {
         });
       }
     } catch (error) {
-      setError(error.message);
-      console.error("Error fetching providers:", error);
+      const msg = error?.response?.data?.message || error.message || 'Error fetching providers';
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }

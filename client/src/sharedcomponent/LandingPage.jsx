@@ -136,8 +136,7 @@ const LandingPage = () => {
     // Navigate to payment with service data
     navigate("/user/payment", { state: { service: selectedProvider?.service } });
     setShowProviderModal(false);
-    // Scroll to top smoothly
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+   
   };
 
   // Render star rating with colors
