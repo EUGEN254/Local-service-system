@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaPlus, FaTimes, FaEye, FaEyeSlash } from "react-icons/fa";
 import { toast } from "react-toastify";
-import { AdminContext } from "../context/AdminContext";
+import { useAdminCategories } from "../hooks/useAdminCategories";
 
 const ServiceCategories = () => {
   const {
@@ -14,7 +14,7 @@ const ServiceCategories = () => {
     updateCategory,
     deleteCategory,
     toggleCategoryStatus,
-  } = useContext(AdminContext);
+  } = useAdminCategories();
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);

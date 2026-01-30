@@ -67,9 +67,11 @@ const Navbar = ({ onMenuClick }) => {
           className="relative bg-gray-100 p-2 rounded-lg cursor-pointer"
         >
           <FaBell className="text-gray-600 text-lg" />
-          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
-            {notificationUnreadCount}
-          </span>
+          {notificationUnreadCount > 0 && (
+            <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full min-w-[1.5rem] flex items-center justify-center">
+              {notificationUnreadCount > 99 ? '99+' : notificationUnreadCount}
+            </span>
+          )}
         </div>
 
         {/* User circle with dropdown */}

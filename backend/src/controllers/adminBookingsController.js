@@ -1,5 +1,6 @@
 import Booking from "../models/bookingSchema.js";
 import mpesaTransactionsSchema from "../models/mpesaTransactionsSchema.js";
+import User from "../models/userSchema.js";
 
 
 
@@ -148,17 +149,29 @@ export const updateBookingStatus = async (req, res) => {
       });
     }
 
+    // Get the current booking before updating
+    const currentBooking = await Booking.findById(id);
+
+    if (!currentBooking) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found'
+      });
+    }
+
     const booking = await Booking.findByIdAndUpdate(
       id,
       { status },
       { new: true }
     ).populate('customer', 'name email phone');
 
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: 'Booking not found'
-      });
+    // If status is changed TO "Completed" (and wasn't already), increment the provider's completedJobs
+    if (status === 'Completed' && currentBooking.status !== 'Completed' && booking.serviceProvider) {
+      await User.findByIdAndUpdate(
+        booking.serviceProvider,
+        { $inc: { 'serviceProviderInfo.completedJobs': 1 } },
+        { new: true }
+      );
     }
 
     res.json({

@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaPlus, FaUser, FaUserShield, FaTimes, FaCheck, FaBan } from "react-icons/fa";
 import { toast } from "react-toastify";
-import { AdminContext } from "../context/AdminContext";
+import { useAdminUsers } from "../hooks/useAdminUsers";
 
 const UserManagement = () => {
   const {
@@ -16,7 +16,7 @@ const UserManagement = () => {
     updateUser,
     createUser,
     deleteUser,
-  } = useContext(AdminContext);
+  } = useAdminUsers();
 
   const [activeTab, setActiveTab] = useState("customers");
   const [showAddModal, setShowAddModal] = useState(false);

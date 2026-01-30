@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -8,7 +8,9 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { AdminContext } from "../context/AdminContext";
+import { useAdminUsers } from "../hooks/useAdminUsers";
+import { useAdminProviders } from "../hooks/useAdminProviders";
+import { useAdminBookings } from "../hooks/useAdminBookings";
 import BookingsAndTransactions from "./BookingsAndTransaction";
 import Notifications from "./Notifications";
 
@@ -32,24 +34,16 @@ const Dashboard = () => {
   const [timeFilter, setTimeFilter] = useState("Monthly");
   const [activeTab, setActiveTab] = useState("overview");
 
-  const {
-    customers,
-    fetchCustomers,
-    loadingUsers,
-    serviceProviders: contextServiceProviders,
-    fetchServiceProviders,
-    loadingProviders,
-    allBookings,
-    fetchAllBookings,
-    loadingAllBookings,
-  } = useContext(AdminContext);
+  const { customers, loadingUsers, fetchCustomers } = useAdminUsers();
+  const { serviceProviders: contextServiceProviders, loadingProviders, fetchServiceProviders } = useAdminProviders();
+  const { allBookings, loadingAllBookings, fetchAllBookings } = useAdminBookings();
 
   // Fetch customers and service providers on component mount
   useEffect(() => {
     fetchCustomers();
     fetchServiceProviders();
     fetchAllBookings();
-  }, []);
+  }, [fetchCustomers, fetchServiceProviders, fetchAllBookings]);
 
   // Calculate all statistics for summary cards
   const summaryStats = useMemo(() => {
@@ -328,24 +322,24 @@ const Dashboard = () => {
                 return (
                   <div
                     key={idx}
-                    className={`bg-gradient-to-br ${card.gradient} rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer overflow-hidden min-w-[180px] sm:min-w-0 flex-shrink-0 sm:flex-shrink`}
+                    className="bg-gray-800 text-white rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer overflow-hidden min-w-[180px] sm:min-w-0 flex-shrink-0 sm:flex-shrink"
                   >
-                    <div className="p-4 sm:p-5 text-white">
+                    <div className="p-4 sm:p-5">
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="text-xs sm:text-sm font-medium opacity-90">
+                          <p className="text-xs sm:text-sm font-medium text-gray-300">
                             {card.title}
                           </p>
                           <p className="text-lg sm:text-2xl font-bold mt-1 sm:mt-2">{card.count}</p>
-                          <p className="text-xs opacity-80 mt-1">
+                          <p className="text-xs text-gray-400 mt-1">
                             {card.description}
                           </p>
                         </div>
-                        <div className="p-1 sm:p-2 bg-white bg-opacity-20 rounded-lg sm:rounded-xl">
+                        <div className="p-1 sm:p-2 bg-gray-700 rounded-lg sm:rounded-xl">
                           <Icon />
                         </div>
                       </div>
-                      <div className="mt-2 sm:mt-3 w-full bg-white bg-opacity-20 rounded-full h-1">
+                      <div className="mt-2 sm:mt-3 w-full bg-gray-700 rounded-full h-1">
                         <div
                           className="bg-white rounded-full h-1 transition-all duration-1000"
                           style={{

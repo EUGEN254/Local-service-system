@@ -1,17 +1,17 @@
 // src/pages/AdminLogin.jsx
-import React, { useContext, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { FaUserShield } from "react-icons/fa";
-import axios from "axios";
-import { AdminContext } from "../context/AdminContext";
+import { useAdmin } from "../context/AdminContext";
+import { loginAdmin } from "../services/adminAuthService";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { fetchCurrentAdmin, backendUrl } = useContext(AdminContext);
+  const { fetchCurrentAdmin } = useAdmin();
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -23,17 +23,7 @@ const AdminLogin = () => {
     setLoading(true);
 
     try {
-      const { data } = await axios.post(
-        `${backendUrl}/api/user/login-admin`,
-        {
-          email,
-          password,
-          role: "admin",
-        },
-        {
-          withCredentials: true,
-        }
-      );
+      const data = await loginAdmin(email, password, "admin");
 
       if (data.success && data.user) {
         if (data.user.role !== "admin") {

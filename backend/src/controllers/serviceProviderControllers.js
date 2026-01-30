@@ -3,6 +3,8 @@ import plumbingServiceSchema from "../models/plumbingServiceSchema.js";
 import Booking from "../models/bookingSchema.js";
 import User from "../models/userSchema.js";
 import mpesaTransactionsSchema from "../models/mpesaTransactionsSchema.js";
+import Rating from "../models/ratingSchema.js";
+import mongoose from "mongoose";
 
 // Add a new service
 export const addService = async (req, res) => {
@@ -68,12 +70,12 @@ export const getMyServices = async (req, res) => {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
-    
+
     // Get total count
-    const totalServices = await plumbingServiceSchema.countDocuments({ 
-      serviceProvider: req.user._id 
+    const totalServices = await plumbingServiceSchema.countDocuments({
+      serviceProvider: req.user._id,
     });
-    
+
     // Fetch services with pagination
     const services = await plumbingServiceSchema
       .find({ serviceProvider: req.user._id })
@@ -83,9 +85,9 @@ export const getMyServices = async (req, res) => {
 
     // Calculate pagination info
     const totalPages = Math.ceil(totalServices / limit);
-    
-    res.json({ 
-      success: true, 
+
+    res.json({
+      success: true,
       services,
       pagination: {
         currentPage: page,
@@ -93,12 +95,14 @@ export const getMyServices = async (req, res) => {
         totalServices: totalServices,
         limit: limit,
         hasNextPage: page < totalPages,
-        hasPrevPage: page > 1
-      }
+        hasPrevPage: page > 1,
+      },
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: "Failed to fetch services" });
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch services" });
   }
 };
 
@@ -285,8 +289,19 @@ export const updateStatus = async (req, res) => {
       });
     }
 
+    const previousStatus = booking.status;
     booking.status = status;
     await booking.save();
+
+    // If status is changed TO "Completed" (and wasn't already), increment the provider's completedJobs
+    if (status === 'Completed' && previousStatus !== 'Completed' && booking.serviceProvider) {
+      await User.findByIdAndUpdate(
+        booking.serviceProvider,
+        { $inc: { 'serviceProviderInfo.completedJobs': 1 } },
+        { new: true }
+      );
+    }
+
     res.json({ success: true, booking });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -336,5 +351,127 @@ export const updateProfile = async (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Failed to update profile" });
+  }
+};
+
+export const getAllServiceProviders = async (req, res) => {
+  try {
+    
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const totalProviders = await User.find({ role: "service-provider" }).countDocuments();
+    const serviceProviders = await User.find({ role: "service-provider" })
+      .skip(skip)
+      .limit(limit)
+      .select("-password -serviceProviderInfo.services");
+
+    // Aggregate ratings for the fetched providers
+    const providerIds = serviceProviders.map((p) => p._id);
+    const agg = await Rating.aggregate([
+      { $match: { provider: { $in: providerIds.map((id) => new mongoose.Types.ObjectId(id)) } } },
+      {
+        $group: {
+          _id: "$provider",
+          avgRating: { $avg: "$rating" },
+          totalReviews: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const ratingMap = {};
+    agg.forEach((a) => {
+      ratingMap[a._id.toString()] = { avgRating: a.avgRating, totalReviews: a.totalReviews };
+    });
+
+    const providersWithRatings = serviceProviders.map((p) => {
+      const obj = p.toObject();
+      const stats = ratingMap[p._id.toString()] || { avgRating: 0, totalReviews: 0 };
+      obj.serviceProviderInfo = obj.serviceProviderInfo || {};
+      obj.serviceProviderInfo.rating = Number((stats.avgRating || 0).toFixed(1));
+      obj.serviceProviderInfo.totalReviews = stats.totalReviews || 0;
+      return obj;
+    });
+
+    res.json({
+      success: true,
+      providers: providersWithRatings,
+      total: totalProviders,
+      page,
+      limit,
+    });
+  } catch (error) {
+    console.error("Error fetching all service providers:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch service providers" });
+  }
+};
+
+// Submit or update a rating for a provider
+export const submitRating = async (req, res) => {
+  try {
+    const providerId = req.params.id;
+    const userId = req.user?._id;
+    const { rating, comment } = req.body;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ success: false, message: "Rating must be between 1 and 5" });
+    }
+
+    const provider = await User.findById(providerId);
+    if (!provider || provider.role !== "service-provider") {
+      return res.status(404).json({ success: false, message: "Service provider not found" });
+    }
+
+    const ratingDoc = await Rating.findOneAndUpdate(
+      { provider: providerId, user: userId },
+      { rating, comment, updatedAt: new Date() },
+      { upsert: true, new: true, setDefaultsOnInsert: true },
+    );
+
+    // Recalculate aggregate
+    const agg = await Rating.aggregate([
+      { $match: { provider: new mongoose.Types.ObjectId(providerId) } },
+      { $group: { _id: "$provider", avgRating: { $avg: "$rating" }, totalReviews: { $sum: 1 } } },
+    ]);
+
+    const stats = agg[0] || { avgRating: 0, totalReviews: 0 };
+
+    // Update cached fields on user.serviceProviderInfo for quick reads (optional)
+    await User.findByIdAndUpdate(providerId, {
+      $set: {
+        "serviceProviderInfo.rating": Number((stats.avgRating || 0).toFixed(1)),
+        "serviceProviderInfo.totalReviews": stats.totalReviews || 0,
+      },
+    });
+
+    res.json({ success: true, rating: ratingDoc, averageRating: stats.avgRating, totalReviews: stats.totalReviews });
+  } catch (error) {
+    console.error("Submit rating error:", error);
+    res.status(500).json({ success: false, message: "Failed to submit rating", error: error.message });
+  }
+};
+
+// Get paginated ratings for a provider
+export const getProviderRatings = async (req, res) => {
+  try {
+    const providerId = req.params.id;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const ratings = await Rating.find({ provider: providerId })
+      .populate("user", "name image")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Rating.countDocuments({ provider: providerId });
+    res.json({ success: true, ratings, total, page, limit });
+  } catch (error) {
+    console.error("Get provider ratings error:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch ratings", error: error.message });
   }
 };

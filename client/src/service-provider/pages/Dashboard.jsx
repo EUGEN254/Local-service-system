@@ -192,52 +192,92 @@ const Dashboard = () => {
       }));
   }, [bookings, timeFilter]);
 
-  // Pie chart data for service status distribution
-  const pieChartData = useMemo(() => [
-    {
-      name: "Completed",
-      value: bookings.filter((b) => b.status === "Completed").length,
-      color: "#10B981", // Green
-    },
-    {
-      name: "In Progress",
-      value: bookings.filter((b) => b.status === "In Progress").length,
-      color: "#F59E0B", // Amber
-    },
-    {
-      name: "Waiting for Work",
-      value: bookings.filter((b) => b.status === "Waiting for Work").length,
-      color: "#3B82F6", // Blue
-    },
-    {
-      name: "Pending",
-      value: bookings.filter((b) => b.status === "Pending").length,
-      color: "#6B7280", // Gray
-    },
-    {
-      name: "Cancelled",
-      value: bookings.filter((b) => b.status === "Cancelled").length,
-      color: "#EF4444", // Red
-    },
-  ], [bookings]);
+  // Pie chart data for service status distribution - optimized with single pass
+  const pieChartData = useMemo(() => {
+    // Single pass through bookings to count statuses
+    const counts = {
+      Completed: 0,
+      "In Progress": 0,
+      "Waiting for Work": 0,
+      Pending: 0,
+      Cancelled: 0,
+    };
 
-  // Summary cards - USING ACTUAL STATUS FROM DATABASE
+    bookings.forEach((b) => {
+      if (b.status && counts.hasOwnProperty(b.status)) {
+        counts[b.status]++;
+      }
+    });
+
+    return [
+      {
+        name: "Completed",
+        value: counts.Completed,
+        color: "#10B981", // Green
+      },
+      {
+        name: "In Progress",
+        value: counts["In Progress"],
+        color: "#F59E0B", // Amber
+      },
+      {
+        name: "Waiting for Work",
+        value: counts["Waiting for Work"],
+        color: "#3B82F6", // Blue
+      },
+      {
+        name: "Pending",
+        value: counts.Pending,
+        color: "#6B7280", // Gray
+      },
+      {
+        name: "Cancelled",
+        value: counts.Cancelled,
+        color: "#EF4444", // Red
+      },
+    ];
+  }, [bookings]);
+
+  // Summary cards - optimized with single pass through bookings
   useEffect(() => {
-    const totalEarnings = bookings
-      .filter((b) => b.is_paid)
-      .reduce((sum, b) => sum + (b.amount || 0), 0);
+    // Single pass to calculate all needed values
+    let totalEarnings = 0;
+    let upcomingCount = 0;
+    const statusCounts = {
+      Pending: 0,
+      "In Progress": 0,
+      "Waiting for Work": 0,
+      Completed: 0,
+    };
 
-    const upcomingBookings = bookings.filter(
-      (b) =>
-        new Date(b.delivery_date) >= new Date() &&
+    const now = new Date();
+
+    bookings.forEach((b) => {
+      // Calculate earnings
+      if (b.is_paid) {
+        totalEarnings += b.amount || 0;
+      }
+
+      // Count by status
+      if (b.status && statusCounts.hasOwnProperty(b.status)) {
+        statusCounts[b.status]++;
+      }
+
+      // Count upcoming bookings
+      if (
+        b.delivery_date &&
+        new Date(b.delivery_date) >= now &&
         b.status !== "Cancelled" &&
         b.status !== "Completed"
-    );
+      ) {
+        upcomingCount++;
+      }
+    });
 
     setSummaryCards([
       {
         title: "Upcoming Services",
-        count: upcomingBookings.length,
+        count: upcomingCount,
         bgColor: "bg-gray-800",
         textColor: "text-white",
         icon: HiCalendar,
@@ -245,7 +285,7 @@ const Dashboard = () => {
       },
       {
         title: "Pending Requests",
-        count: bookings.filter((b) => b.status === "Pending").length,
+        count: statusCounts.Pending,
         bgColor: "bg-gray-800",
         textColor: "text-white",
         icon: HiClipboardList,
@@ -261,7 +301,7 @@ const Dashboard = () => {
       },
       {
         title: "In Progress",
-        count: bookings.filter((b) => b.status === "In Progress").length,
+        count: statusCounts["In Progress"],
         bgColor: "bg-gray-800",
         textColor: "text-white",
         icon: HiClock,
@@ -269,7 +309,7 @@ const Dashboard = () => {
       },
       {
         title: "Waiting for Work",
-        count: bookings.filter((b) => b.status === "Waiting for Work").length,
+        count: statusCounts["Waiting for Work"],
         bgColor: "bg-gray-800",
         textColor: "text-white",
         icon: HiCog,
@@ -277,7 +317,7 @@ const Dashboard = () => {
       },
       {
         title: "Completed",
-        count: bookings.filter((b) => b.status === "Completed").length,
+        count: statusCounts.Completed,
         bgColor: "bg-gray-800",
         textColor: "text-white",
         icon: HiCheckCircle,

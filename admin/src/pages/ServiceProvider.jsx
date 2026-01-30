@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaEye, FaCheck, FaTimes, FaPlus } from "react-icons/fa";
 import { toast } from "react-toastify";
-import { AdminContext } from "../context/AdminContext";
+import { useAdminProviders } from "../hooks/useAdminProviders";
 import axios from 'axios'
 
 const ServiceProvider = () => {
@@ -13,8 +13,11 @@ const ServiceProvider = () => {
     updateProviderProfile,
     deleteProvider,
     updatingProvider,
-    backendUrl
-  } = useContext(AdminContext);
+    backendUrl: backendUrl_from_hook
+  } = useAdminProviders();
+
+  // Use backendUrl from hook or fallback
+  const backendUrl = backendUrl_from_hook || import.meta.env.VITE_BACKEND_URL;
 
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [showViewModal, setShowViewModal] = useState(false);

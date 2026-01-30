@@ -11,6 +11,9 @@ const UserNotification = () => {
   const [activeCategory, setActiveCategory] = useState("All");
   const [showDeleteAllModal, setShowDeleteAllModal] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const itemsPerPage = 10;
 
   const { user, backendUrl } = useContext(ShareContext);
   
@@ -31,6 +34,17 @@ const UserNotification = () => {
   useEffect(() => {
     if (currentUser) {
       fetchAllData();
+      // Check for dark mode on mount
+      const darkMode = localStorage.getItem('theme') === 'dark' || 
+                       (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      setIsDarkMode(darkMode);
+      
+      // Listen for theme changes
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleThemeChange = (e) => setIsDarkMode(e.matches);
+      mediaQuery.addListener(handleThemeChange);
+      
+      return () => mediaQuery.removeListener(handleThemeChange);
     }
   }, [currentUser, activeCategory]);
 
@@ -135,6 +149,13 @@ const UserNotification = () => {
       ? notifications
       : notifications.filter((n) => n.category === activeCategory);
 
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredNotifications.length / itemsPerPage);
+  const paginatedNotifications = filteredNotifications.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   if (!currentUser) {
     return (
       <div className="p-6 text-center">
@@ -146,11 +167,11 @@ const UserNotification = () => {
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6 text-gray-800">
         {/* Left Section */}
         <div className="flex items-center gap-3 flex-wrap">
           <FaBell className="text-2xl text-blue-500" />
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
+          <h2 className="text-xl sm:text-2xl font-bold">
             Notifications
           </h2>
           {notificationUnreadCount > 0 && (
@@ -218,7 +239,7 @@ const UserNotification = () => {
           </div>
         ) : (
           <ul className="divide-y divide-gray-200">
-            {filteredNotifications.map((notification) => (
+            {paginatedNotifications.map((notification) => (
               <li
                 key={notification._id}
                 className={`p-4 hover:bg-gray-50 transition-colors ${
@@ -279,6 +300,56 @@ const UserNotification = () => {
           </ul>
         )}
       </div>
+
+      {/* Pagination Controls */}
+      {filteredNotifications.length > 0 && totalPages > 1 && (
+        <div className="mt-6 flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+          <div className="text-sm text-gray-600">
+            Showing <span className="font-semibold">{((currentPage - 1) * itemsPerPage) + 1}</span> to{' '}
+            <span className="font-semibold">{Math.min(currentPage * itemsPerPage, filteredNotifications.length)}</span> of{' '}
+            <span className="font-semibold">{filteredNotifications.length}</span> notifications
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                currentPage === 1
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }`}
+            >
+              Previous
+            </button>
+            <div className="flex items-center gap-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 rounded-lg text-sm font-medium transition-colors ${
+                    currentPage === page
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                currentPage === totalPages
+                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }`}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal for deleting all notifications */}
       {showDeleteAllModal && (

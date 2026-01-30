@@ -92,9 +92,10 @@ const Analytics = () => {
     const totalRevenue = completedBookings.reduce((sum, b) => sum + (b.amount || 0), 0);
     const avgRevenuePerJob = completedBookings.length > 0 ? totalRevenue / completedBookings.length : 0;
 
-    // Status distribution for charts
+    // Status distribution for charts - use all bookings, not just paid completed
+    const allCompletedBookings = filteredBookings.filter(b => b.status === "Completed");
     const statusDistribution = [
-      { name: 'Completed', value: completedBookings.length, color: '#10B981' },
+      { name: 'Completed', value: allCompletedBookings.length, color: '#10B981' },
       { name: 'In Progress', value: inProgressBookings.length, color: '#F59E0B' },
       { name: 'Pending', value: pendingBookings.length, color: '#3B82F6' },
       { name: 'Cancelled', value: cancelledBookings.length, color: '#EF4444' }
@@ -396,40 +397,41 @@ const Analytics = () => {
     pdf.save(`analytics-simple-${new Date().toISOString().split('T')[0]}.pdf`);
   };
 
+  // Order and gradients aligned with admin Dashboard: Total (blue), Active (orange), Completed (green), Revenue (purple), Customers (indigo), Providers/avg (teal)
   const summaryCards = [
     {
       title: "Total Requests",
       value: analyticsData.summary?.totalRequests || 0,
       icon: HiCalendar,
-      bgColor: "bg-blue-500",
+      gradient: "bg-gray-800",
       description: `Current ${timeRange}`
+    },
+    {
+      title: "Active Jobs",
+      value: (analyticsData.summary?.inProgressJobs || 0) + (analyticsData.summary?.pendingJobs || 0),
+      icon: HiClock,
+      gradient: "bg-gray-800",
+      description: "In progress + pending"
     },
     {
       title: "Completed Jobs",
       value: analyticsData.summary?.completedJobs || 0,
       icon: HiCheckCircle,
-      bgColor: "bg-green-500",
+      gradient: "bg-gray-800",
       description: `${analyticsData.summary?.completionRate || 0}% completion rate`
     },
     {
       title: "Total Revenue",
       value: `${currSymbol}${(analyticsData.summary?.totalRevenue || 0).toLocaleString()}`,
       icon: HiCurrencyDollar,
-      bgColor: "bg-yellow-500",
+      gradient: "bg-gray-800",
       description: `Avg: ${currSymbol}${(analyticsData.summary?.avgRevenuePerJob || 0).toFixed(2)}`
-    },
-    {
-      title: "Active Jobs",
-      value: (analyticsData.summary?.inProgressJobs || 0) + (analyticsData.summary?.pendingJobs || 0),
-      icon: HiClock,
-      bgColor: "bg-orange-500",
-      description: "In progress + pending"
     },
     {
       title: "Unique Customers",
       value: analyticsData.summary?.uniqueCustomers || 0,
       icon: HiUserGroup,
-      bgColor: "bg-purple-500",
+      gradient: "bg-gray-800",
       description: `${analyticsData.summary?.repeatCustomers || 0} repeat customers`
     },
     {
@@ -438,7 +440,7 @@ const Analytics = () => {
         ? (analyticsData.summary.totalRequests / analyticsData.summary.uniqueCustomers).toFixed(1)
         : 0,
       icon: HiTrendingUp,
-      bgColor: "bg-indigo-500",
+      gradient: "bg-gray-800",
       description: "Jobs per customer"
     }
   ];
@@ -516,25 +518,31 @@ const Analytics = () => {
       </div>
 
       {/* Enhanced Summary Cards Grid with Horizontal Scroll on Small Screens */}
-      <div className="flex gap-4 overflow-x-auto pb-4 md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 md:overflow-visible">
-        {summaryCards.map((card, idx) => {
-          const Icon = card.icon;
-          return (
-            <div 
-              key={idx} 
-              className={`${card.bgColor} flex-shrink-0 flex flex-col justify-between p-4 rounded-xl shadow-lg text-white transform transition-all duration-300 hover:scale-105 hover:shadow-xl cursor-pointer min-h-[120px] min-w-[200px] md:min-w-0`}
-            >
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm font-medium opacity-90">{card.title}</p>
-                  <p className="text-2xl font-bold mt-1">{card.value}</p>
+      <div className="overflow-x-auto pb-4 -mx-2 px-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+        <div className="flex gap-3 sm:gap-4 min-w-max sm:min-w-0 sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {summaryCards.map((card, idx) => {
+            const Icon = card.icon;
+            // numeric value for progress calculation
+            const numericValue = typeof card.value === 'number' ? card.value : (Number(String(card.value).replace(/[^0-9.-]+/g, '')) || 0);
+            const total = analyticsData.summary?.totalRequests || 1;
+            const progressPct = Math.min(100, Math.round((numericValue / total) * 100));
+
+            return (
+              <div
+                key={idx}
+                className={`${card.gradient} rounded-xl sm:rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer overflow-hidden min-w-[180px] sm:min-w-0 flex-shrink-0 sm:flex-shrink`}
+              >
+                <div className="p-4 sm:p-5 text-white">
+                  <div>
+                    <p className="text-xs sm:text-sm font-medium opacity-90">{card.title}</p>
+                    <p className="text-lg sm:text-2xl font-bold mt-1 sm:mt-2">{card.value}</p>
+                    <p className="text-xs opacity-80 mt-1">{card.description}</p>
+                  </div>
                 </div>
-                <Icon className="text-white text-xl opacity-80" />
               </div>
-              <p className="text-xs opacity-80 mt-2">{card.description}</p>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {/* Charts Section - Similar to Customer Dashboard */}

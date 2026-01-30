@@ -1,4 +1,4 @@
-import React, { useRef, useContext, useMemo, useState, useEffect } from "react";
+import React, { useRef, useMemo, useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -14,7 +14,9 @@ import {
   AreaChart,
   Area
 } from "recharts";
-import { AdminContext } from "../context/AdminContext";
+import { useAdminUsers } from "../hooks/useAdminUsers";
+import { useAdminProviders } from "../hooks/useAdminProviders";
+import { useAdminBookings } from "../hooks/useAdminBookings";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { 
@@ -124,7 +126,9 @@ const computeRepeatCustomers = (bookings) => {
 };
 
 const Analytics = () => {
-  const { allBookings, customers, serviceProviders, fetchAllBookings, loadingAllBookings } = useContext(AdminContext);
+  const { customers, loadingUsers } = useAdminUsers();
+  const { serviceProviders } = useAdminProviders();
+  const { allBookings, loadingAllBookings, fetchAllBookings } = useAdminBookings();
   const analyticsRef = useRef();
   const [timeRange, setTimeRange] = useState("month");
 
@@ -133,7 +137,7 @@ const Analytics = () => {
   // Fetch data when component mounts or timeRange changes
   useEffect(() => {
     fetchAllBookings();
-  }, [timeRange]);
+  }, [timeRange, fetchAllBookings]);
 
   // Generate analytics data from actual bookings - FIXED VERSION
   const analyticsData = useMemo(() => {

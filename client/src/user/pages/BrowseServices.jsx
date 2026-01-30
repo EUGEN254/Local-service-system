@@ -486,8 +486,9 @@ const BrowseServices = () => {
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 {services.map((service, index) => {
-                  const randomRating = Math.floor(Math.random() * 5) + 1;
-                  const randomReviews = Math.floor(Math.random() * 400) + 50;
+                  const rating = service.rating || service.providerRating || 0;
+                  const reviews = service.totalReviews || service.reviewCount || 0;
+                  const ratingDisplay = parseFloat(rating).toFixed(1);
 
                   return (
                     <div
@@ -510,10 +511,10 @@ const BrowseServices = () => {
                         <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-black/70 text-white px-2 py-1 rounded text-sm">
                           <span className="font-bold">★</span>
                           <span className="font-medium">
-                            {randomRating.toFixed(1)}
+                            {ratingDisplay}
                           </span>
                           <span className="text-gray-300 text-xs">
-                            ({randomReviews})
+                            ({reviews})
                           </span>
                         </div>
                       </div>
@@ -557,19 +558,20 @@ const BrowseServices = () => {
                         {/* Rating */}
                         <div className="flex items-center gap-2 mb-4">
                           <div className="flex items-center">
-                            {renderStars(randomRating)}
+                            {renderStars(Math.round(rating))}
                           </div>
                           <span className="text-sm text-gray-600">
-                            ({randomRating.toFixed(1)})
+                            ({ratingDisplay}) · {reviews} reviews
                           </span>
                         </div>
 
                         {/* Action Buttons */}
                         <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                           <button
-                            onClick={() =>
-                              navigate("/user/payment", { state: { service } })
-                            }
+                            onClick={() => {
+                              navigate("/user/payment", { state: { service } });
+                              window.scrollTo({ top: 0, behavior: 'smooth' });
+                            }}
                             className="bg-gray-900 hover:bg-gray-800 text-white font-medium px-5 py-2.5 rounded transition-colors"
                           >
                             Book Now

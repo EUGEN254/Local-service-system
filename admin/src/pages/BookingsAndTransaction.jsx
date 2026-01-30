@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useContext } from "react";
-import { AdminContext } from "../context/AdminContext";
+import { useAdminBookings } from "../hooks/useAdminBookings";
 
 
 const BookingsAndTransactions = () => {
@@ -13,7 +12,7 @@ const BookingsAndTransactions = () => {
     fetchBookings,
     fetchTransactions,
     updateBookingStatus,
-  } = useContext(AdminContext);
+  } = useAdminBookings();
 
   const [activeTab, setActiveTab] = useState("Bookings");
   const [selectedRecord, setSelectedRecord] = useState(null);

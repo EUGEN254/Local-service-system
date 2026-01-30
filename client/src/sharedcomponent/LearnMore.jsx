@@ -1,8 +1,12 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useContext } from "react";
 import { motion } from "framer-motion";
+import { ShareContext } from "../sharedcontext/SharedContext";
+import { useNavigate } from "react-router-dom";
 
 const LearnMore = ({ onClose, setShowAuthModal, setAuthMode }) => {
   const modalRef = useRef(null);
+  const { user } = useContext(ShareContext);
+  const navigate = useNavigate();
 
   // Close when clicking outside
   useEffect(() => {
@@ -244,30 +248,52 @@ const LearnMore = ({ onClose, setShowAuthModal, setAuthMode }) => {
                 <p className="text-gray-600 text-sm">It's free to join and takes 2 minutes</p>
               </div>
               <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setAuthMode("Sign Up");
-                    setShowAuthModal(true);
-                    onClose();
-                  }}
-                  className="bg-gray-900 hover:bg-gray-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
-                >
-                  Sign up free
-                </button>
-                <button
-                  onClick={() => {
-                    setAuthMode("Login");
-                    setShowAuthModal(true);
-                    onClose();
-                  }}
-                  className="bg-white border border-gray-300 hover:border-gray-400 text-gray-900 font-medium px-6 py-3 rounded-lg transition-colors"
-                >
-                  Sign in
-                </button>
+                {user ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        navigate("/user/dashboard");
+                        onClose();
+                      }}
+                      className="bg-gray-900 hover:bg-gray-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+                    >
+                      Go to Dashboard
+                    </button>
+                    <button
+                      onClick={onClose}
+                      className="bg-white border border-gray-300 hover:border-gray-400 text-gray-900 font-medium px-6 py-3 rounded-lg transition-colors"
+                    >
+                      Close
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        setAuthMode("Sign Up");
+                        setShowAuthModal(true);
+                        onClose();
+                      }}
+                      className="bg-gray-900 hover:bg-gray-800 text-white font-medium px-6 py-3 rounded-lg transition-colors"
+                    >
+                      Sign up free
+                    </button>
+                    <button
+                      onClick={() => {
+                        setAuthMode("Login");
+                        setShowAuthModal(true);
+                        onClose();
+                      }}
+                      className="bg-white border border-gray-300 hover:border-gray-400 text-gray-900 font-medium px-6 py-3 rounded-lg transition-colors"
+                    >
+                      Sign in
+                    </button>
+                  </>
+                )}
               </div>
             </div>
             <p className="text-gray-500 text-sm text-center mt-4">
-              No credit card needed • Cancel anytime
+              {user ? "Start exploring and booking services today" : "No credit card needed • Cancel anytime"}
             </p>
           </div>
         </div>

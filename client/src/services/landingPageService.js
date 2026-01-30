@@ -51,6 +51,7 @@ export const fetchProviderDetails = async (backendUrl, providerId) => {
     const { data } = await axios.get(
       `${backendUrl}/api/landingpage/serviceprovider/${providerId}`
     );
+    console.log("Provider Details Data:", data);
     return data;
   } catch (error) {
     console.error("Failed to fetch provider details:", error);

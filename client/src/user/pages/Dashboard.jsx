@@ -206,11 +206,13 @@ const Dashboard = () => {
       }));
   }, [bookings, timeFilter]);
 
-  // Enhanced summary cards for users - Updated colors to match theme
+  // Enhanced summary cards for users 
   useEffect(() => {
     const totalSpent = bookings
       .filter((b) => b.is_paid)
-      .reduce((sum, b) => sum + (b.amount || 0), 0);
+      .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+
+    
 
     const upcomingBookings = bookings.filter(
       (b) =>
@@ -218,6 +220,7 @@ const Dashboard = () => {
         b.status !== "Cancelled" &&
         b.status !== "Completed",
     );
+    
 
     setSummaryCards([
       {
@@ -403,6 +406,7 @@ const Dashboard = () => {
   const handleView = async (serviceId, index) => {
     try {
       const data = await fetchProviderDetails(backendUrl, serviceId);
+  
       if (data.success) {
         setSelectedService(data.data || data);
         const button = buttonRefs.current[index];
@@ -426,6 +430,7 @@ const Dashboard = () => {
       console.error("Error fetching service details:", err);
     }
   };
+
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -1041,8 +1046,8 @@ const Dashboard = () => {
                   <span>{selectedService.service?.category}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="font-semibold">Provider:</span>
-                  <span>{selectedService.serviceProvider?.name}</span>
+                  <span className="font-semibold">Provider Name:</span>
+                  <span>{selectedService.provider?.name}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="font-semibold">Amount:</span>
@@ -1064,7 +1069,7 @@ const Dashboard = () => {
                   <span className="font-semibold">Added on:</span>
                   <span>
                     {new Date(
-                      selectedService.service?.dateAdded,
+                      selectedService.provider?.updatedAt,
                     ).toLocaleDateString()}
                   </span>
                 </div>
@@ -1078,16 +1083,10 @@ const Dashboard = () => {
                   <div className="flex justify-between">
                     <span className="font-semibold">Phone:</span>
                     <span className="font-semibold text-blue-600">
-                      {selectedService.serviceProvider?.phone}
+                      {selectedService.provider?.phone}
                     </span>
                   </div>
 
-                  <div className="flex justify-between">
-                    <span className="font-semibold">Address:</span>
-                    <span className="font-semibold">
-                      {selectedService.serviceProvider?.address}
-                    </span>
-                  </div>
                 </div>
               </div>
 

@@ -1,130 +1,26 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { FaCheckCircle, FaTrash, FaBell } from "react-icons/fa";
-import { AdminContext } from "../context/AdminContext";
-import axios from "axios";
+import { useAdminNotifications } from "../hooks/useAdminNotifications";
+import { useAdmin } from "../context/AdminContext";
 import { toast } from "react-toastify";
 
 const categories = ["All", "User", "Service Provider", "Booking", "Transaction", "System", "Verification"];
 
 const Notifications = () => {
-  const [notifications, setNotifications] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState("All");
-  const [unreadCount, setUnreadCount] = useState(0);
-  
- 
-  const {backendUrl, admin } = useContext(AdminContext);
-
-  const currentUser = admin;
+  const { admin } = useAdmin();
+  const {
+    notifications,
+    unreadCount,
+    loadingNotifications,
+    fetchNotifications,
+    markNotificationAsRead,
+    markAllNotificationsAsRead,
+  } = useAdminNotifications();
 
   useEffect(() => {
-    if (currentUser) {
-      fetchNotifications();
-      fetchUnreadCount();
-    }
-  }, [currentUser, activeCategory]);
-
-  const fetchNotifications = async () => {
-    try {
-      setLoading(true);
-      const { data } = await axios.get(
-        `${backendUrl}/api/notifications?category=${activeCategory === "All" ? "" : activeCategory}`,
-        { withCredentials: true }
-      );
-
-      if (data.success) {
-        setNotifications(data.notifications);
-      }
-    } catch (error) {
-      console.error("Failed to fetch notifications:", error);
-      toast.error("Failed to load notifications");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchUnreadCount = async () => {
-    try {
-      const { data } = await axios.get(
-        `${backendUrl}/api/notifications/unread-count`,
-        { withCredentials: true }
-      );
-
-      if (data.success) {
-        setUnreadCount(data.unreadCount);
-      }
-    } catch (error) {
-      console.error("Failed to fetch unread count:", error);
-    }
-  };
-
-  const markAsRead = async (notificationId) => {
-    try {
-      const { data } = await axios.put(
-        `${backendUrl}/api/notifications/mark-read/${notificationId}`,
-        {},
-        { withCredentials: true }
-      );
-
-      if (data.success) {
-        setNotifications(prev =>
-          prev.map(n =>
-            n._id === notificationId ? { ...n, read: true } : n
-          )
-        );
-        setUnreadCount(prev => Math.max(0, prev - 1));
-        toast.success("Notification marked as read");
-      }
-    } catch (error) {
-      console.error("Failed to mark as read:", error);
-      toast.error("Failed to mark notification as read");
-    }
-  };
-
-  const markAllAsRead = async () => {
-    try {
-      const { data } = await axios.put(
-        `${backendUrl}/api/notifications/mark-all-read`,
-        {},
-        { withCredentials: true }
-      );
-
-      if (data.success) {
-        setNotifications(prev =>
-          prev.map(n => ({ ...n, read: true }))
-        );
-        setUnreadCount(0);
-        toast.success("All notifications marked as read");
-      }
-    } catch (error) {
-      console.error("Failed to mark all as read:", error);
-      toast.error("Failed to mark all notifications as read");
-    }
-  };
-
-  const deleteNotification = async (notificationId) => {
-    try {
-      const { data } = await axios.delete(
-        `${backendUrl}/api/notifications/${notificationId}`,
-        { withCredentials: true }
-      );
-
-      if (data.success) {
-        setNotifications(prev =>
-          prev.filter(n => n._id !== notificationId)
-        );
-        // Update unread count if the deleted notification was unread
-        const deletedNotification = notifications.find(n => n._id === notificationId);
-        if (deletedNotification && !deletedNotification.read) {
-          setUnreadCount(prev => Math.max(0, prev - 1));
-        }
-        toast.success("Notification deleted");
-      }
-    } catch (error) {
-      console.error("Failed to delete notification:", error);
-      toast.error("Failed to delete notification");
-    }
-  };
+    fetchNotifications({ category: activeCategory === "All" ? "" : activeCategory });
+  }, [activeCategory, fetchNotifications]);
 
   const getNotificationIcon = (type) => {
     switch (type) {
@@ -161,7 +57,7 @@ const Notifications = () => {
     ? notifications 
     : notifications.filter(n => n.category === activeCategory);
 
-  if (!currentUser) {
+  if (!admin) {
     return (
       <div className="p-6 text-center">
         <p className="text-gray-500">Please log in to view notifications</p>
@@ -170,12 +66,12 @@ const Notifications = () => {
   }
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
+    <div className="w-full max-w-[1400px] mx-auto p-3 sm:p-6 space-y-6 h-[calc(100vh-4rem)] overflow-y-auto scrollbar-thin">
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
         <div className="flex items-center gap-3">
           <FaBell className="text-2xl text-blue-500" />
-          <h2 className="text-2xl font-bold text-gray-800">Notifications</h2>
+          <h2 className="text-xl sm:text-2xl font-bold text-gray-800">Notifications</h2>
           {unreadCount > 0 && (
             <span className="bg-red-500 text-white text-sm px-2 py-1 rounded-full">
               {unreadCount} unread
@@ -183,7 +79,7 @@ const Notifications = () => {
           )}
         </div>
         <button
-          onClick={markAllAsRead}
+          onClick={markAllNotificationsAsRead}
           disabled={unreadCount === 0}
           className={`px-4 py-2 rounded-lg font-medium transition-colors ${
             unreadCount === 0
@@ -196,7 +92,7 @@ const Notifications = () => {
       </div>
 
       {/* Category Tabs */}
-      <div className="flex gap-2 mb-6 flex-wrap">
+      <div className="flex gap-2 flex-wrap">
         {categories.map((cat) => (
           <button
             key={cat}
@@ -214,7 +110,7 @@ const Notifications = () => {
 
       {/* Notifications List */}
       <div className="border border-gray-200 rounded-lg overflow-hidden">
-        {loading ? (
+        {loadingNotifications ? (
           <div className="p-8 text-center">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
             <p className="text-gray-500 mt-2">Loading notifications...</p>
@@ -261,20 +157,13 @@ const Notifications = () => {
                   <div className="flex items-center gap-2 ml-4">
                     {!notification.read && (
                       <button
-                        onClick={() => markAsRead(notification._id)}
+                        onClick={() => markNotificationAsRead(notification._id)}
                         className="text-green-500 hover:text-green-700 text-sm flex items-center gap-1 p-2 rounded hover:bg-green-50"
                         title="Mark as read"
                       >
                         <FaCheckCircle size={16} />
                       </button>
                     )}
-                    <button
-                      onClick={() => deleteNotification(notification._id)}
-                      className="text-red-500 hover:text-red-700 text-sm flex items-center gap-1 p-2 rounded hover:bg-red-50"
-                      title="Delete notification"
-                    >
-                      <FaTrash size={14} />
-                    </button>
                   </div>
                 </div>
               </li>

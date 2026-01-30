@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import axios from "axios";
-import { AdminContext } from "../context/AdminContext";
+import { useAdmin } from "../context/AdminContext";
 import { assets } from "../assets/assets";
 
 const Settings = () => {
-  const { backendUrl, fetchCurrentAdmin, admin } = useContext(AdminContext);
+  const { backendUrl: backendUrl_from_context, fetchCurrentAdmin, admin } = useAdmin();
+  const backendUrl = backendUrl_from_context || import.meta.env.VITE_BACKEND_URL;
   const [previewImage, setPreviewImage] = useState(null);
 
   // Profile state

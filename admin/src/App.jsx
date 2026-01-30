@@ -13,7 +13,7 @@ import ServiceCategories from "./pages/ServiceCategories";
 import ServiceProvider from "./pages/ServiceProvider";
 import UserManagement from "./pages/UserManagement";
 import AdminLogin from "./pages/AdminLogin";
-import NotFound from "./componets/NotFound";
+import NotFound from "./components/NotFound";
 import { AdminContext } from "./context/AdminContext";
 
 // ✅ Enhanced Protected Route Wrapper

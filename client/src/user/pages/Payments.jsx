@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   FiSmartphone,
@@ -21,7 +21,41 @@ const Payments = () => {
   const navigate = useNavigate();
   const { backendUrl, currSymbol } = useContext(ShareContext);
 
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   const { service } = location.state || {};
+  const [paymentHistory, setPaymentHistory] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
+  // Fetch payment history if no service is selected
+  useEffect(() => {
+    if (!service) {
+      fetchPaymentHistory();
+    }
+  }, [service, backendUrl]);
+
+  const fetchPaymentHistory = async () => {
+    try {
+      setLoadingHistory(true);
+      const data = await bookingService.fetchMyBookings(backendUrl, {
+        page: 1,
+        limit: 100,
+        paymentStatus: "all"
+      });
+      if (data.success) {
+        setPaymentHistory(data.bookings || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch payment history:", err);
+    } finally {
+      setLoadingHistory(false);
+    }
+  };
 
   const displayService = service || {
     serviceProvider: "N/A",
@@ -276,16 +310,19 @@ const Payments = () => {
           Back
         </button>
 
-        <div className="mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-            Complete Booking
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Fill in your details and choose payment method
-          </p>
-        </div>
+        {/* Show Payment Form if Service is Selected */}
+        {service ? (
+          <>
+            <div className="mb-8">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                Complete Booking
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Fill in your details and choose payment method
+              </p>
+            </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+            <div className="grid md:grid-cols-2 gap-8">
           {/* Left: Service Details */}
           <div>
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
@@ -552,6 +589,150 @@ const Payments = () => {
             </div>
           </div>
         </div>
+          </>
+        ) : (
+          <>
+            {/* Payment History View */}
+            <div className="mb-8">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                Payment History
+              </h1>
+              <p className="text-gray-600 mt-1">
+                View all your payments and bookings
+              </p>
+            </div>
+
+            {loadingHistory ? (
+              <div className="flex justify-center items-center min-h-[400px]">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              </div>
+            ) : paymentHistory.length > 0 ? (
+              <>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+                  <div className="overflow-x-auto max-h-[600px] overflow-y-auto">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
+                        <tr>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Service</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Provider</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Amount</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Payment Method</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Date</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {paymentHistory
+                          .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                          .map((booking) => (
+                          <tr key={booking._id} className="hover:bg-gray-50 transition-colors">
+                            <td className="px-6 py-4">
+                              <div>
+                                <p className="text-sm font-medium text-gray-900">{booking.serviceName}</p>
+                                <p className="text-xs text-gray-500">{booking.categoryName}</p>
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {booking.providerName || booking.serviceProvider}
+                            </td>
+                            <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                              {currSymbol}{booking.amount?.toLocaleString() || 0}
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                booking.paymentMethod === 'Mpesa' 
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-blue-100 text-blue-800'
+                              }`}>
+                                {booking.paymentMethod || 'Cash'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-sm">
+                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                booking.is_paid
+                                  ? 'bg-green-100 text-green-800'
+                                  : 'bg-yellow-100 text-yellow-800'
+                              }`}>
+                                {booking.is_paid ? 'Paid' : 'Pending'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 text-sm text-gray-600">
+                              {new Date(booking.createdAt).toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                              })}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="flex items-center justify-between bg-white px-6 py-4 rounded-lg shadow border border-gray-200">
+                  <div className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{((currentPage - 1) * itemsPerPage) + 1}</span> to{' '}
+                    <span className="font-medium">{Math.min(currentPage * itemsPerPage, paymentHistory.length)}</span> of{' '}
+                    <span className="font-medium">{paymentHistory.length}</span> payments
+                  </div>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className={`px-4 py-2 border rounded-md text-sm font-medium ${
+                        currentPage === 1 
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      Previous
+                    </button>
+                    <div className="flex items-center gap-2">
+                      {Array.from({ length: Math.ceil(paymentHistory.length / itemsPerPage) }, (_, i) => i + 1).map(page => (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`px-3 py-2 rounded-md text-sm font-medium ${
+                            currentPage === page
+                              ? 'bg-blue-600 text-white'
+                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                    </div>
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(paymentHistory.length / itemsPerPage)))}
+                      disabled={currentPage === Math.ceil(paymentHistory.length / itemsPerPage)}
+                      className={`px-4 py-2 border rounded-md text-sm font-medium ${
+                        currentPage === Math.ceil(paymentHistory.length / itemsPerPage)
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-200">
+                <div className="mb-4 text-6xl">📋</div>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">No Payment History</h3>
+                <p className="text-gray-600 mb-8">You haven't made any payments yet</p>
+                <button
+                  onClick={() => navigate("/user/dashboard")}
+                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                >
+                  Browse Services
+                </button>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

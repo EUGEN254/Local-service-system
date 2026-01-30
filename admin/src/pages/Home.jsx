@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
-import Sidebar from "../componets/Sidebar";
-import Navbar from "../componets/Navbar";
+import Sidebar from "../components/Sidebar";
+import Navbar from "../components/Navbar";
 
 const Home = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);

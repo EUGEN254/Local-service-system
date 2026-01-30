@@ -20,7 +20,7 @@ const LandingPage = () => {
   const [authMode, setAuthMode] = useState("Sign Up");
   const [showLearnMore, setShowLearnMore] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const { user, logoutUser, backendUrl } = useContext(ShareContext);
+  const { user, logoutUser, backendUrl, currSymbol } = useContext(ShareContext);
 
   // Use hooks directly
   const {
@@ -73,14 +73,14 @@ const LandingPage = () => {
           (service) => service.category === selectedCategory,
         );
 
-  const handleQuickView = async (serviceProviderId) => {
+  const handleQuickView = async (serviceId) => {
     try {
       const data = await landingPageService.fetchProviderDetails(
         backendUrl,
-        serviceProviderId,
+        serviceId,
       );
       if (data.success) {
-        setSelectedProvider(data.data);
+        setSelectedProvider(data.data); // Set the entire data object, not just provider
         setShowProviderModal(true);
       } else {
         toast.error(data.message);
@@ -133,18 +133,37 @@ const LandingPage = () => {
       return;
     }
 
-    // Default: proceed to booking flow (navigate to a booking page or open auth modal)
-    // Fallback — navigate to dashboard where booking flow can continue
-    navigate(`/user/dashboard`);
+    // Navigate to payment with service data
+    navigate("/user/payment", { state: { service: selectedProvider?.service } });
     setShowProviderModal(false);
+    // Scroll to top smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Render star rating with colors
+  const renderStars = (rating) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <span key={i} className={`text-lg ${i < Math.round(rating) ? 'text-yellow-400' : 'text-gray-300'}`}>
+        ★
+      </span>
+    ));
   };
 
   // view of service provider modal
   const ProviderDetailsModal = () => {
     if (!selectedProvider) return null;
 
-    const provider = selectedProvider;
+    const provider = selectedProvider.provider || selectedProvider;
     const info = provider.serviceProviderInfo || {};
+    const ratings = selectedProvider.ratings || { averageRating: 0, totalReviews: 0, reviews: [] };
+
+    const renderStars = (rating) => {
+      return Array.from({ length: 5 }, (_, i) => (
+        <span key={i} className={`text-lg ${i < Math.round(rating) ? 'text-yellow-400' : 'text-gray-300'}`}>
+          ★
+        </span>
+      ));
+    };
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -332,6 +351,73 @@ const LandingPage = () => {
                       {provider.status}
                     </span>
                   </p>
+                </div>
+
+                {/* Ratings & Reviews */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-bold text-gray-900 mb-3">
+                    Customer Reviews
+                  </h3>
+                  
+                  {/* Average Rating Display */}
+                  <div className="flex items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                      <div className="flex items-center gap-1 mb-1">
+                        {renderStars(ratings.averageRating)}
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {ratings.averageRating}
+                      </div>
+                      <div className="text-sm text-gray-600">
+                        Based on {ratings.totalReviews} reviews
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Individual Reviews */}
+                  {ratings.reviews && ratings.reviews.length > 0 ? (
+                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                      {ratings.reviews.map((review) => (
+                        <div key={review._id} className="border border-gray-200 rounded-lg p-3">
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              {review.userImage ? (
+                                <img
+                                  src={review.userImage}
+                                  alt={review.userName}
+                                  className="w-8 h-8 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-xs font-bold">
+                                  {review.userName?.charAt(0)}
+                                </div>
+                              )}
+                              <div>
+                                <p className="font-medium text-gray-900 text-sm">
+                                  {review.userName}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  {new Date(review.createdAt).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex gap-0.5">
+                              {renderStars(review.rating)}
+                            </div>
+                          </div>
+                          {review.comment && (
+                            <p className="text-sm text-gray-700 ml-10">
+                              {review.comment}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-gray-500 text-sm">
+                      No reviews yet. Be the first to rate this provider!
+                    </p>
+                  )}
                 </div>
 
                 {/* Action Buttons */}
@@ -807,7 +893,7 @@ const LandingPage = () => {
                     className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 overflow-hidden transition-colors"
                   >
                     <div
-                      onClick={() => handleQuickView(service.serviceProvider)}
+                      onClick={() => handleQuickView(service._id)}
                       className="relative overflow-hidden h-48"
                     >
                       <img
@@ -824,44 +910,42 @@ const LandingPage = () => {
                       <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-black/70 text-white px-2 py-1 rounded text-sm">
                         <span className="font-bold">★</span>
                         <span className="font-medium">
-                          {service.rating || "4.9"}
+                          {(service.rating || 0).toFixed(1)}
                         </span>
                         <span className="text-gray-300 text-xs">
-                          ({service.reviews || "400"})
+                          ({service.totalReviews || 0})
                         </span>
                       </div>
                     </div>
 
                     <div className="p-5">
-                      <div className="flex items-start justify-between mb-3">
-                        <h3 className="text-lg font-bold text-gray-900">
-                          {service.serviceName}
-                        </h3>
-                        <div className="flex flex-col items-end">
-                          <span className="text-xl font-bold text-gray-900">
-                            {service.amount}
-                          </span>
-                          <span className="text-xs text-gray-500">
-                            starting price
-                          </span>
-                        </div>
+                      <h3 className="text-lg font-bold text-gray-900 mb-2">
+                        {service.serviceName}
+                      </h3>
+
+                      <div className="flex items-center justify-between mb-4">
+                        <span className="text-xl font-bold text-gray-900">
+                          {currSymbol}{service.amount}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          starting price
+                        </span>
                       </div>
 
-                      {/* <div className="flex flex-wrap gap-1 mb-4">
-                        {service.tags.slice(0, 2).map((tag, i) => (
-                          <span
-                            key={i}
-                            className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                      </div> */}
+                      {/* Star Rating Display */}
+                      <div className="flex items-center gap-2 mb-4">
+                        <div className="flex items-center gap-0.5">
+                          {renderStars(service.rating || 0)}
+                        </div>
+                        <span className="text-sm text-gray-600">
+                          ({service.totalReviews || 0} reviews)
+                        </span>
+                      </div>
 
                       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                         <button
                           onClick={() =>
-                            handleQuickView(service.serviceProvider)
+                            handleQuickView(service._id)
                           }
                           className="text-gray-600 hover:text-gray-900 font-medium text-sm"
                         >
@@ -963,30 +1047,59 @@ const LandingPage = () => {
       {/* CTA Footer */}
       <div className="bg-gray-50 py-16 px-4 sm:px-6 lg:px-8 mt-12">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">
-            Ready to Find Your Perfect Service?
-          </h2>
-          <p className="text-lg text-gray-600 mb-8">
-            Join thousands of satisfied customers who found their trusted
-            service providers on WorkLink
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={() => {
-                setAuthMode("Sign Up");
-                setShowAuthModal(true);
-              }}
-              className="bg-gray-900 hover:bg-gray-800 text-white font-bold text-lg px-8 py-4 rounded-lg transition-colors"
-            >
-              Get Started Free
-            </button>
-            <button
-              onClick={() => setShowLearnMore(true)}
-              className="bg-white text-gray-900 font-bold text-lg px-8 py-4 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-colors"
-            >
-              Learn More
-            </button>
-          </div>
+          {user ? (
+            <>
+              <h2 className="text-3xl font-bold text-gray-900 mb-6">
+                Ready to Book a Service?
+              </h2>
+              <p className="text-lg text-gray-600 mb-8">
+                Browse our verified service providers and book your next appointment today
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={() => navigate("/user/dashboard")}
+                  className="bg-gray-900 hover:bg-gray-800 text-white font-bold text-lg px-8 py-4 rounded-lg transition-colors"
+                >
+                  Go to Dashboard
+                </button>
+                <button
+                  onClick={() => {
+                    document.querySelector("#services")?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  className="bg-white text-gray-900 font-bold text-lg px-8 py-4 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-colors"
+                >
+                  Browse Services
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <h2 className="text-3xl font-bold text-gray-900 mb-6">
+                Ready to Find Your Perfect Service?
+              </h2>
+              <p className="text-lg text-gray-600 mb-8">
+                Join thousands of satisfied customers who found their trusted
+                service providers on WorkLink
+              </p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <button
+                  onClick={() => {
+                    setAuthMode("Sign Up");
+                    setShowAuthModal(true);
+                  }}
+                  className="bg-gray-900 hover:bg-gray-800 text-white font-bold text-lg px-8 py-4 rounded-lg transition-colors"
+                >
+                  Get Started Free
+                </button>
+                <button
+                  onClick={() => setShowLearnMore(true)}
+                  className="bg-white text-gray-900 font-bold text-lg px-8 py-4 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-colors"
+                >
+                  Learn More
+                </button>
+              </div>
+            </>
+          )}
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-gray-500">
             <div className="flex items-center gap-2">

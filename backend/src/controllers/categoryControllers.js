@@ -1,15 +1,24 @@
 // controllers/categoryControllers.js
 import Category from "../models/categorySchema.js";
+import { PlumbingService } from "../models/index.js";
 import {v2 as cloudinary} from 'cloudinary'
 // Get all categories
 export const getCategories = async (req, res) => {
   try {
     const categories = await Category.find().sort({ createdAt: -1 });
 
+    // Compute servicesCount for each category by counting plumbing services
+    const categoriesWithCounts = await Promise.all(
+      categories.map(async (cat) => {
+        const count = await PlumbingService.countDocuments({ category: cat.name });
+        return { ...cat.toObject(), servicesCount: count };
+      })
+    );
+
     res.json({
       success: true,
-      categories,
-      total: categories.length
+      categories: categoriesWithCounts,
+      total: categoriesWithCounts.length,
     });
   } catch (error) {
     console.error("Error fetching categories:", error);
@@ -18,21 +27,13 @@ export const getCategories = async (req, res) => {
       message: "Server error while fetching categories"
     });
   }
-};
+}
+
 
 // Create new category
 export const createCategory = async (req, res) => {
   try {
     const { name, description } = req.body;
-
-    if (!name || !description) {
-      return res.status(400).json({
-        success: false,
-        message: "Name and description are required"
-      });
-    }
-
-    // Check if category already exists
     const existingCategory = await Category.findOne({ name });
     if (existingCategory) {
       return res.status(400).json({
@@ -149,8 +150,9 @@ export const deleteCategory = async (req, res) => {
       });
     }
 
-    // Check if category has services
-    if (category.servicesCount > 0) {
+    // Check if category has services by counting plumbing services
+    const servicesCount = await PlumbingService.countDocuments({ category: category.name });
+    if (servicesCount > 0) {
       return res.status(400).json({
         success: false,
         message: "Cannot delete category with existing services"
