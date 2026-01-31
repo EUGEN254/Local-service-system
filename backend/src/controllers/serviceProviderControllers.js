@@ -5,6 +5,7 @@ import User from "../models/userSchema.js";
 import mpesaTransactionsSchema from "../models/mpesaTransactionsSchema.js";
 import Rating from "../models/ratingSchema.js";
 import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 // Add a new service
 export const addService = async (req, res) => {
@@ -294,11 +295,15 @@ export const updateStatus = async (req, res) => {
     await booking.save();
 
     // If status is changed TO "Completed" (and wasn't already), increment the provider's completedJobs
-    if (status === 'Completed' && previousStatus !== 'Completed' && booking.serviceProvider) {
+    if (
+      status === "Completed" &&
+      previousStatus !== "Completed" &&
+      booking.serviceProvider
+    ) {
       await User.findByIdAndUpdate(
         booking.serviceProvider,
-        { $inc: { 'serviceProviderInfo.completedJobs': 1 } },
-        { new: true }
+        { $inc: { "serviceProviderInfo.completedJobs": 1 } },
+        { new: true },
       );
     }
 
@@ -313,7 +318,7 @@ export const updateProfile = async (req, res) => {
     const userId = req.user.id;
     const { name, email, phone, bio, address } = req.body;
 
-    // 🧩 Build the update object dynamically (only include provided fields)
+    // Build the update object dynamically (only include provided fields)
     const updateData = {};
     if (name) updateData.name = name;
     if (email) updateData.email = email;
@@ -354,14 +359,49 @@ export const updateProfile = async (req, res) => {
   }
 };
 
+export const updatePasswordGoogle = async (req, res) => {
+  try {
+    const { newPassword } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    // Only allow if user has no password (Google signup)
+    if (user.password) {
+      return res.status(400).json({
+        success: false,
+        message: "Password already set. Use change password instead.",
+      });
+    }
+
+    // Hash and save new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Password set successfully",
+    });
+  } catch (error) {
+    console.error("Set password error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+};
+
 export const getAllServiceProviders = async (req, res) => {
   try {
-    
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const totalProviders = await User.find({ role: "service-provider" }).countDocuments();
+    const totalProviders = await User.find({
+      role: "service-provider",
+    }).countDocuments();
     const serviceProviders = await User.find({ role: "service-provider" })
       .skip(skip)
       .limit(limit)
@@ -370,7 +410,13 @@ export const getAllServiceProviders = async (req, res) => {
     // Aggregate ratings for the fetched providers
     const providerIds = serviceProviders.map((p) => p._id);
     const agg = await Rating.aggregate([
-      { $match: { provider: { $in: providerIds.map((id) => new mongoose.Types.ObjectId(id)) } } },
+      {
+        $match: {
+          provider: {
+            $in: providerIds.map((id) => new mongoose.Types.ObjectId(id)),
+          },
+        },
+      },
       {
         $group: {
           _id: "$provider",
@@ -382,14 +428,22 @@ export const getAllServiceProviders = async (req, res) => {
 
     const ratingMap = {};
     agg.forEach((a) => {
-      ratingMap[a._id.toString()] = { avgRating: a.avgRating, totalReviews: a.totalReviews };
+      ratingMap[a._id.toString()] = {
+        avgRating: a.avgRating,
+        totalReviews: a.totalReviews,
+      };
     });
 
     const providersWithRatings = serviceProviders.map((p) => {
       const obj = p.toObject();
-      const stats = ratingMap[p._id.toString()] || { avgRating: 0, totalReviews: 0 };
+      const stats = ratingMap[p._id.toString()] || {
+        avgRating: 0,
+        totalReviews: 0,
+      };
       obj.serviceProviderInfo = obj.serviceProviderInfo || {};
-      obj.serviceProviderInfo.rating = Number((stats.avgRating || 0).toFixed(1));
+      obj.serviceProviderInfo.rating = Number(
+        (stats.avgRating || 0).toFixed(1),
+      );
       obj.serviceProviderInfo.totalReviews = stats.totalReviews || 0;
       return obj;
     });
@@ -417,12 +471,16 @@ export const submitRating = async (req, res) => {
     const { rating, comment } = req.body;
 
     if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ success: false, message: "Rating must be between 1 and 5" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Rating must be between 1 and 5" });
     }
 
     const provider = await User.findById(providerId);
     if (!provider || provider.role !== "service-provider") {
-      return res.status(404).json({ success: false, message: "Service provider not found" });
+      return res
+        .status(404)
+        .json({ success: false, message: "Service provider not found" });
     }
 
     const ratingDoc = await Rating.findOneAndUpdate(
@@ -434,7 +492,13 @@ export const submitRating = async (req, res) => {
     // Recalculate aggregate
     const agg = await Rating.aggregate([
       { $match: { provider: new mongoose.Types.ObjectId(providerId) } },
-      { $group: { _id: "$provider", avgRating: { $avg: "$rating" }, totalReviews: { $sum: 1 } } },
+      {
+        $group: {
+          _id: "$provider",
+          avgRating: { $avg: "$rating" },
+          totalReviews: { $sum: 1 },
+        },
+      },
     ]);
 
     const stats = agg[0] || { avgRating: 0, totalReviews: 0 };
@@ -447,10 +511,19 @@ export const submitRating = async (req, res) => {
       },
     });
 
-    res.json({ success: true, rating: ratingDoc, averageRating: stats.avgRating, totalReviews: stats.totalReviews });
+    res.json({
+      success: true,
+      rating: ratingDoc,
+      averageRating: stats.avgRating,
+      totalReviews: stats.totalReviews,
+    });
   } catch (error) {
     console.error("Submit rating error:", error);
-    res.status(500).json({ success: false, message: "Failed to submit rating", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Failed to submit rating",
+      error: error.message,
+    });
   }
 };
 
@@ -472,6 +545,59 @@ export const getProviderRatings = async (req, res) => {
     res.json({ success: true, ratings, total, page, limit });
   } catch (error) {
     console.error("Get provider ratings error:", error);
-    res.status(500).json({ success: false, message: "Failed to fetch ratings", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch ratings",
+      error: error.message,
+    });
+  }
+};
+
+export const updatePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user._id;
+
+    // 1. Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // 2. Verify current password (if user has one)
+    if (user.password) {
+      const isMatch = await bcrypt.compare(currentPassword, user.password);
+      if (!isMatch) {
+        return res.status(400).json({ 
+          success: false, 
+          message: "Current password is incorrect" 
+        });
+      }
+    }
+
+    // 3. Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // 4. Update ONLY password field (skip validation)
+    await User.findByIdAndUpdate(
+      userId,
+      { password: hashedPassword },
+      { 
+        runValidators: false, 
+        new: true 
+      }
+    );
+
+    res.json({ 
+      success: true, 
+      message: "Password updated successfully" 
+    });
+
+  } catch (error) {
+    console.error("Error updating password:", error);
+    res.status(500).json({ 
+      success: false, 
+      message: "Server error" 
+    });
   }
 };

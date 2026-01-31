@@ -449,90 +449,13 @@ export const getMe = async (req, res) => {
         user.serviceProviderInfo?.idVerification?.status || "not-submitted",
       rejectionReason:
         user.serviceProviderInfo?.idVerification?.rejectionReason || "",
+      hasPassword: !!user.password,//true is password exists
     };
 
     res.json({ success: true, user: safeUser });
   } catch (error) {
     console.error("Error in getMe:", error);
     res.status(500).json({ success: false, message: "Server error" });
-  }
-};
-
-// Update user password
-export const updatePassword = async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    const userId = req.user._id;
-
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({
-        success: false,
-        message: "Current password and new password are required",
-      });
-    }
-
-    if (newPassword.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: "New password must be at least 6 characters long",
-      });
-    }
-
-    const user = await User.findById(userId).select("+password");
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found",
-      });
-    }
-
-    // Verify current password
-    const isCurrentPasswordValid = await bcrypt.compare(
-      currentPassword,
-      user.password,
-    );
-    if (!isCurrentPasswordValid) {
-      return res.status(400).json({
-        success: false,
-        message: "Current password is incorrect",
-      });
-    }
-
-    // Hash and save new password
-    const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-    user.password = hashedNewPassword;
-    await user.save();
-
-    // Notify user about password change
-    await createNotification(userId, {
-      title: "Password Changed Successfully 🔒",
-      message:
-        "Your account password has been updated successfully. If you didn't make this change, please contact support immediately.",
-      type: "system",
-      category: "System",
-      priority: "high",
-    });
-
-    res.json({
-      success: true,
-      message: "Password updated successfully",
-    });
-  } catch (error) {
-    console.error("Error updating password:", error);
-
-    await createNotification(req.user._id, {
-      title: "Password Update Failed",
-      message:
-        "There was an error while trying to update your password. Please try again.",
-      type: "system",
-      category: "System",
-      priority: "medium",
-    });
-
-    res.status(500).json({
-      success: false,
-      message: "Server error while updating password",
-    });
   }
 };
 

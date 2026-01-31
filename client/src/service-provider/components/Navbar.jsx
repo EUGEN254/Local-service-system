@@ -1,11 +1,13 @@
 import React, { useContext, useState } from "react";
 import {
   FaSignOutAlt,
-  FaSearch,
   FaBell,
   FaBars,
   FaChevronDown,
   FaInbox,
+  FaTachometerAlt,
+  FaCog,
+  FaSearch ,
 } from "react-icons/fa";
 import { ShareContext } from "../../sharedcontext/SharedContext";
 import { assets } from "../../assets/assets.js";
@@ -106,13 +108,44 @@ const Navbar = ({ onMenuClick }) => {
 
           {/* Dropdown */}
           {dropdownOpen && (
-            <div className="absolute right-0 mt-3 w-36 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-              <button
-                className="w-full flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100 transition-colors"
-                onClick={logoutUser}
-              >
-                <FaSignOutAlt className="text-gray-600" /> Logout
-              </button>
+            <div className="absolute right-0 mt-3 w-68 bg-white border border-gray-200 rounded-lg shadow-xl z-50">
+              <div className="p-3 border-b border-gray-100">
+                <p className="text-lg font-medium text-gray-900">
+                  {user?.name}
+                </p>
+                <p className="text-base text-gray-500 truncate">
+                  {user?.email}
+                </p>
+              </div>
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    navigate("/sp/dashboard");
+                    setDropdownOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-base"
+                >
+                  <FaTachometerAlt className="text-gray-500" />
+                  <span className="font-medium">Dashboard</span>
+                </button>
+                <button
+                  onClick={() => {
+                    navigate("/sp/settings");
+                    setDropdownOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-base"
+                >
+                  <FaCog className="text-gray-500" />
+                  <span className="font-medium">Settings</span>
+                </button>
+                <button
+                  className="w-full flex items-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-base"
+                  onClick={logoutUser}
+                >
+                  <FaSignOutAlt className="text-red-500" />
+                  <span className="font-medium">Logout</span>
+                </button>
+              </div>
             </div>
           )}
         </div>

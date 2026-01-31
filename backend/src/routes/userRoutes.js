@@ -5,7 +5,6 @@ import {
   loginUser,
   logoutUser,
   registerUser,
-  updatePassword,
   submitIdVerification,
   getIdVerificationStatus, 
   loginAdmin,
@@ -25,7 +24,6 @@ userRouter.post("/login-admin", loginAdmin);
 userRouter.post("/logoutAdmin", logoutAdmin);
 userRouter.post("/logout", logoutUser);
 userRouter.get("/me", userAuth, getMe);
-userRouter.put("/update-password", userAuth, updatePassword);
 
 
 // Password routes

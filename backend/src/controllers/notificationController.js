@@ -162,7 +162,7 @@ export const createNotification = async (userId, notificationData) => {
       ...notificationData
     });
 
-    await notification.save();//save to notification database 
+    await notification.save();
     
     // Populate before emitting
     const populatedNotification = await Notification.findById(notification._id)
@@ -181,7 +181,7 @@ export const createNotification = async (userId, notificationData) => {
         read: populatedNotification.read,
         createdAt: populatedNotification.createdAt,
         user: populatedNotification.user,
-        relatedEntity: populatedNotification.relatedEntity
+        relatedEntity: populatedNotification.relatedEntity,
       });
     }
 

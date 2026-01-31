@@ -6,51 +6,71 @@ const notificationSchema = new mongoose.Schema(
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      required: true,
     },
     title: {
       type: String,
-      required: true
+      required: true,
     },
     message: {
       type: String,
-      required: true
+      required: true,
     },
     type: {
       type: String,
-      enum: ["user", "service-provider", "booking", "transaction", "system", "verification"],
-      default: "system"
+      enum: [
+        "user",
+        "service-provider",
+        "booking",
+        "transaction",
+        "system",
+        "verification",
+      ],
+      default: "system",
     },
     category: {
       type: String,
-      enum: ["User", "Service Provider", "Booking", "Transaction", "System", "Verification"],
-      default: "System"
+      enum: [
+        "User",
+        "Service Provider",
+        "general",
+        "payment",
+        "account",
+        "service",
+        "Booking",
+        "Transaction",
+        "technical",
+        "System",
+        "other",
+        "Verification",
+      ],
+      default: "System",
     },
     read: {
       type: Boolean,
-      default: false
+      default: false,
     },
     priority: {
       type: String,
       enum: ["low", "medium", "high"],
-      default: "medium"
+      default: "medium",
     },
     actionUrl: {
-      type: String // URL to redirect when notification is clicked
+      type: String,
     },
     relatedEntity: {
       type: mongoose.Schema.Types.ObjectId, // Reference to related booking, user, etc.
-      refPath: 'relatedEntityModel'
+      refPath: "relatedEntityModel",
     },
     relatedEntityModel: {
       type: String,
-      enum: ["User", "Booking", "Service", "Transaction"]
+      enum: ["User", "Booking", "Service", "Transaction"],
     },
     expiresAt: {
-      type: Date // Auto-delete notifications after this date
-    }
+      type: Date, // Auto-delete notifications after this date
+    },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Auto-delete expired notifications

@@ -18,6 +18,8 @@ import {
   getAllServiceProviders,
   submitRating,
   getProviderRatings,
+  updatePassword,
+  updatePasswordGoogle,
 } from "../controllers/serviceProviderControllers.js";
 
 const serviceRouter = express.Router();
@@ -38,11 +40,14 @@ serviceRouter.put(
   upload.single("image"),
   updateProfile,
 );
+serviceRouter.put("/set-password", userAuth, updatePasswordGoogle);
+
+serviceRouter.put("/update-password", userAuth, updatePassword);
 serviceRouter.get("/customer/:customerId", userAuth, getCustomerDetails);
 serviceRouter.get("/details/:serviceId", getServiceDetails);
 serviceRouter.put("/edit/:id", userAuth, upload.single("image"), editService);
 serviceRouter.put("/booking/:id/status", userAuth, updateStatus);
-serviceRouter.get("/all",  getAllServiceProviders);
+serviceRouter.get("/all", getAllServiceProviders);
 // Ratings
 serviceRouter.post("/:id/rate", userAuth, submitRating);
 serviceRouter.get("/:id/ratings", getProviderRatings);

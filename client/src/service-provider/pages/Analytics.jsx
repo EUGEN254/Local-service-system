@@ -478,7 +478,7 @@ const Analytics = () => {
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center h-[calc(100vh-4rem)]">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-500"></div>
       </div>
     );
   }
@@ -559,7 +559,7 @@ const Analytics = () => {
             </div>
           </div>
           <div className="w-full h-64">
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250}>
               <BarChart data={analyticsData.timelineData || []} margin={{ top: 20, bottom: 5 }} barSize={12}>
                 <XAxis dataKey="period" />
                 <YAxis />
@@ -622,7 +622,7 @@ const Analytics = () => {
         <div className="bg-white p-6 rounded-xl shadow-md space-y-4 border border-gray-200">
           <p className="font-semibold text-gray-700 text-lg">Revenue Trend</p>
           <div className="w-full h-64">
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250}>
               <AreaChart data={analyticsData.revenueTrend || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="period" />

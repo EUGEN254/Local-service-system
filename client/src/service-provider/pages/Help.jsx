@@ -226,14 +226,14 @@ const Help = () => {
 
   const handleCallSupport = () => {
     if (window.confirm('Call support at +254 700 123 456?')) {
-      window.location.href = 'tel:+254700123456';
+      window.location.href = 'tel:+254115418682';
     }
   };
 
   const handleEmailSupport = () => {
     const subject = encodeURIComponent('Support Request');
     const body = encodeURIComponent('Hello Support Team,\n\nI need assistance with:');
-    window.location.href = `mailto:support@localservicesystem.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:bitinyoeugen@gmail.com?subject=${subject}&body=${body}`;
   };
 
   return (
@@ -247,11 +247,11 @@ const Help = () => {
         {/* Quick Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
-            <div className="text-2xl font-bold text-blue-600">24/7</div>
+            <div className="text-2xl font-bold text-gray-600">24/7</div>
             <div className="text-sm text-gray-600">Support Available</div>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
-            <div className="text-2xl font-bold text-green-600">2h</div>
+            <div className="text-2xl font-bold text-gray-600">2h</div>
             <div className="text-sm text-gray-600">Average Response Time</div>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center">
@@ -274,7 +274,7 @@ const Help = () => {
                     key={tab}
                     onClick={() => setActiveTab(tab)}
                     className={`flex-1 sm:flex-none whitespace-nowrap py-2 px-4 border-b-2 font-medium text-sm ${
-                      activeTab === tab ? 'border-yellow-500 text-yellow-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      activeTab === tab ? 'border-gray-500 text-yellow-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                     }`}
                   >
                     {tab === 'faq' ? 'FAQ' : tab === 'contact' ? 'Contact Admin' : 'Resources'}
@@ -296,7 +296,7 @@ const Help = () => {
                         onClick={() => setSelectedCategory(category)}
                         className={`px-4 py-2 rounded-full text-sm font-medium capitalize ${
                           selectedCategory === category
-                            ? 'bg-yellow-500 text-white'
+                            ? 'bg-gray-500 text-white'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
@@ -307,7 +307,7 @@ const Help = () => {
 
                   <div className="space-y-4">
                     {faqCategories[selectedCategory].map((faq, index) => (
-                      <div key={index} className="border border-gray-200 rounded-lg p-4 hover:border-yellow-300 transition-colors">
+                      <div key={index} className="border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
                         <h3 className="font-semibold text-gray-800 mb-2">Q: {faq.question}</h3>
                         <p className="text-gray-600 text-sm">A: {faq.answer}</p>
                       </div>
@@ -327,7 +327,7 @@ const Help = () => {
                       <select
                         value={selectedCategory}
                         onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                       >
                         {contactCategories.map((cat) => (
                           <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -341,7 +341,7 @@ const Help = () => {
                         value={subject}
                         onChange={(e) => setSubject(e.target.value)}
                         placeholder="Brief description of your issue"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent"
                         required
                       />
                     </div>
@@ -352,14 +352,14 @@ const Help = () => {
                         onChange={(e) => setMessage(e.target.value)}
                         rows={6}
                         placeholder="Please describe your issue in detail..."
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent resize-vertical"
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent resize-vertical"
                         required
                       />
                     </div>
                     <button
                       type="submit"
                       disabled={isSubmitting}
-                      className="bg-yellow-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-gray-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSubmitting ? 'Submitting...' : 'Submit Ticket'}
                     </button>
@@ -378,7 +378,7 @@ const Help = () => {
                       <div key={resource.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                         <div className="flex items-start justify-between mb-3">
                           <h3 className="font-semibold text-gray-800">{resource.title}</h3>
-                          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full capitalize">
+                          <span className="bg-blue-100 text-gray-800 text-xs px-2 py-1 rounded-full capitalize">
                             {resource.type}
                           </span>
                         </div>
@@ -386,13 +386,13 @@ const Help = () => {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleViewResource(resource)}
-                            className="text-yellow-600 text-sm font-semibold hover:text-yellow-700 border border-yellow-600 px-3 py-1 rounded-lg transition-colors"
+                            className="text-gray-600 text-sm font-semibold hover:text-gray-700 border border-gray-600 px-3 py-1 rounded-lg transition-colors"
                           >
                             View Content
                           </button>
                           <button
                             onClick={() => handleDownloadResource(resource)}
-                            className="bg-yellow-500 text-white text-sm font-semibold hover:bg-yellow-600 px-3 py-1 rounded-lg transition-colors"
+                            className="bg-gray-500 text-white text-sm font-semibold hover:bg-gray-600 px-3 py-1 rounded-lg transition-colors"
                           >
                             Download
                           </button>
@@ -419,7 +419,7 @@ const Help = () => {
               📞
             </div>
             <h3 className="font-semibold text-gray-800 mb-1">Call Support</h3>
-            <p className="text-gray-600 text-sm">+254 700 123 456</p>
+            <p className="text-gray-600 text-sm">+254 115 418 682</p>
             <p className="text-xs text-gray-500 mt-1">Tap to call</p>
           </div>
           <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 text-center hover:shadow-md transition-shadow cursor-pointer">
@@ -430,7 +430,7 @@ const Help = () => {
               ✉️
             </div>
             <h3 className="font-semibold text-gray-800 mb-1">Email Support</h3>
-            <p className="text-gray-600 text-sm">support@localservicesystem.com</p>
+            <p className="text-gray-600 text-sm">bitinyoeugen@gmail.com.com</p>
             <p className="text-xs text-gray-500 mt-1">Tap to email</p>
           </div>
         </div>
@@ -463,7 +463,7 @@ const Help = () => {
               </button>
               <button
                 onClick={() => handleDownloadResource(selectedResource)}
-                className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
+                className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
               >
                 Download
               </button>

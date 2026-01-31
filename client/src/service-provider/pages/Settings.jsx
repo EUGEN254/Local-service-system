@@ -3,6 +3,7 @@ import { assets } from "../../assets/assets";
 import { toast } from "sonner";
 import * as settingsService from "../../services/settingsService";
 import { ShareContext } from "../../sharedcontext/SharedContext";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const Settings = () => {
   const { backendUrl, fetchCurrentUser, user } = useContext(ShareContext);
@@ -26,11 +27,17 @@ const Settings = () => {
     twoFactorAuth: false,
   });
 
-  const [emailPush, setEmailPush] = useState(true);
-  const [appearance, setAppearance] = useState("light");
+  // Password visibility state
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [activeSection, setActiveSection] = useState("profile");
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+
+  // Check if user has password (not Google signup)
+  const hasPassword = user?.hasPassword !== null && user?.hasPassword !== undefined;
 
   // Initialize profile data from user context
   useEffect(() => {
@@ -43,7 +50,7 @@ const Settings = () => {
         bio: user.bio || "",
         address: user.address || "",
       });
-      
+
       // Set preview image if user has an image
       if (user.image) {
         setPreviewImage(user.image);
@@ -59,7 +66,7 @@ const Settings = () => {
     setSecurity((prev) => ({ ...prev, [field]: value }));
   };
 
-  // ✅ Update profile
+  // Update profile
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -76,7 +83,7 @@ const Settings = () => {
         formData.append("image", profile.image);
       }
 
-      const data = await settingsService.updateProfile(formData);
+      const data = await settingsService.updateProfile(backendUrl, formData);
       await fetchCurrentUser();
 
       toast.success(data.message || "Profile updated successfully!");
@@ -84,21 +91,30 @@ const Settings = () => {
       console.error("Error updating profile:", err);
       toast.error(
         err.response?.data?.message ||
-          "Error updating service provider profile!"
+          "Error updating service provider profile!",
       );
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ✅ Update password function
+  // Update password function
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    
-    // Validation
-    if (!security.currentPassword || !security.newPassword || !security.confirmPassword) {
-      toast.error("Please fill in all password fields");
-      return;
+
+    // Different validation for Google vs Email users
+    if (hasPassword) {
+      // For email users: require current password
+      if (!security.currentPassword || !security.newPassword || !security.confirmPassword) {
+        toast.error("Please fill in all password fields");
+        return;
+      }
+    } else {
+      // For Google users: only require new password
+      if (!security.newPassword || !security.confirmPassword) {
+        toast.error("Please fill in new password fields");
+        return;
+      }
     }
 
     if (security.newPassword.length < 6) {
@@ -114,16 +130,22 @@ const Settings = () => {
     setIsPasswordLoading(true);
 
     try {
-      const { data } = await axios.put(
-        `${backendUrl}/api/user/update-password`,
-        {
-          currentPassword: security.currentPassword,
-          newPassword: security.newPassword,
-        },
-        {
-          withCredentials: true,
-        }
-      );
+      // Call appropriate endpoint based on user type
+      let data;
+      if (hasPassword) {
+        // Regular password update
+        data = await settingsService.updatePassword(
+          backendUrl,
+          security.currentPassword,
+          security.newPassword,
+        );
+      } else {
+        // Set initial password for Google users
+        data = await settingsService.setInitialPassword(
+          backendUrl,
+          security.newPassword,
+        );
+      }
 
       if (data.success) {
         toast.success("Password changed successfully!");
@@ -134,10 +156,13 @@ const Settings = () => {
           confirmPassword: "",
           twoFactorAuth: security.twoFactorAuth,
         });
+        // Refresh user data
+        await fetchCurrentUser();
       }
     } catch (err) {
       console.error("Error updating password:", err);
-      const errorMessage = err.response?.data?.message || "Error updating password!";
+      const errorMessage =
+        err.response?.data?.message || "Error updating password!";
       toast.error(errorMessage);
     } finally {
       setIsPasswordLoading(false);
@@ -147,7 +172,6 @@ const Settings = () => {
   const menuItems = [
     { id: "profile", label: "Profile", icon: "👤" },
     { id: "security", label: "Security", icon: "🔒" },
-    { id: "appearance", label: "Appearance", icon: "🎨" },
   ];
 
   return (
@@ -173,7 +197,7 @@ const Settings = () => {
                   onClick={() => setActiveSection(item.id)}
                   className={`w-full flex items-center space-x-3 px-3 py-3 rounded-xl text-left transition-all duration-200 ${
                     activeSection === item.id
-                      ? "bg-yellow-50 text-yellow-700 border border-yellow-200"
+                      ? "bg-gray-50 text-gray-700 border border-gray-200"
                       : "text-gray-700 hover:bg-gray-50"
                   }`}
                 >
@@ -218,7 +242,7 @@ const Settings = () => {
                           }
                         }}
                       />
-                      <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-yellow-400 flex items-center justify-center bg-gray-100">
+                      <div className="w-20 h-20 rounded-full overflow-hidden border-2 border-gray-400 flex items-center justify-center bg-gray-100">
                         {previewImage ? (
                           <img
                             src={previewImage}
@@ -249,7 +273,7 @@ const Settings = () => {
                       onChange={(e) =>
                         handleProfileChange("name", e.target.value)
                       }
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-colors"
                     />
                   </div>
 
@@ -265,7 +289,7 @@ const Settings = () => {
                         onChange={(e) =>
                           handleProfileChange("email", e.target.value)
                         }
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-colors"
                       />
                     </div>
                     <div>
@@ -278,7 +302,7 @@ const Settings = () => {
                         onChange={(e) =>
                           handleProfileChange("phone", e.target.value)
                         }
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-colors"
                       />
                     </div>
                   </div>
@@ -294,7 +318,7 @@ const Settings = () => {
                         handleProfileChange("bio", e.target.value)
                       }
                       rows={4}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors resize-vertical"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-colors resize-vertical"
                       placeholder="Tell customers about your experience and expertise..."
                     />
                   </div>
@@ -309,8 +333,8 @@ const Settings = () => {
                       value={profile.address}
                       onChange={(e) =>
                         handleProfileChange("address", e.target.value)
-                        }
-                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
+                      }
+                      className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-colors"
                     />
                   </div>
 
@@ -324,7 +348,7 @@ const Settings = () => {
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className="px-6 py-3 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isLoading ? "Saving..." : "Save Changes"}
                     </button>
@@ -338,126 +362,131 @@ const Settings = () => {
               <div className="space-y-6">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                   <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                    Change Password
+                    {hasPassword ? "Change Password" : "Set Password"}
                   </h2>
                   <p className="text-gray-600 mb-6">
-                    Update your password to keep your account secure
+                    {hasPassword 
+                      ? "Update your password to keep your account secure"
+                      : "Set a password to enable email login for your account"
+                    }
+                    {!hasPassword && (
+                      <span className="block text-sm text-gray-500 mt-1">
+                        You registered with Google. Set a password to also login with email.
+                      </span>
+                    )}
                   </p>
 
                   <form onSubmit={handleChangePassword} className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Current Password *
-                      </label>
-                      <input
-                        type="password"
-                        value={security.currentPassword}
-                        onChange={(e) =>
-                          handleSecurityChange(
-                            "currentPassword",
-                            e.target.value
-                          )
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
-                        placeholder="Enter your current password"
-                        required
-                      />
-                    </div>
+                    {/* Show current password only for email users */}
+                    {hasPassword && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Current Password *
+                        </label>
+                        <div className="relative">
+                          <input
+                            type={showCurrentPassword ? "text" : "password"}
+                            value={security.currentPassword}
+                            onChange={(e) =>
+                              handleSecurityChange(
+                                "currentPassword",
+                                e.target.value,
+                              )
+                            }
+                            className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-colors"
+                            placeholder="Enter your current password"
+                            required={hasPassword}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            aria-label={showCurrentPassword ? "Hide password" : "Show password"}
+                          >
+                            {showCurrentPassword ? <FaEyeSlash /> : <FaEye />}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         New Password *
                       </label>
-                      <input
-                        type="password"
-                        value={security.newPassword}
-                        onChange={(e) =>
-                          handleSecurityChange("newPassword", e.target.value)
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
-                        placeholder="Enter your new password (min 6 characters)"
-                        minLength={6}
-                        required
-                      />
+                      <div className="relative">
+                        <input
+                          type={showNewPassword ? "text" : "password"}
+                          value={security.newPassword}
+                          onChange={(e) =>
+                            handleSecurityChange("newPassword", e.target.value)
+                          }
+                          className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-colors"
+                          placeholder={
+                            hasPassword 
+                              ? "Enter your new password (min 6 characters)"
+                              : "Set your password (min 6 characters)"
+                          }
+                          minLength={6}
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          aria-label={showNewPassword ? "Hide password" : "Show password"}
+                        >
+                          {showNewPassword ? <FaEyeSlash /> : <FaEye />}
+                        </button>
+                      </div>
                       <p className="text-xs text-gray-500 mt-1">
                         Password must be at least 6 characters long
                       </p>
                     </div>
+
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Confirm New Password *
                       </label>
-                      <input
-                        type="password"
-                        value={security.confirmPassword}
-                        onChange={(e) =>
-                          handleSecurityChange(
-                            "confirmPassword",
-                            e.target.value
-                          )
-                        }
-                        className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
-                        placeholder="Confirm your new password"
-                        required
-                      />
+                      <div className="relative">
+                        <input
+                          type={showConfirmPassword ? "text" : "password"}
+                          value={security.confirmPassword}
+                          onChange={(e) =>
+                            handleSecurityChange(
+                              "confirmPassword",
+                              e.target.value,
+                            )
+                          }
+                          className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-10 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:border-transparent transition-colors"
+                          placeholder="Confirm your new password"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                        >
+                          {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                        </button>
+                      </div>
                     </div>
+
                     <div className="flex justify-end pt-6">
                       <button
                         type="submit"
                         disabled={isPasswordLoading}
-                        className="px-6 py-3 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {isPasswordLoading ? "Updating..." : "Update Password"}
+                        {isPasswordLoading 
+                          ? "Updating..." 
+                          : hasPassword 
+                            ? "Update Password" 
+                            : "Set Password"
+                        }
                       </button>
                     </div>
                   </form>
-                </div>
-              </div>
-            )}
-
-            {/* Appearance Section */}
-            {activeSection === "appearance" && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-2">
-                  Appearance Settings
-                </h2>
-                <p className="text-gray-600 mb-6">
-                  Customize how the app looks and feels
-                </p>
-
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between py-4 border-b border-gray-100">
-                    <div>
-                      <p className="font-medium text-gray-800">Theme</p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Choose your preferred theme
-                      </p>
-                    </div>
-                    <select
-                      value={appearance}
-                      onChange={(e) => setAppearance(e.target.value)}
-                      className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent min-w-[120px]"
-                    >
-                      <option value="light">Light</option>
-                      <option value="dark">Dark</option>
-                      <option value="system">System</option>
-                    </select>
-                  </div>
-                  <div className="flex items-center justify-between py-4">
-                    <div>
-                      <p className="font-medium text-gray-800">Font Size</p>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Adjust the text size
-                      </p>
-                    </div>
-                    <select
-                      className="border border-gray-300 rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent min-w-[120px]"
-                      defaultValue="medium"
-                    >
-                      <option value="small">Small</option>
-                      <option value="medium">Medium</option>
-                      <option value="large">Large</option>
-                    </select>
-                  </div>
                 </div>
               </div>
             )}
