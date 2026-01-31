@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect, useMemo, useCallback } from "react";
 import { assets } from "../../assets/assets";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import * as spServicesService from "../../services/spServicesService";
 import { ShareContext } from "../../sharedcontext/SharedContext";
 import { useServices } from "../../hooks/useServices";

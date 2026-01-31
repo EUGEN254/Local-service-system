@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   FiSmartphone,
@@ -725,7 +725,7 @@ const Payments = () => {
                 <h3 className="text-xl font-bold text-gray-900 mb-2">No Payment History</h3>
                 <p className="text-gray-600 mb-8">You haven't made any payments yet</p>
                 <button
-                  onClick={() => navigate("/user/dashboard")}
+                  onClick={() => navigate("/user/browse-services")}
                   className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
                 >
                   Browse Services

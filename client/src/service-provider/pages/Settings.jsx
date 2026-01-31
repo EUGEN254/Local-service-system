@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { assets } from "../../assets/assets";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import * as settingsService from "../../services/settingsService";
 import { ShareContext } from "../../sharedcontext/SharedContext";
 

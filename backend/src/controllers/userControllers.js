@@ -182,7 +182,7 @@ export const loginUser = async (req, res) => {
   if (!isMatch) {
     return res.status(400).json({
       success: false,
-      message: "Incorrect password. Please try again.",
+      message: "Invalid credentials",
     });
   }
 
@@ -234,6 +234,7 @@ export const googleLoginUser = async (req, res) => {
         password: null,
         image: picture,
         role,
+        termsAccepted: true,
         emailVerified: email_verified || false,
         googleId: sub,
       });
@@ -283,11 +284,10 @@ export const googleLoginUser = async (req, res) => {
         }
       }
     } else {
-      
       if (user.role === "admin") {
         return res.status(400).json({
           success: false,
-          message: "Invalid credentials.",
+          message: "Email already taken.",
         });
       }
 

@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import * as allProviders from "../../services/allProviders.js";
 import * as ratingService from '../../services/ratingService';
 import RatingModal from '../components/RatingModal.jsx';

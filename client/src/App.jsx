@@ -1,7 +1,5 @@
 // src/App.jsx
 import React, { useContext } from "react";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 
 // Context
@@ -35,7 +33,8 @@ import Chat from "./user/pages/Chat";
 import UserNotification from "./user/pages/UserNotification";
 import ForgetPassword from "./user/pages/ForgetPassword";
 import AllProviders from "./user/pages/AllProviders";
-import ScrollToTop from "./sharedcomponent/ScrollToTop";
+import { Toaster } from "./sharedcomponent/Sonner";
+
 
 const App = () => {
   const { user } = useContext(ShareContext);
@@ -43,23 +42,7 @@ const App = () => {
 
   return (
     <>
-      <ToastContainer
-        position="top-right"
-        autoClose={1500}
-        newestOnTop
-        closeOnClick
-        pauseOnHover
-        draggable
-        className="z-10000"
-        toastStyle={{
-          height: "50px",
-          minHeight: "50px",
-          fontSize: "14px",
-          lineHeight: "1.2",
-        }}
-      />
-      <ScrollToTop />
-
+      <Toaster/>
       <Routes>
         {/* Public routes - exact paths */}
         <Route path="/" element={<LandingPage />} />

@@ -1,5 +1,5 @@
 import axios from "axios";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 // Fetch user's services with pagination
 export const fetchServices = async (

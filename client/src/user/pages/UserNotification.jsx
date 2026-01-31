@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from "react";
 import { FaCheckCircle, FaTrash, FaBell } from "react-icons/fa";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { ShareContext } from "../../sharedcontext/SharedContext";
 import { useNotifications } from "../../hooks/useNotifications";
 

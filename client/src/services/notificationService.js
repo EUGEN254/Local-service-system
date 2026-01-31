@@ -1,5 +1,5 @@
 import axios from "axios";
-import { toast } from "react-toastify";
+
 
 // Fetch notification unread count
 export const fetchNotificationUnreadCount = async (backendUrl) => {

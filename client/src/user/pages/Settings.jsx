@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { assets } from "../../assets/assets";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import * as settingsService from "../../services/settingsService";
 
 const Settings = () => {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useContext } from 'react';
 import { ShareContext } from '../../sharedcontext/SharedContext';
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import * as supportService from "../../services/supportService";
 
 const Help = () => {

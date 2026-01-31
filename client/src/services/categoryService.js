@@ -1,6 +1,5 @@
 import axios from "axios";
-import { toast } from "react-toastify";
-
+import { toast } from "sonner";
 // Fetch all categories
 export const fetchCategories = async (backendUrl) => {
   try {

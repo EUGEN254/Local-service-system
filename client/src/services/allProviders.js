@@ -5,8 +5,6 @@ export const fetchAllProviders = async (backendUrl, page, limit) => {
     const response = await axios.get(
       `${backendUrl}/api/serviceprovider/all?page=${page}&limit=${limit}`
     );
-    console.log("API Response:", response);
-    
     if (response.data.success) {
       // Return the entire data object, not just providers
       return {

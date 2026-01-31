@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { FaStar } from 'react-icons/fa';
 import * as ratingService from '../../services/ratingService';
-import { toast } from 'react-toastify';
+import { toast } from "sonner";
 
 const RatingModal = ({ backendUrl, provider, onClose, onRated }) => {
   const [value, setValue] = useState(0);

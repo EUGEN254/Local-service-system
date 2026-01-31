@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { 
   FaStar, 
   FaFilter, 

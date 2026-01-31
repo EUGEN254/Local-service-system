@@ -1,5 +1,5 @@
 import React, { useState, useContext, useEffect, useRef } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import * as chatService from "../../services/chatService";
 import { ShareContext } from "../../sharedcontext/SharedContext.jsx";
 import { assets } from "../../assets/assets";

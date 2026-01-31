@@ -2,7 +2,7 @@ import React, { useContext, useRef, useState } from "react";
 import { FaHome } from "react-icons/fa";
 import { FiMail, FiLock, FiArrowLeft } from "react-icons/fi";
 import { NavLink, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { ShareContext } from "../../sharedcontext/SharedContext";
 import * as passwordResetService from "../../services/passwordResetService";
 import LoginSignUp from "../../sharedcomponent/LoginSignUp";

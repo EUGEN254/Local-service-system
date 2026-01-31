@@ -1,6 +1,5 @@
 // serviceprovider/Notification.jsx
 import React, { useContext, useEffect, useState, useRef } from "react";
-import { Link } from "react-router-dom";
 import { fetchCustomerDetails } from "../../services/landingPageService";
 import {
   FaBell,

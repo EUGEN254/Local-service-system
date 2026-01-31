@@ -4,7 +4,7 @@ import AnimatedCounter from "./AnimatedCounter";
 import LearnMore from "./LearnMore";
 import { ShareContext } from "../sharedcontext/SharedContext";
 import * as landingPageService from "../services/landingPageService";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useLandingPage, useCategories } from "../hooks/index";
 import {

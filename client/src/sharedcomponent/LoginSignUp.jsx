@@ -2,7 +2,7 @@ import React, { useContext, useState } from "react";
 import { FiMail, FiLock, FiUserPlus, FiAlertTriangle } from "react-icons/fi";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import * as authService from "../services/authService";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { ShareContext } from "../sharedcontext/SharedContext";
 import { GoogleLogin } from "@react-oauth/google";
 
@@ -66,14 +66,21 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
     try {
       let data;
       if (currState === "Sign Up") {
-        data = await authService.register(backendUrl, { name, email, password, termsAccepted, role });
+        data = await authService.register(backendUrl, {
+          name,
+          email,
+          password,
+          termsAccepted,
+          role,
+        });
       } else {
         data = await authService.login(backendUrl, { email, password, role });
       }
 
       if (data.success) {
         await fetchCurrentUser();
-        const targetRoute = data.user.role === "customer" ? "/user/browse-services" : "/sp";
+        const targetRoute =
+          data.user.role === "customer" ? "/user/browse-services" : "/sp";
         navigate(targetRoute, { replace: true });
         toast.success(data.message);
         if (setShowAuthModal) setShowAuthModal(false);
@@ -90,6 +97,26 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
   };
 
   const handleGoogleLogin = async (credentialResponse) => {
+    // Show legal disclaimer for Sign Up (but don't store in state)
+    if (currState === "Sign Up") {
+      toast.info(
+        <div>
+          By continuing with Google, you have agreed to our{" "}
+          <Link to="/terms" className="font-semibold underline">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link to="/privacy" className="font-semibold underline">
+            Privacy Policy
+          </Link>
+        </div>,
+        {
+          autoClose: 5000,
+          closeButton: true,
+        },
+      );
+    }
+
     if (currState === "Sign Up" && showRoleConfirm) {
       toast.error("Please confirm your role selection first");
       return;
@@ -97,18 +124,23 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
 
     setGoogleLoading(true);
     try {
-      const data = await authService.googleLogin(backendUrl, { token: credentialResponse.credential, role });
+      const data = await authService.googleLogin(backendUrl, {
+        token: credentialResponse.credential,
+        role,
+      });
       if (data.success) {
         toast.success("Logged in with Google successfully!");
         await fetchCurrentUser();
-        const targetRoute = data.user.role === "customer" ? "/user/browse-services" : "/sp";
+        const targetRoute =
+          data.user.role === "customer" ? "/user/browse-services" : "/sp";
         navigate(targetRoute, { replace: true });
         if (setShowAuthModal) setShowAuthModal(false);
       } else {
         toast.error(data.message);
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Google login failed. Please try again.";
+      const errorMessage =
+        err.response?.data?.message || "Google login failed. Please try again.";
       toast.error(errorMessage);
     } finally {
       setGoogleLoading(false);
@@ -122,8 +154,8 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-60">
           <div className="bg-white rounded-xl shadow-2xl p-5 max-w-md w-full mx-auto border border-gray-200">
             <div className="flex items-center mb-4">
-              <div className="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                <FiAlertTriangle className="text-blue-600 text-lg" />
+              <div className="w-9 h-9 bg-gray-100 rounded-full flex items-center justify-center mr-3">
+                <FiAlertTriangle className="text-red-600 text-lg" />
               </div>
               <h3 className="text-xl font-bold text-gray-900">
                 Confirm Your Role
@@ -135,8 +167,9 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
                 {getRoleConfirmationMessage()}
               </p>
               <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                <p className="text-blue-700 font-medium text-sm">
-                  Note: Your role determines your dashboard features and cannot be easily changed later.
+                <p className="text-gray-700 font-medium text-sm">
+                  Note: Your role determines your dashboard features and cannot
+                  be easily changed later.
                 </p>
               </div>
             </div>
@@ -150,9 +183,10 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
               </button>
               <button
                 onClick={confirmRole}
-                className="flex-1 py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium transition-colors text-base"
+                className="flex-1 py-2.5 px-4 rounded-lg bg-gray-600 hover:bg-gray-700 text-white font-medium transition-colors text-base"
               >
-                Confirm {pendingRole === "customer" ? "Customer" : "Service Provider"}
+                Confirm{" "}
+                {pendingRole === "customer" ? "Customer" : "Service Provider"}
               </button>
             </div>
           </div>
@@ -198,9 +232,11 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
                   disabled={isLoading}
                 >
                   <div className="flex items-center justify-center gap-2">
-                    <div className={`w-3.5 h-3.5 rounded-full ${
-                      role === r ? "bg-blue-500" : "bg-gray-400"
-                    }`}></div>
+                    <div
+                      className={`w-3.5 h-3.5 rounded-full ${
+                        role === r ? "bg-blue-500" : "bg-gray-400"
+                      }`}
+                    ></div>
                     <span className="text-base font-medium capitalize">
                       {r === "customer" ? "Customer" : "Service Provider"}
                     </span>
@@ -279,7 +315,9 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
               />
               <button
                 type="button"
-                onClick={() => !isLoading && setPasswordVisible(!passwordVisible)}
+                onClick={() =>
+                  !isLoading && setPasswordVisible(!passwordVisible)
+                }
                 className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 text-base disabled:opacity-50"
                 disabled={isLoading}
               >
@@ -332,9 +370,24 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
           >
             {formLoading ? (
               <>
-                <svg className="animate-spin h-4 w-4 mr-2 text-white" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                <svg
+                  className="animate-spin h-4 w-4 mr-2 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  />
                 </svg>
                 Processing...
               </>
@@ -384,27 +437,34 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
 
         {/* Google Login */}
         <div className="relative">
-          <div className={googleLoading ? 'opacity-50' : ''}>
+          <div
+            className={googleLoading ? "opacity-50" : ""}
+            style={{ width: "100%", minWidth: "240px" }}
+          >
             <GoogleLogin
               onSuccess={handleGoogleLogin}
-              onError={() => !googleLoading && toast.error("Google login failed")}
+              onError={() =>
+                !googleLoading && toast.error("Google login failed")
+              }
               disabled={isLoading}
               shape="rectangular"
               size="large"
               width="100%"
             />
           </div>
-          
+
           {/* Google Loading Overlay */}
           {googleLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/90 rounded-lg">
               <div className="text-center">
                 <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-1"></div>
-                <p className="text-sm text-gray-600">Signing in with Google...</p>
+                <p className="text-sm text-gray-600">
+                  Signing in with Google...
+                </p>
               </div>
             </div>
           )}
-          
+
           {/* Role Reminder */}
           <div className="mt-3 text-center">
             <p className="text-sm text-gray-600">

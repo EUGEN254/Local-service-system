@@ -1,5 +1,5 @@
 import axios from "axios";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 
 // Fetch current logged-in user
 export const fetchCurrentUser = async (backendUrl) => {
