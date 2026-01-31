@@ -12,7 +12,7 @@ export const loginAdmin = async (email, password, role = "admin") => {
     const { data } = await axios.post(
       `${API_BASE}/api/user/login-admin`,
       { email, password, role },
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return data;
   } catch (error) {
@@ -25,7 +25,7 @@ export const logoutAdmin = async () => {
     const { data } = await axios.post(
       `${API_BASE}/api/user/logoutAdmin`,
       {},
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return data;
   } catch (error) {
@@ -35,27 +35,25 @@ export const logoutAdmin = async () => {
 
 export const getCurrentAdmin = async () => {
   try {
-    // backend exposes current user at /api/user/me
     const { data } = await axios.get(`${API_BASE}/api/user/me`, {
       withCredentials: true,
-      validateStatus: (status) => status < 500, // Don't throw on 4xx errors
+      validateStatus: (status) => status < 500,
     });
     return data;
   } catch (error) {
-    return { success: false, error: error.message }; // Return error object instead of throwing
+    return { success: false, error: error.message };
   }
 };
 
 export const verifyAdmin = async () => {
   try {
-    // No dedicated verify endpoint; reuse /api/user/me and ensure role is admin
     const { data } = await axios.get(`${API_BASE}/api/user/me`, {
       withCredentials: true,
-      validateStatus: (status) => status < 500, // Don't throw on 4xx errors
+      validateStatus: (status) => status < 500,
     });
-    // Return the user data so callers can inspect role/verification
+
     return data;
   } catch (error) {
-    return { success: false, error: error.message }; // Return error object instead of throwing
+    return { success: false, error: error.message };
   }
 };

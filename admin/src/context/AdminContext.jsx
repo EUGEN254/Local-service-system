@@ -1,14 +1,5 @@
-// src/context/AdminContext.jsx
-/**
- * Admin Authentication Context
- * Handles admin authentication state only
- * All other state should use custom hooks from /hooks
- * 
- * ⚠️ NOTE: This context is being preserved for backward compatibility
- * but should be gradually migrated to use the hooks in /hooks instead
- */
 import { createContext, useContext, useState, useEffect } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import * as adminAuthService from "../services/adminAuthService";
@@ -29,7 +20,7 @@ export const AdminProvider = ({ children }) => {
   // ========== AUTHENTICATION STATE ONLY ==========
   const cachedUser = localStorage.getItem("adminUser");
   const [admin, setAdmin] = useState(
-    cachedUser ? JSON.parse(cachedUser) : null
+    cachedUser ? JSON.parse(cachedUser) : null,
   );
   const [verified, setIsVerified] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
@@ -134,7 +125,7 @@ export const AdminProvider = ({ children }) => {
 
       const { data } = await axios.get(
         `${backendUrl}/api/notifications?${params}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
@@ -153,7 +144,7 @@ export const AdminProvider = ({ children }) => {
     try {
       const { data } = await axios.get(
         `${backendUrl}/api/notifications/unread-count`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
@@ -170,12 +161,14 @@ export const AdminProvider = ({ children }) => {
       const { data } = await axios.put(
         `${backendUrl}/api/notifications/mark-read/${notificationId}`,
         {},
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
         setNotifications((prev) =>
-          prev.map((n) => (n._id === notificationId ? { ...n, read: true } : n))
+          prev.map((n) =>
+            n._id === notificationId ? { ...n, read: true } : n,
+          ),
         );
         setUnreadCount((prev) => Math.max(0, prev - 1));
         return true;
@@ -191,7 +184,7 @@ export const AdminProvider = ({ children }) => {
       const { data } = await axios.put(
         `${backendUrl}/api/notifications/mark-all-read`,
         {},
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
@@ -212,7 +205,7 @@ export const AdminProvider = ({ children }) => {
     try {
       const { data } = await axios.get(
         `${backendUrl}/api/admin/service-providers`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
       if (data.success) {
         setServiceProviders(data.serviceProviders);
@@ -228,13 +221,13 @@ export const AdminProvider = ({ children }) => {
   const updateVerificationStatus = async (
     userId,
     status,
-    rejectionReason = ""
+    rejectionReason = "",
   ) => {
     try {
       const { data } = await axios.put(
         `${backendUrl}/api/admin/update-verification`,
         { userId, status, rejectionReason },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
@@ -255,8 +248,8 @@ export const AdminProvider = ({ children }) => {
                     isVerified: status === "verified",
                   },
                 }
-              : provider
-          )
+              : provider,
+          ),
         );
         return true;
       }
@@ -277,7 +270,7 @@ export const AdminProvider = ({ children }) => {
         {
           withCredentials: true,
           headers: { "Content-Type": "multipart/form-data" },
-        }
+        },
       );
 
       if (data.success) {
@@ -285,8 +278,8 @@ export const AdminProvider = ({ children }) => {
           prev.map((provider) =>
             provider._id === providerId
               ? { ...provider, ...data.user }
-              : provider
-          )
+              : provider,
+          ),
         );
         toast.success("Provider updated successfully!");
         return true;
@@ -312,7 +305,7 @@ export const AdminProvider = ({ children }) => {
         {
           withCredentials: true,
           headers: { "Content-Type": "multipart/form-data" },
-        }
+        },
       );
 
       if (data.success) {
@@ -336,12 +329,12 @@ export const AdminProvider = ({ children }) => {
     try {
       const { data } = await axios.delete(
         `${backendUrl}/api/admin/delete-provider/${providerId}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
         setServiceProviders((prev) =>
-          prev.filter((provider) => provider._id !== providerId)
+          prev.filter((provider) => provider._id !== providerId),
         );
         toast.success("Provider deleted successfully!");
         return true;
@@ -395,15 +388,19 @@ export const AdminProvider = ({ children }) => {
       const { data } = await axios.put(
         `${backendUrl}/api/admin/update-user-status`,
         { userId, status },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
         setCustomers((prev) =>
-          prev.map((user) => (user._id === userId ? { ...user, status } : user))
+          prev.map((user) =>
+            user._id === userId ? { ...user, status } : user,
+          ),
         );
         setAdmins((prev) =>
-          prev.map((user) => (user._id === userId ? { ...user, status } : user))
+          prev.map((user) =>
+            user._id === userId ? { ...user, status } : user,
+          ),
         );
         toast.success(`User status updated to ${status}`);
         return true;
@@ -425,19 +422,19 @@ export const AdminProvider = ({ children }) => {
         {
           withCredentials: true,
           headers: { "Content-Type": "multipart/form-data" },
-        }
+        },
       );
 
       if (data.success) {
         setCustomers((prev) =>
           prev.map((user) =>
-            user._id === userId ? { ...user, ...data.user } : user
-          )
+            user._id === userId ? { ...user, ...data.user } : user,
+          ),
         );
         setAdmins((prev) =>
           prev.map((user) =>
-            user._id === userId ? { ...user, ...data.user } : user
-          )
+            user._id === userId ? { ...user, ...data.user } : user,
+          ),
         );
         toast.success("User updated successfully!");
         return true;
@@ -461,7 +458,7 @@ export const AdminProvider = ({ children }) => {
         {
           withCredentials: true,
           headers: { "Content-Type": "multipart/form-data" },
-        }
+        },
       );
 
       if (data.success) {
@@ -487,7 +484,7 @@ export const AdminProvider = ({ children }) => {
     try {
       const { data } = await axios.delete(
         `${backendUrl}/api/admin/delete-user/${userId}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
@@ -542,7 +539,7 @@ export const AdminProvider = ({ children }) => {
         {
           withCredentials: true,
           headers: { "Content-Type": "multipart/form-data" },
-        }
+        },
       );
 
       if (data.success) {
@@ -571,14 +568,14 @@ export const AdminProvider = ({ children }) => {
         {
           withCredentials: true,
           headers: { "Content-Type": "multipart/form-data" },
-        }
+        },
       );
 
       if (data.success) {
         setCategories((prev) =>
           prev.map((category) =>
-            category._id === categoryId ? data.category : category
-          )
+            category._id === categoryId ? data.category : category,
+          ),
         );
         toast.success("Category updated successfully!");
         return true;
@@ -599,12 +596,12 @@ export const AdminProvider = ({ children }) => {
     try {
       const { data } = await axios.delete(
         `${backendUrl}/api/categories/${categoryId}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
         setCategories((prev) =>
-          prev.filter((category) => category._id !== categoryId)
+          prev.filter((category) => category._id !== categoryId),
         );
         toast.success("Category deleted successfully!");
         return true;
@@ -624,14 +621,14 @@ export const AdminProvider = ({ children }) => {
       const { data } = await axios.patch(
         `${backendUrl}/api/categories/${categoryId}/toggle-status`,
         {},
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
         setCategories((prev) =>
           prev.map((category) =>
-            category._id === categoryId ? data.category : category
-          )
+            category._id === categoryId ? data.category : category,
+          ),
         );
         toast.success(data.message);
         return true;
@@ -656,7 +653,7 @@ export const AdminProvider = ({ children }) => {
 
       const { data } = await axios.get(
         `${backendUrl}/api/admin/bookings?${params}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
@@ -681,7 +678,7 @@ export const AdminProvider = ({ children }) => {
 
       const { data } = await axios.get(
         `${backendUrl}/api/admin/transactions?${params}`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
@@ -701,19 +698,19 @@ export const AdminProvider = ({ children }) => {
       const { data } = await axios.put(
         `${backendUrl}/api/admin/update-booking/${bookingId}`,
         { status },
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
         setBookings((prev) =>
           prev.map((booking) =>
-            booking._id === bookingId ? { ...booking, status } : booking
-          )
+            booking._id === bookingId ? { ...booking, status } : booking,
+          ),
         );
         setAllBookings((prev) =>
           prev.map((booking) =>
-            booking._id === bookingId ? { ...booking, status } : booking
-          )
+            booking._id === bookingId ? { ...booking, status } : booking,
+          ),
         );
         toast.success("Booking status updated!");
         return true;
@@ -724,7 +721,7 @@ export const AdminProvider = ({ children }) => {
     } catch (err) {
       console.error("Failed to update booking status:", err);
       toast.error(
-        err.response?.data?.message || "Failed to update booking status"
+        err.response?.data?.message || "Failed to update booking status",
       );
       return false;
     } finally {
@@ -736,7 +733,7 @@ export const AdminProvider = ({ children }) => {
     try {
       const { data } = await axios.get(
         `${backendUrl}/api/admin/booking-stats`,
-        { withCredentials: true }
+        { withCredentials: true },
       );
 
       if (data.success) {
@@ -751,10 +748,9 @@ export const AdminProvider = ({ children }) => {
   const fetchAllBookings = async () => {
     setLoadingAllBookings(true);
     try {
-      const { data } = await axios.get(
-        `${backendUrl}/api/admin/bookings`,
-        { withCredentials: true }
-      );
+      const { data } = await axios.get(`${backendUrl}/api/admin/bookings`, {
+        withCredentials: true,
+      });
 
       if (data.success) {
         setAllBookings(data.bookings);

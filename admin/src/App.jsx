@@ -1,6 +1,4 @@
 import React, { useContext } from "react";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import Dashboard from "./pages/Dashboard";
@@ -15,41 +13,41 @@ import UserManagement from "./pages/UserManagement";
 import AdminLogin from "./pages/AdminLogin";
 import NotFound from "./components/NotFound";
 import { AdminContext } from "./context/AdminContext";
+import { Toaster } from "./components/Sonner";
 
-// ✅ Enhanced Protected Route Wrapper
+// Enhanced Protected Route Wrapper
 const ProtectedRoute = ({ children }) => {
   const isLoggedIn = localStorage.getItem("isAdminLoggedIn") === "true";
   const adminUser = localStorage.getItem("adminUser");
-  
+
   // Check both localStorage and if admin user data exists
   if (!isLoggedIn || !adminUser) {
     return <Navigate to="/" replace />;
   }
-  
+
   return children;
 };
 
-// ✅ Public Route (redirect to admin if already logged in)
+// Public Route (redirect to admin if already logged in)
 const PublicRoute = ({ children }) => {
   const isLoggedIn = localStorage.getItem("isAdminLoggedIn") === "true";
   const adminUser = localStorage.getItem("adminUser");
-  
+
   if (isLoggedIn && adminUser) {
     return <Navigate to="/admin" replace />;
   }
-  
+
   return children;
 };
 
 const App = () => {
   const { authLoading } = useContext(AdminContext);
 
-
   if (authLoading) {
     // Return a full-screen loader while checking auth (prevents flicker)
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-900 text-white">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-yellow-400"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-gray-400"></div>
         <span className="ml-3 text-lg">Loading...</span>
       </div>
     );
@@ -57,26 +55,17 @@ const App = () => {
 
   return (
     <>
-          <ToastContainer
-        position="top-right" 
-        autoClose={1500}
-        newestOnTop
-        closeOnClick
-        pauseOnHover
-        draggable
-        className="!z-[10000] !p-1" 
-        toastStyle={{ height: '50px', minHeight: '50px' }}
-      />
+      <Toaster />
 
       <Routes>
         {/* Public route - redirects to admin if already logged in */}
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
             <PublicRoute>
               <AdminLogin />
             </PublicRoute>
-          } 
+          }
         />
 
         {/* Protected admin routes */}

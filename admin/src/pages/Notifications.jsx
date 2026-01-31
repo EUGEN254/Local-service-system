@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { FaCheckCircle, FaTrash, FaBell } from "react-icons/fa";
 import { useAdminNotifications } from "../hooks/useAdminNotifications";
 import { useAdmin } from "../context/AdminContext";
-import { toast } from "react-toastify";
+
 
 const categories = ["All", "User", "Service Provider", "Booking", "Transaction", "System", "Verification"];
 

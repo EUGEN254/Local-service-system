@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import * as adminCategoryService from "../services/adminCategoryService";
 
 /**

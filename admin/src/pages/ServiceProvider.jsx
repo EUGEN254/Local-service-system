@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaEye, FaCheck, FaTimes, FaPlus } from "react-icons/fa";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useAdminProviders } from "../hooks/useAdminProviders";
 import axios from 'axios'
+import { assets } from "../assets/assets";
 
 const ServiceProvider = () => {
   const { 
@@ -26,6 +27,8 @@ const ServiceProvider = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
+
+  
   
   // Edit Form State
   const [editForm, setEditForm] = useState({
@@ -52,6 +55,7 @@ const ServiceProvider = () => {
   const [addingProvider, setAddingProvider] = useState(false);
 
   useEffect(() => {
+    console.log('here',serviceProviders)
     fetchServiceProviders();
   }, []);
 
@@ -331,7 +335,7 @@ const ServiceProvider = () => {
   if (loadingProviders) {
     return (
       <div className="p-6 flex justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-500"></div>
       </div>
     );
   }
@@ -381,8 +385,11 @@ const ServiceProvider = () => {
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                        <span className="text-xs text-gray-500">No Image</span>
+                      <div className="w-10 h-10 flex items-center justify-center">
+                         <img
+                            src={assets.avatar_icon}
+                            alt="Default avatar"
+                          />
                       </div>
                     )}
                   </td>

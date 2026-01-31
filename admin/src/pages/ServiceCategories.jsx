@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaPlus, FaTimes, FaEye, FaEyeSlash } from "react-icons/fa";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useAdminCategories } from "../hooks/useAdminCategories";
 
 const ServiceCategories = () => {

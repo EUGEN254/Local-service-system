@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaEdit, FaTrash, FaPlus, FaUser, FaUserShield, FaTimes, FaCheck, FaBan } from "react-icons/fa";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import { useAdminUsers } from "../hooks/useAdminUsers";
 
 const UserManagement = () => {

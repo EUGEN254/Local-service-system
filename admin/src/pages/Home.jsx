@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
+import { FaHome, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 
 const Home = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
-  // ADMIN AUTH PROTECTION 
+  // ADMIN AUTH PROTECTION
   useEffect(() => {
     const checkAdminAuth = async () => {
       const isAdminLoggedIn = localStorage.getItem("isAdminLoggedIn");
       const adminUser = localStorage.getItem("adminUser");
-      
+
       if (!isAdminLoggedIn || !adminUser) {
         navigate("/admin/login");
         return;
@@ -44,13 +46,27 @@ const Home = () => {
     checkAdminAuth();
   }, [navigate, backendUrl]);
 
- 
-
   return (
-    <div className="flex min-h-screen bg-gray-100">
+    <div className="flex min-h-screen bg-gray-50">
       {/* Sidebar for large screens */}
-      <div className="hidden md:flex">
-        <Sidebar />
+      <div className="hidden md:flex relative">
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          onLinkClick={() => setSidebarOpen(false)}
+        />
+
+        {/* Collapse/Expand Toggle Button - Desktop (on edge of sidebar) */}
+        <button
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="absolute top-6 -right-3 z-10 w-6 h-6 bg-gray-800 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-gray-900 transition-colors border-2 border-white"
+          aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {sidebarCollapsed ? (
+            <FaChevronRight size={12} />
+          ) : (
+            <FaChevronLeft size={12} />
+          )}
+        </button>
       </div>
 
       {/* Overlay Sidebar for small screens */}
@@ -60,26 +76,71 @@ const Home = () => {
           <div className="relative w-64 h-full shadow-md flex flex-col p-4">
             {/* Close button */}
             <button
-              className="absolute top-5 -right-3 text-gray-600 hover:text-gray-900 text-xl"
+              className="absolute top-6 -right-2 text-gray-700 hover:text-gray-900 text-xl"
               onClick={() => setSidebarOpen(false)}
             >
               ✕
             </button>
 
             {/* Sidebar content */}
-            <Sidebar onLinkClick={() => setSidebarOpen(false)} />
+            <Sidebar
+              collapsed={false}
+              onLinkClick={() => setSidebarOpen(false)}
+            />
           </div>
         </div>
       )}
 
       {/* Main content */}
-      <div className="flex flex-col flex-1 md:ml-0 overflow-y-auto">
-        <Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+      <div className="flex flex-col flex-1 overflow-hidden">
+        <Navbar
+          sidebarCollapsed={sidebarCollapsed}
+          onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
+          onMenuClick={() => setSidebarOpen(!sidebarOpen)}
+        />
+        {/* Main content area */}
+        <main className="flex-1 bg-gray-50 overflow-y-auto">
+          {/* Back home button */}
+          <div className="sticky top-0 z-10 bg-gray-50/95 backdrop-blur-sm py-4 px-4 md:px-6 border-b border-gray-200 flex items-center justify-between">
+            <button
+              onClick={() => navigate("/")}
+              className="flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors group"
+              aria-label="Go back to home"
+            >
+              <FaHome
+                className="group-hover:scale-110 transition-transform"
+                size={20}
+              />
+              <span className="text-lg font-semibold">Back Home</span>
+            </button>
 
-        {/* Main Page Wrapper */}
-        <div className="p-6 mt-2 bg-gray-100 rounded-2xl min-h-[calc(100vh-4rem)] w-full md:max-w-6xl mx-auto overflow-y-auto">
-                  <Outlet />
-                </div>
+            {/* Desktop collapse toggle in header (optional) */}
+            <button
+              onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+              className="hidden md:flex items-center gap-2 text-gray-600 hover:text-gray-900 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-label={
+                sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"
+              }
+            >
+              {sidebarCollapsed ? (
+                <>
+                  <FaChevronRight />
+                  <span className="text-sm">Expand Sidebar</span>
+                </>
+              ) : (
+                <>
+                  <FaChevronLeft />
+                  <span className="text-sm">Collapse Sidebar</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Main content container */}
+          <div className="p-4 md:p-6 max-w-7xl mx-auto w-full">
+            <Outlet />
+          </div>
+        </main>
       </div>
     </div>
   );

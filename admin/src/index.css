@@ -1,69 +1,220 @@
 @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap");
 @import "tailwindcss";
 
+/* ==============================
+         GLOBAL STYLES & PRELOADER
+      =============================== */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: aliceblue;
+  font-family: "Outfit", sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Disable scroll while loading */
+html.loading,
+body.loading {
+  overflow: hidden;
+}
+
+html:not(.loading),
+body:not(.loading) {
+  overflow: auto;
+}
+
+/* Full-screen loader */
+#startup-loader {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #111827; /* bg-gray-900 */
+  color: white;
+  z-index: 99999;
+  opacity: 1;
+  transition: opacity 0.1s ease;
+  font-family: "Outfit", sans-serif;
+}
+
+#startup-loader.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Spinner same as auth loader */
+.spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 9999px; /* rounded-full */
+  border-bottom: 2px solid #5a5a59; /* yellow-400 */
+  border-left: 2px solid transparent;
+  border-right: 2px solid transparent;
+  border-top: 2px solid transparent;
+  animation: spin 1s linear infinite;
+  will-change: transform;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  margin-left: 0.75rem; /* ml-3 */
+  font-size: 1.125rem; /* text-lg */
+}
+
 /* Base font settings */
 body {
-  font-family: 'Outfit', sans-serif;
+  font-family: "Outfit", sans-serif;
   font-size: 16px;
   line-height: 1.5;
-  color: black; 
+  color: black;
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 @keyframes slideUp {
-  from { opacity: 0; transform: translateY(30px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes slideRight {
-  from { opacity: 0; transform: translateX(-20px); }
-  to { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 @keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.9); }
-  to { opacity: 1; transform: scale(1); }
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 @keyframes countUp {
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 @keyframes countNumber {
-  from { --num: 0; }
-  to { --num: var(--target); }
+  from {
+    --num: 0;
+  }
+  to {
+    --num: var(--target);
+  }
 }
 
 /* Animation utilities */
-.animate-fade-in { animation: fadeIn 0.8s ease-in-out; }
-.animate-slide-up { animation: slideUp 0.8s ease-out; }
-.animate-slide-right { animation: slideRight 0.6s ease-out; }
-.animate-scale-in { animation: scaleIn 0.3s ease-out; }
-.animate-pulse-slow { animation: pulse 3s infinite; }
-.animate-count-up { animation: countUp 1s ease-out forwards; opacity: 0; }
+.animate-fade-in {
+  animation: fadeIn 0.8s ease-in-out;
+}
+.animate-slide-up {
+  animation: slideUp 0.8s ease-out;
+}
+.animate-slide-right {
+  animation: slideRight 0.6s ease-out;
+}
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out;
+}
+.animate-pulse-slow {
+  animation: pulse 3s infinite;
+}
+.animate-count-up {
+  animation: countUp 1s ease-out forwards;
+  opacity: 0;
+}
 
 /* Counter styles */
-.counter { animation: countNumber 2s ease-out forwards; counter-reset: num var(--num); }
-.counter::before { content: counter(num); }
+.counter {
+  animation: countNumber 2s ease-out forwards;
+  counter-reset: num var(--num);
+}
+.counter::before {
+  content: counter(num);
+}
 
 /* Scrollbar styling */
-::-webkit-scrollbar { width: 4px; height: 12px; }
-::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 6px; }
+::-webkit-scrollbar {
+  width: 4px;
+  height: 12px;
+}
+::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 6px;
+}
 ::-webkit-scrollbar-thumb {
   background-color: #888;
   border-radius: 6px;
   border: 3px solid #f0f0f0;
 }
-.scrollbar-thin::-webkit-scrollbar { width: 2px; }
-.scrollbar-thin::-webkit-scrollbar-track { background: #f0f0f0; border-radius: 2px; }
-.scrollbar-thin::-webkit-scrollbar-thumb { background-color: #888; border-radius: 4px; }
-.scrollbar-thin::-webkit-scrollbar-thumb:hover { background-color: #555; }
-.scrollbar-thin { scrollbar-width: thin; scrollbar-color: #888 #f0f0f0; }
+.scrollbar-thin::-webkit-scrollbar {
+  width: 2px;
+}
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 2px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background-color: #888;
+  border-radius: 4px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background-color: #555;
+}
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #888 #f0f0f0;
+}
 
 /* Cursor behavior */
-* { caret-color: transparent; }
-input, textarea, [contenteditable="true"] { caret-color: auto; }
-button, a, div, span, li, .clickable { cursor: default; }
+* {
+  caret-color: transparent;
+}
+input,
+textarea,
+[contenteditable="true"] {
+  caret-color: auto;
+}
+button,
+a,
+div,
+span,
+li,
+.clickable {
+  cursor: default;
+}
 
 /* Preloader focus/cursor behavior */
 #preloader {
@@ -73,9 +224,6 @@ button, a, div, span, li, .clickable { cursor: default; }
 #preloader:focus {
   outline: none;
 }
-
-
-
 
 /* Ultra thin scrollbars specifically for booking tables */
 .booking-table-scroll::-webkit-scrollbar {

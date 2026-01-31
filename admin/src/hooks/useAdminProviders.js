@@ -15,8 +15,9 @@ export const useAdminProviders = () => {
     setLoadingProviders(true);
     try {
       const data = await adminProviderService.fetchServiceProviders();
+
       if (data.success) {
-        setServiceProviders(data.providers || []);
+        setServiceProviders(data.serviceProviders || []);
       }
     } catch (error) {
       console.error("Error fetching service providers:", error);

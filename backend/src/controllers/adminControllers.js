@@ -11,25 +11,25 @@ export const getServiceProviders = async (req, res) => {
     const serviceProviders = await User.aggregate([
       {
         $match: {
-          role: "service-provider"
-        }
+          role: "service-provider",
+        },
       },
       {
         $lookup: {
-          from: "plumbingservices", // MongoDB collection name (usually pluralized)
+          from: "plumbingservices",
           localField: "_id",
           foreignField: "serviceProvider",
-          as: "services"
-        }
+          as: "services",
+        },
       },
       {
         $project: {
-          password: 0 // exclude password
-        }
+          password: 0, // exclude password
+        },
       },
       {
-        $sort: { createdAt: -1 }
-      }
+        $sort: { createdAt: -1 },
+      },
     ]);
 
     res.json({
@@ -107,29 +107,29 @@ export const updateVerificationStatus = async (req, res) => {
     }
 
     await user.save();
-    
+
     // ✅ Create notification for the ADMIN who performed the action
     await createNotification(req.user._id, {
       title: "Verification Status Updated",
       message: `You ${status} the verification for ${user.name} (${user.email})`,
       type: "system",
       category: "System",
-      priority: "medium"
+      priority: "medium",
     });
 
     // ✅ Create notification for ALL ADMINS (audit trail)
-    const allAdmins = await User.find({ 
-      role: "admin", 
-      _id: { $ne: req.user._id } 
+    const allAdmins = await User.find({
+      role: "admin",
+      _id: { $ne: req.user._id },
     });
-    
+
     for (const admin of allAdmins) {
       await createNotification(admin._id, {
         title: "Provider Verification Updated",
         message: `${req.user.name} ${status} the verification for ${user.name}`,
         type: "system",
         category: "System",
-        priority: "low"
+        priority: "low",
       });
     }
 
@@ -143,17 +143,16 @@ export const updateVerificationStatus = async (req, res) => {
         serviceProviderInfo: user.serviceProviderInfo,
       },
     });
-
   } catch (error) {
     console.error("Error updating verification status:", error);
-    
+
     // ✅ Create error notification for admin
     await createNotification(req.user._id, {
       title: "Verification Update Failed",
       message: `Failed to update verification status for user ${userId}: ${error.message}`,
       type: "system",
       category: "System",
-      priority: "high"
+      priority: "high",
     });
 
     res.status(500).json({
@@ -162,7 +161,6 @@ export const updateVerificationStatus = async (req, res) => {
     });
   }
 };
-
 
 export const updateProviderProfile = async (req, res) => {
   try {

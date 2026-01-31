@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { toast } from "react-toastify";
+import { toast } from "sonner";
 import axios from "axios";
 import { useAdmin } from "../context/AdminContext";
 import { assets } from "../assets/assets";
