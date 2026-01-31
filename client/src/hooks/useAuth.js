@@ -18,10 +18,14 @@ export const useAuth = (backendUrl, navigate) => {
       try {
         if (showLoader) setAuthLoading(true);
         const userData = await authService.fetchCurrentUser(backendUrl);
-        setUser(userData);
-
-        const isUserVerified = authService.isUserVerified(userData);
-        setIsVerified(isUserVerified);
+        if (userData) {
+          setUser(userData);
+          const isUserVerified = authService.isUserVerified(userData);
+          setIsVerified(isUserVerified);
+        } else {
+          setUser(null);
+          setIsVerified(false);
+        }
       } catch (err) {
         setUser(null);
         setIsVerified(false);

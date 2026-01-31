@@ -6,6 +6,7 @@ export const fetchCurrentUser = async (backendUrl) => {
   try {
     const { data } = await axios.get(`${backendUrl}/api/user/me`, {
       withCredentials: true,
+      validateStatus: (status) => status < 500, 
     });
 
     if (data.success && data.user) {
@@ -20,7 +21,7 @@ export const fetchCurrentUser = async (backendUrl) => {
   } catch (err) {
     localStorage.removeItem("user");
     localStorage.removeItem("role");
-    throw err;
+    return null; 
   }
 };
 

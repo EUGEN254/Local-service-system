@@ -38,10 +38,11 @@ export const getCurrentAdmin = async () => {
     // backend exposes current user at /api/user/me
     const { data } = await axios.get(`${API_BASE}/api/user/me`, {
       withCredentials: true,
+      validateStatus: (status) => status < 500, // Don't throw on 4xx errors
     });
     return data;
   } catch (error) {
-    throw error.response?.data || error;
+    return { success: false, error: error.message }; // Return error object instead of throwing
   }
 };
 
@@ -50,10 +51,11 @@ export const verifyAdmin = async () => {
     // No dedicated verify endpoint; reuse /api/user/me and ensure role is admin
     const { data } = await axios.get(`${API_BASE}/api/user/me`, {
       withCredentials: true,
+      validateStatus: (status) => status < 500, // Don't throw on 4xx errors
     });
     // Return the user data so callers can inspect role/verification
     return data;
   } catch (error) {
-    throw error.response?.data || error;
+    return { success: false, error: error.message }; // Return error object instead of throwing
   }
 };

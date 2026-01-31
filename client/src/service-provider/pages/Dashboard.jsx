@@ -644,7 +644,7 @@ const Dashboard = () => {
               </div>
 
               <div className="w-full h-64">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height={300}>
                   <BarChart
                     data={computeChartData}
                     margin={{ top: 20, bottom: 5 }}
@@ -690,7 +690,7 @@ const Dashboard = () => {
               </h3>
 
               <div className="w-full h-64">
-                <ResponsiveContainer width="100%" height="100%">
+                <ResponsiveContainer width="100%" height={300}>
                   <PieChart>
                     <Pie
                       data={pieChartData}

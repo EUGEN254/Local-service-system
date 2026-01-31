@@ -288,6 +288,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
                 placeholder="you@example.com"
                 required
                 value={email}
+                 autoComplete="username email"
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
                 className="w-full pl-10 pr-3 py-2.5 text-base rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 focus:outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -309,6 +310,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                autoComplete="current-password"
                 required
                 disabled={isLoading}
                 className="w-full pl-10 pr-10 py-2.5 text-base rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 focus:outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"

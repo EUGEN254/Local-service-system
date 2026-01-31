@@ -401,7 +401,7 @@ const Dashboard = () => {
             <div className="p-3 sm:p-6">
               <div className="w-full h-64 sm:h-80">
                 {chartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height={300}>
                     <BarChart
                       data={chartData}
                       margin={{ top: 20, right: 10, left: 0, bottom: 0 }}

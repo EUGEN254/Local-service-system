@@ -474,7 +474,7 @@ const Analytics = () => {
             </div>
           </div>
           <div className="w-full h-64">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={300}>
               <BarChart data={timelineData || []} margin={{ top: 20, bottom: 5 }} barSize={12}>
                 <XAxis dataKey="period" />
                 <YAxis />
@@ -492,7 +492,7 @@ const Analytics = () => {
         <div className="bg-white p-6 rounded-xl shadow-md space-y-4 border border-gray-200">
           <p className="font-semibold text-gray-700 text-lg">Booking Distribution</p>
           <div className="w-full h-64">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
                   data={statusDistribution || []}
@@ -537,7 +537,7 @@ const Analytics = () => {
         <div className="bg-white p-6 rounded-xl shadow-md space-y-4 border border-gray-200">
           <p className="font-semibold text-gray-700 text-lg">Revenue Trend (KSh)</p>
           <div className="w-full h-64">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={revenueTrend || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="period" />
@@ -553,7 +553,7 @@ const Analytics = () => {
         <div className="bg-white p-6 rounded-xl shadow-md space-y-4 border border-gray-200">
           <p className="font-semibold text-gray-700 text-lg">Bookings by Category</p>
           <div className="w-full h-64">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={300}>
               <BarChart data={categoryData || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="category" />
@@ -573,7 +573,7 @@ const Analytics = () => {
       <div className="bg-white p-6 rounded-xl shadow-md space-y-4 border border-gray-200">
         <p className="font-semibold text-gray-700 text-lg">Provider Performance (Completion Rate %)</p>
         <div className="w-full h-64">
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height={300}>
             <BarChart data={providerPerformance || []}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="provider" />

@@ -559,7 +559,7 @@ const Analytics = () => {
             </div>
           </div>
           <div className="w-full h-64">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={300}>
               <BarChart data={analyticsData.timelineData || []} margin={{ top: 20, bottom: 5 }} barSize={12}>
                 <XAxis dataKey="period" />
                 <YAxis />
@@ -577,7 +577,7 @@ const Analytics = () => {
         <div className="bg-white p-6 rounded-xl shadow-md space-y-4 border border-gray-200">
           <p className="font-semibold text-gray-700 text-lg">Service Distribution</p>
           <div className="w-full h-64">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
                   data={analyticsData.statusDistribution || []}
@@ -622,7 +622,7 @@ const Analytics = () => {
         <div className="bg-white p-6 rounded-xl shadow-md space-y-4 border border-gray-200">
           <p className="font-semibold text-gray-700 text-lg">Revenue Trend</p>
           <div className="w-full h-64">
-            <ResponsiveContainer width="100%" height="100%">
+            <ResponsiveContainer width="100%" height={300}>
               <AreaChart data={analyticsData.revenueTrend || []}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="period" />
