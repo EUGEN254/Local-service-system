@@ -34,7 +34,7 @@ const navLinks =(logoutAdmin)=>({
 
 
 const Sidebar = ({collapsed = false, onLinkClick }) => {
-  const { logoutAdmin,admin } = useAdmin();
+  const { logoutAdmin, admin, unreadBookingCount } = useAdmin();
   const { unreadCount } = useAdminNotifications();
   const links = navLinks(logoutAdmin);
   const location = useLocation()
@@ -129,7 +129,7 @@ const Sidebar = ({collapsed = false, onLinkClick }) => {
 
                   {/* Unread booking count for Bookings */}
                   {link.name === "Bookings" &&
-                    unreadCount > 0 &&
+                    unreadBookingCount > 0 &&
                     !isOnNotificationsPage && (
                       <span
                         className={`absolute ${

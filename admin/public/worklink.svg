@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!-- Background -->
+  <rect width="32" height="32" rx="8" fill="#111827"></rect>
+
+  <!-- Dashboard bars -->
+  <rect x="8" y="17" width="3" height="7" rx="1" fill="#FFFFFF"></rect>
+  <rect x="14.5" y="13" width="3" height="11" rx="1" fill="#FFFFFF"></rect>
+  <rect x="21" y="9" width="3" height="15" rx="1" fill="#FFFFFF"></rect>
+</svg>

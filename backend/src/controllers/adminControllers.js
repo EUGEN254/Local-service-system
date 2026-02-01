@@ -187,23 +187,31 @@ export const updateProviderProfile = async (req, res) => {
     const oldEmail = user.email;
     const oldPhone = user.phone;
 
-    // Update basic fields
-    user.name = name;
-    user.email = email;
-    user.phone = phone || user.phone;
+    // Prepare update object
+    const updateData = {
+      name,
+      email,
+      phone: phone || user.phone,
+    };
 
     // Handle image upload if provided
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "profiles",
       });
-      user.image = result.secure_url;
+      updateData.image = result.secure_url;
     }
 
-    await user.save();
+    // Use findByIdAndUpdate to avoid running full document validators that
+    // might require fields unrelated to this update (e.g. termsAccepted).
+    const updatedUser = await User.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: false,
+      select: "-password",
+    });
 
     // ✅ Create notification for the SERVICE PROVIDER
-    await createNotification(user._id, {
+    await createNotification(updatedUser._id, {
       title: "Profile Updated Successfully",
       message: "Your service provider profile has been updated by admin.",
       type: "user",
@@ -215,7 +223,7 @@ export const updateProviderProfile = async (req, res) => {
     const adminId = req.user._id; // The admin who is making the update
     await createNotification(adminId, {
       title: "Provider Profile Updated",
-      message: `You updated the profile for service provider: ${oldName} → ${name}`,
+      message: `You updated the profile for service provider: ${oldName} → ${updatedUser.name}`,
       type: "system",
       category: "System",
       priority: "low",
@@ -237,12 +245,12 @@ export const updateProviderProfile = async (req, res) => {
       success: true,
       message: "Provider updated successfully",
       user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        image: user.image,
-        role: user.role,
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        image: updatedUser.image,
+        role: updatedUser.role,
       },
     });
   } catch (error) {
@@ -503,33 +511,42 @@ export const updateUser = async (req, res) => {
       });
     }
 
-    // Update fields
-    user.name = name;
-    user.email = email;
-    user.phone = phone || user.phone;
-    user.role = role;
+    // Prepare update object
+    const updateData = {
+      name,
+      email,
+      phone: phone || user.phone,
+      role,
+    };
 
     // Handle image upload if provided
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "profiles",
       });
-      user.image = result.secure_url;
+      updateData.image = result.secure_url;
     }
 
-    await user.save();
+    // Use findByIdAndUpdate to avoid running full document validators that
+    // may require fields not being updated (e.g. termsAccepted). If you
+    // prefer validation on updated fields, set `runValidators: true`.
+    const updatedUser = await User.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: false,
+      select: "-password",
+    });
 
     res.json({
       success: true,
       message: "User updated successfully",
       user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
-        status: user.status,
-        image: user.image,
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        role: updatedUser.role,
+        status: updatedUser.status,
+        image: updatedUser.image,
       },
     });
   } catch (error) {

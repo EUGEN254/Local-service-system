@@ -326,7 +326,7 @@ export const updateProfile = async (req, res) => {
     if (bio) updateData.bio = bio;
     if (address) updateData.address = address;
 
-    // 🖼️ Handle Cloudinary image upload (if a new image is sent)
+    // Handle Cloudinary image upload (if a new image is sent)
     if (req.file) {
       const result = await cloudinary.uploader.upload(req.file.path, {
         folder: "service_providers",
@@ -334,7 +334,7 @@ export const updateProfile = async (req, res) => {
       updateData.image = result.secure_url;
     }
 
-    // 🧠 Update only provided fields
+    //  Update only provided fields
     const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
       new: true,
       select: "-password", // never send password back

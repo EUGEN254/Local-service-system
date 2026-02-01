@@ -89,7 +89,7 @@ const Sidebar = ({ collapsed = false, onLinkClick }) => {
   return (
     <div
       className={`h-full bg-gray-900 text-white shadow-lg flex flex-col overflow-hidden transition-all duration-300 ${
-        collapsed ? "w-20" : "w-64" // Changed from w-74 to standard w-64 when expanded
+        collapsed ? "w-20" : "w-64" 
       }`}
     >
       {/* Header - Matches Landing Page */}

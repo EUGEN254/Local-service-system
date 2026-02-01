@@ -47,8 +47,8 @@ const Home = () => {
   }, [navigate, backendUrl]);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar for large screens */}
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar for large screens - Collapsible */}
       <div className="hidden md:flex relative">
         <Sidebar
           collapsed={sidebarCollapsed}
@@ -71,33 +71,43 @@ const Home = () => {
 
       {/* Overlay Sidebar for small screens */}
       {sidebarOpen && (
-        <div className="fixed inset-0 z-50 flex bg-opacity-30">
-          {/* Sidebar panel */}
-          <div className="relative w-64 h-full shadow-md flex flex-col p-4">
-            {/* Close button */}
-            <button
-              className="absolute top-6 -right-2 text-gray-700 hover:text-gray-900 text-xl"
-              onClick={() => setSidebarOpen(false)}
-            >
-              ✕
-            </button>
+        <>
+          {/* Overlay backdrop */}
+          <div
+            className="fixed inset-0 z-40 bg-black/50 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
 
-            {/* Sidebar content */}
-            <Sidebar
-              collapsed={false}
-              onLinkClick={() => setSidebarOpen(false)}
-            />
+          {/* Sidebar panel */}
+          <div className="fixed inset-y-0 left-0 z-50 w-64 bg-gray-900 shadow-xl transform transition-transform duration-300 ease-in-out md:hidden">
+            <div className="relative h-full">
+              {/* Close button */}
+              <button
+                className="absolute top-4 right-4 z-50 text-gray-300 hover:text-white text-xl p-2 rounded-full hover:bg-gray-800"
+                onClick={() => setSidebarOpen(false)}
+                aria-label="Close sidebar"
+              >
+                <FaChevronLeft />
+              </button>
+
+              {/* Sidebar content */}
+              <Sidebar
+                collapsed={false}
+                onLinkClick={() => setSidebarOpen(false)}
+              />
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* Main content */}
       <div className="flex flex-col flex-1 overflow-hidden">
         <Navbar
+          onMenuClick={() => setSidebarOpen(!sidebarOpen)}
           sidebarCollapsed={sidebarCollapsed}
           onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
-          onMenuClick={() => setSidebarOpen(!sidebarOpen)}
         />
+
         {/* Main content area */}
         <main className="flex-1 bg-gray-50 overflow-y-auto">
           {/* Back home button */}

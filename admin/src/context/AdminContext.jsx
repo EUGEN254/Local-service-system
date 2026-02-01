@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -48,6 +48,7 @@ export const AdminProvider = ({ children }) => {
   const [loadingBookings, setLoadingBookings] = useState(false);
   const [loadingAllBookings, setLoadingAllBookings] = useState(false);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
+  const [unreadBookingCount, setUnreadBookingCount] = useState(0);
   const [updatingProvider, setUpdatingProvider] = useState(false);
   const [updatingUser, setUpdatingUser] = useState(false);
   const [updatingCategory, setUpdatingCategory] = useState(false);
@@ -115,7 +116,7 @@ export const AdminProvider = ({ children }) => {
   };
 
   // ========== NOTIFICATION FUNCTIONS ==========
-  const fetchNotifications = async (filters = {}) => {
+  const fetchNotifications = useCallback(async (filters = {}) => {
     setLoadingNotifications(true);
     try {
       const params = new URLSearchParams();
@@ -138,7 +139,7 @@ export const AdminProvider = ({ children }) => {
     } finally {
       setLoadingNotifications(false);
     }
-  };
+  }, [backendUrl]);
 
   const fetchUnreadCount = async () => {
     try {
@@ -154,6 +155,23 @@ export const AdminProvider = ({ children }) => {
     } catch (err) {
       console.error("Failed to fetch unread count:", err);
     }
+  };
+
+  const fetchUnreadBookingCount = async () => {
+    try {
+      const { data } = await axios.get(
+        `${backendUrl}/api/admin/bookings/unread-count`,
+        { withCredentials: true },
+      );
+
+      if (data.success) {
+        setUnreadBookingCount(data.unreadCount ?? 0);
+        return data.unreadCount ?? 0;
+      }
+    } catch (err) {
+      console.error("Failed to fetch unread booking count:", err);
+    }
+    return 0;
   };
 
   const markNotificationAsRead = async (notificationId) => {
@@ -773,6 +791,14 @@ export const AdminProvider = ({ children }) => {
     }
   }, []);
 
+  // When admin becomes available, refresh notification-related counts
+  useEffect(() => {
+    if (admin) {
+      fetchUnreadCount();
+      fetchUnreadBookingCount();
+    }
+  }, [admin]);
+
   // All context values
   const value = {
     backendUrl,
@@ -837,9 +863,11 @@ export const AdminProvider = ({ children }) => {
     // Notifications
     notifications,
     unreadCount,
+    unreadBookingCount,
     loadingNotifications,
     fetchNotifications,
     fetchUnreadCount,
+    fetchUnreadBookingCount,
     markNotificationAsRead,
     markAllNotificationsAsRead,
   };

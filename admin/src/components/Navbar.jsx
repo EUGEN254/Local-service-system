@@ -5,9 +5,11 @@ import {
   FaBell,
   FaBars,
   FaChevronDown,
+  FaTachometerAlt,
+  FaCog,
 } from "react-icons/fa";
 import { useAdmin } from "../context/AdminContext";
-import { useAdminNotifications } from "../hooks/useAdminNotifications";
+// use notification counts from AdminContext to keep a single source of truth
 import { useAdminUsers } from "../hooks/useAdminUsers";
 import { useAdminProviders } from "../hooks/useAdminProviders";
 import { useAdminBookings } from "../hooks/useAdminBookings";
@@ -19,8 +21,7 @@ const Navbar = ({ onMenuClick }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const { logoutAdmin, admin, authLoading } = useAdmin();
-  const { unreadCount, fetchUnreadCount } = useAdminNotifications();
+  const { logoutAdmin, admin, authLoading, unreadCount, fetchUnreadCount } = useAdmin();
   const { customers } = useAdminUsers();
   const { serviceProviders: contextServiceProviders } = useAdminProviders();
   const { allBookings } = useAdminBookings();
@@ -280,7 +281,7 @@ const Navbar = ({ onMenuClick }) => {
             className="flex items-center gap-1 bg-gray-100 px-3 py-2 rounded-full hover:bg-gray-200 transition-colors"
             onClick={() => setDropdownOpen(!dropdownOpen)}
           >
-            <div className="w-6 h-6 bg-yellow-500 text-white rounded-full flex items-center justify-center font-semibold text-sm">
+            <div className="w-6 h-6 bg-gray-500 text-white rounded-full flex items-center justify-center font-semibold text-sm">
               {admin?.name?.charAt(0).toUpperCase() || "A"}
             </div>
 
@@ -289,13 +290,42 @@ const Navbar = ({ onMenuClick }) => {
 
           {/* Dropdown */}
           {dropdownOpen && (
-            <div className="absolute right-0 mt-3 w-36 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-              <button
-                className="w-full flex items-center gap-2 px-4 py-2 text-gray-700 hover:bg-gray-100"
-                onClick={logoutAdmin}
-              >
-                <FaSignOutAlt className="text-gray-600" /> Logout
-              </button>
+            <div className="absolute right-0 mt-3 w-68 bg-white border border-gray-200 rounded-lg shadow-xl z-50">
+              <div className="p-3 border-b border-gray-100">
+                <p className="text-lg font-medium text-gray-900">
+                  {admin?.name}
+                </p>
+                <p className="text-base text-gray-500 truncate">{admin?.email}</p>
+              </div>
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    navigate("/admin/dashboard");
+                    setDropdownOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-base"
+                >
+                  <FaTachometerAlt className="text-gray-500" />
+                  <span className="font-medium">Dashboard</span>
+                </button>
+                <button
+                  onClick={() => {
+                    navigate("/admin/settings");
+                    setDropdownOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-base"
+                >
+                  <FaCog className="text-gray-500" />
+                  <span className="font-medium">Settings</span>
+                </button>
+                <button
+                  className="w-full flex items-center gap-2 px-4 py-3 text-red-600 hover:bg-red-50 transition-colors text-base"
+                  onClick={logoutAdmin}
+                >
+                  <FaSignOutAlt className="text-red-500" />
+                  <span className="font-medium">Logout</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
