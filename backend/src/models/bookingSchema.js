@@ -17,6 +17,8 @@ const bookingSchema = new mongoose.Schema(
     paymentMethod: { type: String, enum: ["Mpesa", "Cash"], default: "Mpesa" },
     status: { type: String, default: "Pending" },
     read: { type: Boolean, default: false }, 
+    // Admin-only read flag for booking notifications
+    adminRead: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

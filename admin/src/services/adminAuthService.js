@@ -1,11 +1,12 @@
 import axios from "axios";
+import { API_BASE } from "../config/api.js";
 
 /**
  * Admin Authentication Service
  * Handles admin login, logout, and verification
  */
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL;
+
 
 export const loginAdmin = async (email, password, role = "admin") => {
   try {
@@ -20,15 +21,26 @@ export const loginAdmin = async (email, password, role = "admin") => {
   }
 };
 
-export const logoutAdmin = async () => {
+export const logoutAdmin = async (navigate) => {
   try {
+    // navigate to login immediately; do not touch localStorage here
+    navigate("/", { replace: true });
+
     const { data } = await axios.post(
       `${API_BASE}/api/user/logoutAdmin`,
       {},
       { withCredentials: true },
     );
+    
+    if (data.success) {
+      setTimeout(() => {
+        // Toast will be shown from the hook
+      }, 100);
+    }
     return data;
   } catch (error) {
+    // Ensure navigation even on error
+    navigate("/", { replace: true });
     throw error.response?.data || error;
   }
 };

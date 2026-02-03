@@ -5,8 +5,7 @@ import { useAdmin } from "../context/AdminContext";
 import { assets } from "../assets/assets";
 
 const Settings = () => {
-  const { backendUrl: backendUrl_from_context, fetchCurrentAdmin, admin } = useAdmin();
-  const backendUrl = backendUrl_from_context || import.meta.env.VITE_BACKEND_URL;
+  const { API_BASE, admin, fetchCurrentAdmin } = useAdmin();
   const [previewImage, setPreviewImage] = useState(null);
 
   // Profile state
@@ -44,7 +43,7 @@ const Settings = () => {
         bio: admin.bio || "",
         address: admin.address || "",
       });
-      
+
       // Set preview image if user has an image
       if (admin.image) {
         setPreviewImage(admin.image);
@@ -78,14 +77,14 @@ const Settings = () => {
       }
 
       const { data } = await axios.put(
-        `${backendUrl}/api/admin/update-profile`,
+        `${API_BASE}/api/admin/update-profile`,
         formData,
         {
           withCredentials: true,
           headers: {
             "Content-Type": "multipart/form-data",
           },
-        }
+        },
       );
       await fetchCurrentAdmin();
 
@@ -94,7 +93,7 @@ const Settings = () => {
       console.error("Error updating profile:", err);
       toast.error(
         err.response?.data?.message ||
-          "Error updating service provider profile!"
+          "Error updating service provider profile!",
       );
     } finally {
       setIsLoading(false);
@@ -104,9 +103,13 @@ const Settings = () => {
   // ✅ Update password function
   const handleChangePassword = async (e) => {
     e.preventDefault();
-    
+
     // Validation
-    if (!security.currentPassword || !security.newPassword || !security.confirmPassword) {
+    if (
+      !security.currentPassword ||
+      !security.newPassword ||
+      !security.confirmPassword
+    ) {
       toast.error("Please fill in all password fields");
       return;
     }
@@ -125,14 +128,14 @@ const Settings = () => {
 
     try {
       const { data } = await axios.put(
-        `${backendUrl}/api/user/update-password`,
+        `${API_BASE}/api/user/update-password`,
         {
           currentPassword: security.currentPassword,
           newPassword: security.newPassword,
         },
         {
           withCredentials: true,
-        }
+        },
       );
 
       if (data.success) {
@@ -147,7 +150,8 @@ const Settings = () => {
       }
     } catch (err) {
       console.error("Error updating password:", err);
-      const errorMessage = err.response?.data?.message || "Error updating password!";
+      const errorMessage =
+        err.response?.data?.message || "Error updating password!";
       toast.error(errorMessage);
     } finally {
       setIsPasswordLoading(false);
@@ -319,7 +323,7 @@ const Settings = () => {
                       value={profile.address}
                       onChange={(e) =>
                         handleProfileChange("address", e.target.value)
-                        }
+                      }
                       className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
                     />
                   </div>
@@ -365,7 +369,7 @@ const Settings = () => {
                         onChange={(e) =>
                           handleSecurityChange(
                             "currentPassword",
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"
@@ -402,7 +406,7 @@ const Settings = () => {
                         onChange={(e) =>
                           handleSecurityChange(
                             "confirmPassword",
-                            e.target.value
+                            e.target.value,
                           )
                         }
                         className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-colors"

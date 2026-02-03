@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useAdminBookings } from "../hooks/useAdminBookings";
+import { useAdmin } from "../context/AdminContext";
+import { FaEye, FaCheck, FaCheckCircle } from "react-icons/fa";
 
 
 const BookingsAndTransactions = () => {
@@ -12,11 +14,16 @@ const BookingsAndTransactions = () => {
     fetchBookings,
     fetchTransactions,
     updateBookingStatus,
+    markBookingAsRead,
+    markAllBookingsAsRead,
   } = useAdminBookings();
+
+  const { fetchUnreadBookingCount } = useAdmin();
 
   const [activeTab, setActiveTab] = useState("Bookings");
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [viewLayout, setViewLayout] = useState("table"); // "table" or "card"
   const [filters, setFilters] = useState({
     status: "",
     search: "",
@@ -30,10 +37,14 @@ const BookingsAndTransactions = () => {
     } else {
       fetchTransactions(filters);
     }
-  }, [activeTab, filters]);
+  }, [activeTab, filters, fetchBookings, fetchTransactions]);
 
   const openModal = (record) => {
     setSelectedRecord(record);
+    // Only mark as read for bookings, not transactions
+    if (activeTab === "Bookings") {
+      markAsRead(record._id);
+    }
     setModalOpen(true);
   };
 
@@ -46,6 +57,28 @@ const BookingsAndTransactions = () => {
     const success = await updateBookingStatus(bookingId, newStatus);
     if (success) {
       closeModal();
+    }
+  };
+
+  const markAsRead = async (recordId) => {
+    try {
+      await markBookingAsRead(recordId);
+      // Refresh the unread booking count in navbar and sidebar
+      await fetchUnreadBookingCount();
+    } catch (error) {
+      console.error("Failed to mark as read:", error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const result = await markAllBookingsAsRead();
+      if (result.success) {
+        // Refresh the unread booking count in navbar and sidebar
+        await fetchUnreadBookingCount();
+      }
+    } catch (error) {
+      console.error("Failed to mark all as read:", error);
     }
   };
 
@@ -77,7 +110,41 @@ const BookingsAndTransactions = () => {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold mb-6">Bookings & Transactions</h2>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold">Bookings & Transactions</h2>
+        {activeTab === "Bookings" && (
+          <div className="flex gap-2 items-center">
+            <button
+              onClick={markAllAsRead}
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-green-500 text-white hover:bg-green-600 transition-colors flex items-center gap-2"
+              title="Mark all pending bookings as read"
+            >
+              <FaCheck size={14} />
+              Mark All as Read
+            </button>
+            <button
+              onClick={() => setViewLayout("table")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                viewLayout === "table"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+            >
+              Table View
+            </button>
+            <button
+              onClick={() => setViewLayout("card")}
+              className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                viewLayout === "card"
+                  ? "bg-blue-500 text-white"
+                  : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+              }`}
+            >
+              Card View
+            </button>
+          </div>
+        )}
+      </div>
 
       {/* Filters */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -152,6 +219,100 @@ const BookingsAndTransactions = () => {
       {(loadingBookings && activeTab === "Bookings") || 
        (loadingTransactions && activeTab === "Transactions") ? (
         <div className="text-center py-8">Loading...</div>
+      ) : viewLayout === "card" && activeTab === "Bookings" ? (
+        /* Card View Layout */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {bookings.map((booking) => (
+            <div
+              key={booking._id}
+              className={`p-4 rounded-lg border-2 transition-all cursor-pointer ${
+                booking.adminRead
+                  ? "border-gray-200 bg-gray-50"
+                  : "border-blue-400 bg-blue-50 shadow-md"
+              }`}
+              onClick={() => openModal(booking)}
+            >
+              {/* Unread indicator */}
+              {!booking.adminRead && (
+                <div className="flex justify-between items-start mb-2">
+                  <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500 text-white text-xs rounded-full font-semibold">
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                    New
+                  </span>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      markAsRead(booking._id);
+                    }}
+                    className="text-blue-600 hover:text-blue-800 text-xs font-semibold"
+                  >
+                    Mark as read
+                  </button>
+                </div>
+              )}
+
+              {/* Content */}
+              <div className="space-y-2">
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Customer</p>
+                  <p className="font-semibold text-gray-900">{booking.customer?.name || 'N/A'}</p>
+                </div>
+
+                <div>
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Service</p>
+                  <p className="font-medium text-gray-800">{booking.serviceName}</p>
+                  <p className="text-xs text-gray-600">{booking.categoryName}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Amount</p>
+                    <p className="font-semibold text-gray-900">KSh {booking.amount}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500 uppercase tracking-wide">Delivery</p>
+                    <p className="text-sm text-gray-700">{formatDate(booking.delivery_date)}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pt-2">
+                  <div>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(booking.status)}`}>
+                      {booking.status}
+                    </span>
+                  </div>
+                  <div>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      booking.is_paid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`}>
+                      {booking.is_paid ? 'Paid' : 'Unpaid'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="mt-4 pt-4 border-t border-gray-200 flex justify-end">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openModal(booking);
+                  }}
+                  className="flex items-center gap-2 py-1 px-3 rounded-lg bg-blue-500 text-white text-xs hover:bg-blue-600 transition-colors"
+                >
+                  <FaEye size={12} />
+                  View Details
+                </button>
+              </div>
+            </div>
+          ))}
+
+          {bookings.length === 0 && (
+            <div className="col-span-full p-6 text-center text-gray-500">
+              No bookings found.
+            </div>
+          )}
+        </div>
       ) : (
         /* Table Section */
         <div className="border border-gray-200 rounded-lg overflow-x-auto">
@@ -172,7 +333,12 @@ const BookingsAndTransactions = () => {
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {bookings.map((booking, idx) => (
-                    <tr key={booking._id} className="hover:bg-gray-50">
+                    <tr 
+                      key={booking._id} 
+                      className={`hover:bg-gray-50 transition-colors ${
+                        booking.adminRead ? "" : "bg-blue-50 border-l-4 border-blue-400"
+                      }`}
+                    >
                       <td className="p-3 text-sm text-gray-900">{idx + 1}</td>
                       <td className="p-3 text-sm text-gray-900">
                         {booking.customer?.name || 'N/A'}
@@ -198,13 +364,23 @@ const BookingsAndTransactions = () => {
                           {booking.is_paid ? 'Paid' : 'Unpaid'}
                         </span>
                       </td>
-                      <td className="p-3">
+                      <td className="p-3 flex gap-2">
                         <button
                           onClick={() => openModal(booking)}
-                          className="py-1 px-3 rounded-lg bg-blue-500 text-white text-sm hover:bg-blue-600 transition-colors"
+                          className="py-1 px-3 rounded-lg bg-blue-500 text-white text-sm hover:bg-blue-600 transition-colors flex items-center gap-1"
                         >
+                          <FaEye size={12} />
                           View
                         </button>
+                        {!booking.adminRead && (
+                          <button
+                            onClick={() => markAsRead(booking._id)}
+                            className="py-1 px-3 rounded-lg bg-green-500 text-white text-sm hover:bg-green-600 transition-colors flex items-center gap-1"
+                            title="Mark as read"
+                          >
+                            <FaCheckCircle size={12} />
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -273,22 +449,194 @@ const BookingsAndTransactions = () => {
       {/* Modal */}
       {modalOpen && selectedRecord && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/50 z-50">
-          <div className="bg-white rounded-lg shadow-lg p-6 w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold mb-4">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-11/12 max-w-3xl max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-semibold mb-6 text-gray-900">
               {activeTab === "Bookings" ? "Booking" : "Transaction"} Details
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-              {Object.entries(selectedRecord).map(([key, value]) => (
-                <div key={key} className="text-sm">
-                  <span className="font-semibold text-gray-700 capitalize">
-                    {key.replace(/_/g, ' ')}:
-                  </span>
-                  <span className="ml-2 text-gray-900">
-                    {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-                  </span>
-                </div>
-              ))}
+            <div className="space-y-4">
+              {activeTab === "Bookings" ? (
+                <>
+                  {/* Customer Section */}
+                  <div className="border-b pb-4">
+                    <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Customer Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Name</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedRecord.customer?.name || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Email</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedRecord.customer?.email || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Phone</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedRecord.customer?.phone || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Service Section */}
+                  <div className="border-b pb-4">
+                    <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Service Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Service</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedRecord.serviceName || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Category</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedRecord.categoryName || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Provider</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedRecord.providerName || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Provider Phone</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedRecord.providerPhone || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Booking Details Section */}
+                  <div className="border-b pb-4">
+                    <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Booking Details</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Amount</p>
+                        <p className="text-sm font-medium text-gray-900">KSh {selectedRecord.amount}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Status</p>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedRecord.status)}`}>
+                          {selectedRecord.status}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Delivery Date</p>
+                        <p className="text-sm font-medium text-gray-900">{formatDate(selectedRecord.delivery_date)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Payment Status</p>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${
+                          selectedRecord.is_paid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {selectedRecord.is_paid ? 'Paid' : 'Unpaid'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Location Section */}
+                  <div className="border-b pb-4">
+                    <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Location</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Address</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedRecord.address || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">City</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedRecord.city || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Notes</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedRecord.notes || 'No notes'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Timestamps Section */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Timestamps</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Created</p>
+                        <p className="text-sm font-medium text-gray-900">{formatDateTime(selectedRecord.createdAt)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Updated</p>
+                        <p className="text-sm font-medium text-gray-900">{formatDateTime(selectedRecord.updatedAt)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  {/* Transaction - Customer Section */}
+                  <div className="border-b pb-4">
+                    <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Customer Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Customer Name</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedRecord.customer || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Phone</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedRecord.phone || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Transaction - Service Section */}
+                  <div className="border-b pb-4">
+                    <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Service Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Service Name</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedRecord.serviceName || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Category</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedRecord.categoryName || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Transaction - Payment Section */}
+                  <div className="border-b pb-4">
+                    <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Payment Information</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Amount</p>
+                        <p className="text-sm font-medium text-gray-900">KSh {selectedRecord.amount}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Status</p>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedRecord.status)}`}>
+                          {selectedRecord.status}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Transaction ID</p>
+                        <p className="text-sm font-mono text-gray-900">{selectedRecord.transactionId || 'N/A'}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Payment Method</p>
+                        <p className="text-sm font-medium text-gray-900">{selectedRecord.paymentMethod || 'N/A'}</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Transaction - Details Section */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-3">Transaction Details</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-gray-500 uppercase tracking-wide">Date & Time</p>
+                        <p className="text-sm font-medium text-gray-900">{formatDateTime(selectedRecord.createdAt)}</p>
+                      </div>
+                      {selectedRecord.bookingId && (
+                        <div>
+                          <p className="text-xs text-gray-500 uppercase tracking-wide">Booking ID</p>
+                          <p className="text-sm font-mono text-gray-900">{typeof selectedRecord.bookingId === 'object' ? (selectedRecord.bookingId._id || JSON.stringify(selectedRecord.bookingId)) : String(selectedRecord.bookingId)}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
 
             {activeTab === "Bookings" && (

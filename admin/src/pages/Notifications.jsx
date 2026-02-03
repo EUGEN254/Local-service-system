@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { FaCheckCircle, FaTrash, FaBell } from "react-icons/fa";
-import { useAdminNotifications } from "../hooks/useAdminNotifications";
 import { useAdmin } from "../context/AdminContext";
 
 
@@ -8,7 +7,6 @@ const categories = ["All", "User", "Service Provider", "Booking", "Transaction",
 
 const Notifications = () => {
   const [activeCategory, setActiveCategory] = useState("All");
-  const { admin } = useAdmin();
   const {
     notifications,
     unreadCount,
@@ -16,7 +14,7 @@ const Notifications = () => {
     fetchNotifications,
     markNotificationAsRead,
     markAllNotificationsAsRead,
-  } = useAdminNotifications();
+  } = useAdmin();
 
   useEffect(() => {
     fetchNotifications({ category: activeCategory === "All" ? "" : activeCategory });
@@ -56,14 +54,6 @@ const Notifications = () => {
   const filteredNotifications = activeCategory === "All" 
     ? notifications 
     : notifications.filter(n => n.category === activeCategory);
-
-  if (!admin) {
-    return (
-      <div className="p-6 text-center">
-        <p className="text-gray-500">Please log in to view notifications</p>
-      </div>
-    );
-  }
 
   return (
     <div className="w-full max-w-[1400px] mx-auto p-3 sm:p-6 space-y-6 h-[calc(100vh-4rem)] overflow-y-auto scrollbar-thin">

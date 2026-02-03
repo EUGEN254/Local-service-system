@@ -154,6 +154,94 @@ export const deleteAllNotifications = async (req, res) => {
   }
 };
 
+// Get admin notifications (system-wide)
+export const getAdminNotifications = async (req, res) => {
+  try {
+    const { category, page = 1, limit = 20 } = req.query;
+    
+    const filter = {};
+    
+    if (category && category !== "All") {
+      filter.category = category;
+    }
+
+    const notifications = await Notification.find(filter)
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit)
+      .populate("relatedEntity", "name email serviceName amount status")
+      .populate("user", "name email role");
+
+    const total = await Notification.countDocuments(filter);
+
+    res.status(200).json({
+      success: true,
+      notifications,
+      totalPages: Math.ceil(total / limit),
+      currentPage: page,
+      total,
+    });
+  } catch (error) {
+    console.error("Get admin notifications error:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch notifications" });
+  }
+};
+
+// Get admin unread count (all system notifications)
+export const getAdminUnreadCount = async (req, res) => {
+  try {
+    const unreadCount = await Notification.countDocuments({ read: false });
+
+    res.json({
+      success: true,
+      unreadCount
+    });
+  } catch (error) {
+    console.error("Get admin unread count error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch unread count"
+    });
+  }
+};
+
+// Mark admin notification as read
+export const markAdminNotificationAsRead = async (req, res) => {
+  try {
+    const { notificationId } = req.params;
+
+    const notification = await Notification.findByIdAndUpdate(
+      notificationId,
+      { read: true },
+      { new: true }
+    );
+
+    if (!notification) {
+      return res.status(404).json({ success: false, message: "Notification not found" });
+    }
+
+    res.status(200).json({ success: true, notification });
+  } catch (error) {
+    console.error("Mark notification as read error:", error);
+    res.status(500).json({ success: false, message: "Failed to mark notification as read" });
+  }
+};
+
+// Mark all admin notifications as read
+export const markAdminAllNotificationsAsRead = async (req, res) => {
+  try {
+    await Notification.updateMany(
+      { read: false },
+      { read: true }
+    );
+
+    res.status(200).json({ success: true, message: "All notifications marked as read" });
+  } catch (error) {
+    console.error("Mark all notifications as read error:", error);
+    res.status(500).json({ success: false, message: "Failed to mark all notifications as read" });
+  }
+};
+
 // Utility function to create notifications (for use in other controllers)
 export const createNotification = async (userId, notificationData) => {
   try {

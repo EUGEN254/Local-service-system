@@ -95,6 +95,50 @@ export const useAdminBookings = () => {
     }
   }, []);
 
+  const markBookingAsRead = useCallback(async (bookingId) => {
+    try {
+      const data = await adminBookingService.markBookingAsRead(bookingId);
+      if (data.success) {
+        setBookings((prev) =>
+          prev.map((booking) =>
+            booking._id === bookingId
+              ? { ...booking, adminRead: true }
+              : booking
+          )
+        );
+        setAllBookings((prev) =>
+          prev.map((booking) =>
+            booking._id === bookingId
+              ? { ...booking, adminRead: true }
+              : booking
+          )
+        );
+      }
+      return data;
+    } catch (error) {
+      console.error("Error marking booking as read:", error);
+      throw error;
+    }
+  }, []);
+
+  const markAllBookingsAsRead = useCallback(async () => {
+    try {
+      const data = await adminBookingService.markAllBookingsAsRead();
+      if (data.success) {
+        setBookings((prev) =>
+          prev.map((booking) => ({ ...booking, adminRead: true }))
+        );
+        setAllBookings((prev) =>
+          prev.map((booking) => ({ ...booking, adminRead: true }))
+        );
+      }
+      return data;
+    } catch (error) {
+      console.error("Error marking all bookings as read:", error);
+      throw error;
+    }
+  }, []);
+
   return {
     bookings,
     allBookings,
@@ -109,5 +153,7 @@ export const useAdminBookings = () => {
     updateBookingStatus,
     fetchTransactions,
     fetchBookingStats,
+    markBookingAsRead,
+    markAllBookingsAsRead,
   };
 };

@@ -1,20 +1,27 @@
 import React, { useState, useEffect } from "react";
-import { FaEdit, FaTrash, FaEye, FaCheck, FaTimes, FaPlus } from "react-icons/fa";
+import {
+  FaEdit,
+  FaTrash,
+  FaEye,
+  FaCheck,
+  FaTimes,
+  FaPlus,
+} from "react-icons/fa";
 import { toast } from "sonner";
 import { useAdminProviders } from "../hooks/useAdminProviders";
-import axios from 'axios'
 import { assets } from "../assets/assets";
 
 const ServiceProvider = () => {
-  const { 
-    serviceProviders, 
-    loadingProviders, 
+  const {
+    serviceProviders,
+    loadingProviders,
     fetchServiceProviders,
     updateVerificationStatus,
     updateProviderProfile,
     deleteProvider,
     updatingProvider,
-    backendUrl: backendUrl_from_hook
+    createProvider,
+    backendUrl: backendUrl_from_hook,
   } = useAdminProviders();
 
   // Use backendUrl from hook or fallback
@@ -28,8 +35,6 @@ const ServiceProvider = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
 
-  
-  
   // Edit Form State
   const [editForm, setEditForm] = useState({
     name: "",
@@ -37,7 +42,7 @@ const ServiceProvider = () => {
     phone: "",
     image: "",
     imageFile: null,
-    imagePreview: ""
+    imagePreview: "",
   });
 
   // Add Form State
@@ -49,13 +54,13 @@ const ServiceProvider = () => {
     confirmPassword: "",
     image: "",
     imageFile: null,
-    imagePreview: ""
+    imagePreview: "",
   });
 
   const [addingProvider, setAddingProvider] = useState(false);
 
   useEffect(() => {
-    console.log('here',serviceProviders)
+    console.log("here", serviceProviders);
     fetchServiceProviders();
   }, []);
 
@@ -72,7 +77,7 @@ const ServiceProvider = () => {
       phone: provider.phone || "",
       image: provider.image || "",
       imageFile: null,
-      imagePreview: provider.image || ""
+      imagePreview: provider.image || "",
     });
     setShowEditModal(true);
   };
@@ -91,7 +96,7 @@ const ServiceProvider = () => {
       confirmPassword: "",
       image: "",
       imageFile: null,
-      imagePreview: ""
+      imagePreview: "",
     });
     setShowAddModal(true);
   };
@@ -118,7 +123,11 @@ const ServiceProvider = () => {
       return;
     }
 
-    const success = await updateVerificationStatus(selectedProvider._id, "rejected", rejectionReason);
+    const success = await updateVerificationStatus(
+      selectedProvider._id,
+      "rejected",
+      rejectionReason,
+    );
     if (success) {
       toast.success("Service provider rejected successfully!");
       setShowRejectModal(false);
@@ -130,7 +139,7 @@ const ServiceProvider = () => {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!editForm.name || !editForm.email) {
       toast.error("Name and email are required");
       return;
@@ -140,13 +149,13 @@ const ServiceProvider = () => {
     formData.append("name", editForm.name);
     formData.append("email", editForm.email);
     formData.append("phone", editForm.phone);
-    
+
     if (editForm.imageFile) {
       formData.append("image", editForm.imageFile);
     }
 
     const success = await updateProviderProfile(selectedProvider._id, formData);
-    
+
     if (success) {
       toast.success("Provider updated successfully!");
       setShowEditModal(false);
@@ -157,7 +166,7 @@ const ServiceProvider = () => {
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!addForm.name || !addForm.email || !addForm.password) {
       toast.error("Name, email and password are required");
       return;
@@ -182,21 +191,11 @@ const ServiceProvider = () => {
       formData.append("phone", addForm.phone);
       formData.append("password", addForm.password);
       formData.append("role", "service-provider");
-      
+
       if (addForm.imageFile) {
         formData.append("image", addForm.imageFile);
       }
-
-      // You'll need to create this API endpoint
-      const { data } = await axios.post(
-        `${backendUrl}/api/admin/create-provider`,
-        formData,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-
+      const data = await createProvider(formData);
       if (data.success) {
         toast.success("Service provider created successfully!");
         setShowAddModal(false);
@@ -223,15 +222,20 @@ const ServiceProvider = () => {
 
   const getStatusBadge = (status) => {
     const statusConfig = {
-      "pending": { color: "bg-yellow-100 text-yellow-800", label: "Pending" },
-      "verified": { color: "bg-green-100 text-green-800", label: "Verified" },
-      "rejected": { color: "bg-red-100 text-red-800", label: "Rejected" },
-      "not-submitted": { color: "bg-gray-100 text-gray-800", label: "Not Submitted" }
+      pending: { color: "bg-yellow-100 text-yellow-800", label: "Pending" },
+      verified: { color: "bg-green-100 text-green-800", label: "Verified" },
+      rejected: { color: "bg-red-100 text-red-800", label: "Rejected" },
+      "not-submitted": {
+        color: "bg-gray-100 text-gray-800",
+        label: "Not Submitted",
+      },
     };
-    
+
     const config = statusConfig[status] || statusConfig["not-submitted"];
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}
+      >
         {config.label}
       </span>
     );
@@ -243,7 +247,7 @@ const ServiceProvider = () => {
       <label className="block text-sm font-medium text-gray-700 mb-2">
         Profile Image
       </label>
-      
+
       {/* Current Image Preview */}
       {form.image && !form.imagePreview && (
         <div className="mb-3">
@@ -255,7 +259,7 @@ const ServiceProvider = () => {
           />
         </div>
       )}
-      
+
       {/* Drag & Drop Upload Area */}
       <div
         className="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 bg-gray-50 hover:bg-blue-50 transition-all duration-300 group"
@@ -265,13 +269,15 @@ const ServiceProvider = () => {
           const file = e.dataTransfer.files[0];
           if (file && file.type.startsWith("image/")) {
             setForm({
-              ...form, 
+              ...form,
               imageFile: file,
-              imagePreview: URL.createObjectURL(file)
+              imagePreview: URL.createObjectURL(file),
             });
           }
         }}
-        onClick={() => document.getElementById(`${formKey}-profile-image`).click()}
+        onClick={() =>
+          document.getElementById(`${formKey}-profile-image`).click()
+        }
       >
         {form.imagePreview ? (
           <img
@@ -305,25 +311,27 @@ const ServiceProvider = () => {
             const file = e.target.files[0];
             if (file) {
               setForm({
-                ...form, 
+                ...form,
                 imageFile: file,
-                imagePreview: URL.createObjectURL(file)
+                imagePreview: URL.createObjectURL(file),
               });
             }
           }}
         />
       </div>
-      
+
       {/* Remove Image Button */}
       {(form.imageFile || form.image) && (
         <button
           type="button"
-          onClick={() => setForm({
-            ...form, 
-            image: "",
-            imageFile: null,
-            imagePreview: ""
-          })}
+          onClick={() =>
+            setForm({
+              ...form,
+              image: "",
+              imageFile: null,
+              imagePreview: "",
+            })
+          }
           className="mt-2 px-3 py-1 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition-colors"
         >
           Remove Image
@@ -345,7 +353,9 @@ const ServiceProvider = () => {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Service Providers</h1>
+          <h1 className="text-2xl font-bold text-gray-800">
+            Service Providers
+          </h1>
           <p className="text-gray-600">Manage and verify service providers</p>
         </div>
         <button
@@ -363,20 +373,36 @@ const ServiceProvider = () => {
           <table className="w-full min-w-[800px]">
             <thead className="bg-gray-50">
               <tr>
-                <th className="p-4 text-left text-sm font-semibold text-gray-700">No</th>
-                <th className="p-4 text-left text-sm font-semibold text-gray-700">Name</th>
-                <th className="p-4 text-left text-sm font-semibold text-gray-700">Image</th>
-                <th className="p-4 text-left text-sm font-semibold text-gray-700">Email</th>
-                <th className="p-4 text-left text-sm font-semibold text-gray-700">Phone</th>
-                <th className="p-4 text-left text-sm font-semibold text-gray-700">Verification Status</th>
-                <th className="p-4 text-left text-sm font-semibold text-gray-700">Actions</th>
+                <th className="p-4 text-left text-sm font-semibold text-gray-700">
+                  No
+                </th>
+                <th className="p-4 text-left text-sm font-semibold text-gray-700">
+                  Name
+                </th>
+                <th className="p-4 text-left text-sm font-semibold text-gray-700">
+                  Image
+                </th>
+                <th className="p-4 text-left text-sm font-semibold text-gray-700">
+                  Email
+                </th>
+                <th className="p-4 text-left text-sm font-semibold text-gray-700">
+                  Phone
+                </th>
+                <th className="p-4 text-left text-sm font-semibold text-gray-700">
+                  Verification Status
+                </th>
+                <th className="p-4 text-left text-sm font-semibold text-gray-700">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {serviceProviders.map((provider, idx) => (
                 <tr key={provider._id} className="hover:bg-gray-50">
                   <td className="p-4 text-sm text-gray-900">{idx + 1}</td>
-                  <td className="p-4 text-sm font-medium text-gray-900">{provider.name}</td>
+                  <td className="p-4 text-sm font-medium text-gray-900">
+                    {provider.name}
+                  </td>
                   <td className="p-4">
                     {provider.image ? (
                       <img
@@ -386,17 +412,20 @@ const ServiceProvider = () => {
                       />
                     ) : (
                       <div className="w-10 h-10 flex items-center justify-center">
-                         <img
-                            src={assets.avatar_icon}
-                            alt="Default avatar"
-                          />
+                        <img src={assets.avatar_icon} alt="Default avatar" />
                       </div>
                     )}
                   </td>
-                  <td className="p-4 text-sm text-gray-900">{provider.email}</td>
-                  <td className="p-4 text-sm text-gray-900">{provider.phone || "N/A"}</td>
+                  <td className="p-4 text-sm text-gray-900">
+                    {provider.email}
+                  </td>
+                  <td className="p-4 text-sm text-gray-900">
+                    {provider.phone || "N/A"}
+                  </td>
                   <td className="p-4">
-                    {getStatusBadge(provider.serviceProviderInfo?.idVerification?.status)}
+                    {getStatusBadge(
+                      provider.serviceProviderInfo?.idVerification?.status,
+                    )}
                   </td>
                   <td className="p-4">
                     <div className="flex gap-2">
@@ -442,7 +471,9 @@ const ServiceProvider = () => {
           <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-semibold">ID Verification Documents</h3>
+                <h3 className="text-xl font-semibold">
+                  ID Verification Documents
+                </h3>
                 <button
                   onClick={() => setShowViewModal(false)}
                   className="text-gray-500 hover:text-gray-700"
@@ -454,19 +485,35 @@ const ServiceProvider = () => {
               {/* Provider Info */}
               <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                 <h4 className="font-semibold mb-2">Provider Information</h4>
-                <p><strong>Name:</strong> {selectedProvider.name}</p>
-                <p><strong>Email:</strong> {selectedProvider.email}</p>
-                <p><strong>Phone:</strong> {selectedProvider.phone || "N/A"}</p>
-                <p><strong>Status:</strong> {getStatusBadge(selectedProvider.serviceProviderInfo?.idVerification?.status)}</p>
+                <p>
+                  <strong>Name:</strong> {selectedProvider.name}
+                </p>
+                <p>
+                  <strong>Email:</strong> {selectedProvider.email}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {selectedProvider.phone || "N/A"}
+                </p>
+                <p>
+                  <strong>Status:</strong>{" "}
+                  {getStatusBadge(
+                    selectedProvider.serviceProviderInfo?.idVerification
+                      ?.status,
+                  )}
+                </p>
               </div>
 
               {/* ID Documents */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <div>
                   <h4 className="font-semibold mb-3">Front of ID</h4>
-                  {selectedProvider.serviceProviderInfo?.idVerification?.idFrontImage ? (
+                  {selectedProvider.serviceProviderInfo?.idVerification
+                    ?.idFrontImage ? (
                     <img
-                      src={selectedProvider.serviceProviderInfo.idVerification.idFrontImage}
+                      src={
+                        selectedProvider.serviceProviderInfo.idVerification
+                          .idFrontImage
+                      }
                       alt="Front ID"
                       className="w-full h-64 object-contain border rounded-lg"
                     />
@@ -478,9 +525,13 @@ const ServiceProvider = () => {
                 </div>
                 <div>
                   <h4 className="font-semibold mb-3">Back of ID</h4>
-                  {selectedProvider.serviceProviderInfo?.idVerification?.idBackImage ? (
+                  {selectedProvider.serviceProviderInfo?.idVerification
+                    ?.idBackImage ? (
                     <img
-                      src={selectedProvider.serviceProviderInfo.idVerification.idBackImage}
+                      src={
+                        selectedProvider.serviceProviderInfo.idVerification
+                          .idBackImage
+                      }
                       alt="Back ID"
                       className="w-full h-64 object-contain border rounded-lg"
                     />
@@ -493,7 +544,8 @@ const ServiceProvider = () => {
               </div>
 
               {/* Action Buttons */}
-              {selectedProvider.serviceProviderInfo?.idVerification?.status === "pending" && (
+              {selectedProvider.serviceProviderInfo?.idVerification?.status ===
+                "pending" && (
                 <div className="flex gap-3 justify-end">
                   <button
                     onClick={() => openRejectModal(selectedProvider)}
@@ -530,7 +582,7 @@ const ServiceProvider = () => {
                   <FaTimes />
                 </button>
               </div>
-              
+
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Please provide a reason for rejection:
@@ -543,7 +595,7 @@ const ServiceProvider = () => {
                   required
                 />
               </div>
-              
+
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => setShowRejectModal(false)}
@@ -577,43 +629,59 @@ const ServiceProvider = () => {
                   <FaTimes />
                 </button>
               </div>
-              
+
               <form onSubmit={handleEditSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Name
+                  </label>
                   <input
                     type="text"
                     value={editForm.name}
-                    onChange={(e) => setEditForm({...editForm, name: e.target.value})}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, name: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
                   <input
                     type="email"
                     value={editForm.email}
-                    onChange={(e) => setEditForm({...editForm, email: e.target.value})}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, email: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone
+                  </label>
                   <input
                     type="text"
                     value={editForm.phone}
-                    onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                    onChange={(e) =>
+                      setEditForm({ ...editForm, phone: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-                
+
                 {/* Image Upload */}
-                <ImageUpload form={editForm} setForm={setEditForm} formKey="edit" />
-                
+                <ImageUpload
+                  form={editForm}
+                  setForm={setEditForm}
+                  formKey="edit"
+                />
+
                 <div className="flex gap-3 justify-end pt-4">
                   <button
                     type="button"
@@ -652,65 +720,92 @@ const ServiceProvider = () => {
                   <FaTimes />
                 </button>
               </div>
-              
+
               <form onSubmit={handleAddSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Name
+                  </label>
                   <input
                     type="text"
                     value={addForm.name}
-                    onChange={(e) => setAddForm({...addForm, name: e.target.value})}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, name: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
                   <input
                     type="email"
                     value={addForm.email}
-                    onChange={(e) => setAddForm({...addForm, email: e.target.value})}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, email: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
                   />
                 </div>
-                
+
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone
+                  </label>
                   <input
                     type="text"
                     value={addForm.phone}
-                    onChange={(e) => setAddForm({...addForm, phone: e.target.value})}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, phone: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Password
+                  </label>
                   <input
                     type="password"
                     value={addForm.password}
-                    onChange={(e) => setAddForm({...addForm, password: e.target.value})}
+                    onChange={(e) =>
+                      setAddForm({ ...addForm, password: e.target.value })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Confirm Password
+                  </label>
                   <input
                     type="password"
                     value={addForm.confirmPassword}
-                    onChange={(e) => setAddForm({...addForm, confirmPassword: e.target.value})}
+                    onChange={(e) =>
+                      setAddForm({
+                        ...addForm,
+                        confirmPassword: e.target.value,
+                      })
+                    }
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     required
                   />
                 </div>
-                
+
                 {/* Image Upload */}
-                <ImageUpload form={addForm} setForm={setAddForm} formKey="add" />
-                
+                <ImageUpload
+                  form={addForm}
+                  setForm={setAddForm}
+                  formKey="add"
+                />
+
                 <div className="flex gap-3 justify-end pt-4">
                   <button
                     type="button"
@@ -741,7 +836,9 @@ const ServiceProvider = () => {
           <div className="bg-white rounded-lg max-w-md w-full">
             <div className="p-6">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-red-600">Confirm Delete</h3>
+                <h3 className="text-lg font-semibold text-red-600">
+                  Confirm Delete
+                </h3>
                 <button
                   onClick={() => setShowDeleteModal(false)}
                   className="text-gray-500 hover:text-gray-700"
@@ -749,16 +846,18 @@ const ServiceProvider = () => {
                   <FaTimes />
                 </button>
               </div>
-              
+
               <div className="mb-6">
                 <p className="text-gray-700">
-                  Are you sure you want to delete <strong>{selectedProvider.name}</strong>?
+                  Are you sure you want to delete{" "}
+                  <strong>{selectedProvider.name}</strong>?
                 </p>
                 <p className="text-sm text-gray-500 mt-2">
-                  This action cannot be undone. All associated data will be permanently removed.
+                  This action cannot be undone. All associated data will be
+                  permanently removed.
                 </p>
               </div>
-              
+
               <div className="flex gap-3 justify-end">
                 <button
                   onClick={() => setShowDeleteModal(false)}

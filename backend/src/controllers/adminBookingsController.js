@@ -216,3 +216,77 @@ export const getBookingStats = async (req, res) => {
     });
   }
 };
+
+// Get unread bookings count
+export const getUnreadBookingsCount = async (req, res) => {
+  try {
+    const unreadCount = await Booking.countDocuments({ 
+      adminRead: { $ne: true }
+    });
+
+    res.json({
+      success: true,
+      unreadCount
+    });
+  } catch (error) {
+    console.error('Get unread bookings count error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch unread bookings count'
+    });
+  }
+};
+
+// Mark booking as read by admin
+export const markBookingAsRead = async (req, res) => {
+  try {
+    const { bookingId } = req.params;
+
+    const booking = await Booking.findByIdAndUpdate(
+      bookingId,
+      { adminRead: true },
+      { new: true }
+    );
+
+    if (!booking) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Booking not found' 
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Booking marked as read',
+      booking
+    });
+  } catch (error) {
+    console.error('Mark booking as read error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to mark booking as read'
+    });
+  }
+};
+
+// Mark all pending bookings as read
+export const markAllBookingsAsRead = async (req, res) => {
+  try {
+    const result = await Booking.updateMany(
+      { adminRead: false },
+      { adminRead: true }
+    );
+
+    res.json({
+      success: true,
+      message: `Marked ${result.modifiedCount} bookings as read`,
+      modifiedCount: result.modifiedCount
+    });
+  } catch (error) {
+    console.error('Mark all bookings as read error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to mark all bookings as read'
+    });
+  }
+};

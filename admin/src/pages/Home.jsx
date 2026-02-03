@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Outlet, useNavigate } from "react-router-dom";
-import { toast } from "sonner";
-import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import Navbar from "../components/Navbar";
 import { FaHome, FaChevronLeft, FaChevronRight } from "react-icons/fa";
@@ -9,42 +7,7 @@ import { FaHome, FaChevronLeft, FaChevronRight } from "react-icons/fa";
 const Home = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-
-  // ADMIN AUTH PROTECTION
-  useEffect(() => {
-    const checkAdminAuth = async () => {
-      const isAdminLoggedIn = localStorage.getItem("isAdminLoggedIn");
-      const adminUser = localStorage.getItem("adminUser");
-
-      if (!isAdminLoggedIn || !adminUser) {
-        navigate("/admin/login");
-        return;
-      }
-
-      try {
-        // Verify with backend that user is still authenticated and is admin
-        const { data } = await axios.get(`${backendUrl}/api/user/me`, {
-          withCredentials: true,
-        });
-
-        if (!data.success || data.user.role !== "admin") {
-          localStorage.removeItem("isAdminLoggedIn");
-          localStorage.removeItem("adminUser");
-          navigate("/admin/login");
-          toast.error("Admin access required");
-        }
-      } catch (err) {
-        localStorage.removeItem("isAdminLoggedIn");
-        localStorage.removeItem("adminUser");
-        navigate("/admin/login");
-        toast.error("Session expired. Please login again.");
-      }
-    };
-
-    checkAdminAuth();
-  }, [navigate, backendUrl]);
 
   return (
     <div className="flex min-h-screen bg-gray-100">

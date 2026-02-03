@@ -1,11 +1,10 @@
 import axios from "axios";
+import { API_BASE } from "../config/api.js";
 
 /**
  * Admin Notification Service
- * Handles notification management
+ * Handles admin notification management
  */
-
-const API_BASE = import.meta.env.VITE_BACKEND_URL;
 
 export const fetchNotifications = async (filters = {}) => {
   try {
@@ -15,8 +14,8 @@ export const fetchNotifications = async (filters = {}) => {
     });
 
     const { data } = await axios.get(
-      `${API_BASE}/api/notifications?${params}`,
-      { withCredentials: true }
+      `${API_BASE}/api/admin/notifications?${params}`,
+      { withCredentials: true },
     );
     return data;
   } catch (error) {
@@ -27,8 +26,8 @@ export const fetchNotifications = async (filters = {}) => {
 export const fetchUnreadCount = async () => {
   try {
     const { data } = await axios.get(
-      `${API_BASE}/api/notifications/unread-count`,
-      { withCredentials: true }
+      `${API_BASE}/api/admin/notifications/unread-count`,
+      { withCredentials: true },
     );
     return data;
   } catch (error) {
@@ -39,9 +38,9 @@ export const fetchUnreadCount = async () => {
 export const markNotificationAsRead = async (notificationId) => {
   try {
     const { data } = await axios.put(
-      `${API_BASE}/api/notifications/mark-read/${notificationId}`,
+      `${API_BASE}/api/admin/notifications/${notificationId}/mark-read`,
       {},
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return data;
   } catch (error) {
@@ -52,12 +51,38 @@ export const markNotificationAsRead = async (notificationId) => {
 export const markAllNotificationsAsRead = async () => {
   try {
     const { data } = await axios.put(
-      `${API_BASE}/api/notifications/mark-all-read`,
+      `${API_BASE}/api/admin/notifications/mark-all-read`,
       {},
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return data;
   } catch (error) {
     throw error.response?.data || error;
+  }
+};
+
+export const fetchUnreadBookingCount = async () => {
+  try {
+    const { data } = await axios.get(
+      `${API_BASE}/api/admin/bookings/unread-count`,
+      { withCredentials: true },
+    );
+
+    return data;
+  } catch (err) {
+    throw err.response?.data || err;
+  }
+};
+
+export const markAllBookingsAsRead = async () => {
+  try {
+    const { data } = await axios.put(
+      `${API_BASE}/api/admin/bookings/mark-all-read`,
+      {},
+      { withCredentials: true },
+    );
+    return data;
+  } catch (err) {
+    throw err.response?.data || err;
   }
 };

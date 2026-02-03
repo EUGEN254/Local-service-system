@@ -7,42 +7,52 @@ import {
   FaChevronDown,
   FaTachometerAlt,
   FaCog,
+  FaCalendarAlt,
 } from "react-icons/fa";
-import { useAdmin } from "../context/AdminContext";
-// use notification counts from AdminContext to keep a single source of truth
 import { useAdminUsers } from "../hooks/useAdminUsers";
 import { useAdminProviders } from "../hooks/useAdminProviders";
 import { useAdminBookings } from "../hooks/useAdminBookings";
 import { assets } from "../assets/assets";
 import { useNavigate } from "react-router-dom";
+import { useAdmin } from "../context/AdminContext";
 
 const Navbar = ({ onMenuClick }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
-  const { logoutAdmin, admin, authLoading, unreadCount, fetchUnreadCount } = useAdmin();
+  const {
+    logoutAdmin,
+    admin,
+    authLoading,
+    unreadCount,
+    fetchUnreadCount,
+    unreadBookingCount,
+    fetchUnreadBookingCount,
+  } = useAdmin();
   const { customers } = useAdminUsers();
   const { serviceProviders: contextServiceProviders } = useAdminProviders();
   const { allBookings } = useAdminBookings();
-
   const navigate = useNavigate();
 
   // Refresh unread count periodically
   useEffect(() => {
     if (admin) {
       fetchUnreadCount();
-      
+      fetchUnreadBookingCount();
       // Refresh every 30 seconds
-      const interval = setInterval(fetchUnreadCount, 30000);
+      const interval = setInterval(() => {
+        fetchUnreadCount();
+        fetchUnreadBookingCount();
+      }, 30000);
       return () => clearInterval(interval);
     }
-  }, [admin, fetchUnreadCount]);
+  }, [admin, fetchUnreadCount, fetchUnreadBookingCount]);
 
   // Handle search functionality
   const handleSearch = (query) => {
     setSearchQuery(query);
-    
+
     if (!query.trim()) {
       setSearchResults([]);
       setShowSearchResults(false);
@@ -66,7 +76,7 @@ const Navbar = ({ onMenuClick }) => {
           email: customer.email,
           phone: customer.phone,
           icon: "fas fa-user",
-          color: "text-blue-600"
+          color: "text-blue-600",
         });
       }
     });
@@ -85,7 +95,7 @@ const Navbar = ({ onMenuClick }) => {
           email: provider.email,
           phone: provider.phone,
           icon: "fas fa-tools",
-          color: "text-green-600"
+          color: "text-green-600",
         });
       }
     });
@@ -105,7 +115,7 @@ const Navbar = ({ onMenuClick }) => {
           email: booking.serviceName,
           phone: booking.status,
           icon: "fas fa-calendar",
-          color: "text-purple-600"
+          color: "text-purple-600",
         });
       }
     });
@@ -118,7 +128,7 @@ const Navbar = ({ onMenuClick }) => {
   const handleResultClick = (result) => {
     setSearchQuery("");
     setShowSearchResults(false);
-    
+
     if (result.type === "customer") {
       navigate("/admin/user-management");
     } else if (result.type === "provider") {
@@ -188,7 +198,9 @@ const Navbar = ({ onMenuClick }) => {
             <p className="font-semibold text-gray-800">
               {admin?.name || "Admin User"}
             </p>
-            <p className="text-sm text-gray-500">{admin?.email || "admin@example.com"}</p>
+            <p className="text-sm text-gray-500">
+              {admin?.email || "admin@example.com"}
+            </p>
           </div>
         </div>
       </div>
@@ -220,7 +232,9 @@ const Navbar = ({ onMenuClick }) => {
                     className="w-full text-left px-3 py-2 hover:bg-gray-100 rounded-md transition-colors mb-1 last:mb-0"
                   >
                     <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-md bg-gray-100 flex-shrink-0 ${result.color}`}>
+                      <div
+                        className={`p-2 rounded-md bg-gray-100 flex-shrink-0 ${result.color}`}
+                      >
                         <i className={`${result.icon} text-sm`}></i>
                       </div>
                       <div className="flex-1 min-w-0">
@@ -232,7 +246,9 @@ const Navbar = ({ onMenuClick }) => {
                         </p>
                         {result.phone && (
                           <p className="text-xs text-gray-400">
-                            {result.type === "booking" ? `Status: ${result.phone}` : result.phone}
+                            {result.type === "booking"
+                              ? `Status: ${result.phone}`
+                              : result.phone}
                           </p>
                         )}
                       </div>
@@ -253,7 +269,9 @@ const Navbar = ({ onMenuClick }) => {
 
           {showSearchResults && searchQuery && searchResults.length === 0 && (
             <div className="absolute top-full left-0 mt-2 w-80 bg-white border border-gray-200 rounded-lg shadow-xl z-50 p-6 text-center">
-              <p className="text-gray-500 text-sm">No results found for "{searchQuery}"</p>
+              <p className="text-gray-500 text-sm">
+                No results found for "{searchQuery}"
+              </p>
             </div>
           )}
         </div>
@@ -264,13 +282,27 @@ const Navbar = ({ onMenuClick }) => {
         </button>
 
         {/* Notification bell */}
-        <div 
-        onClick={()=>navigate('/admin/notifications')}
-        className="relative bg-gray-100 p-2 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors">
+        <div
+          onClick={() => navigate("/admin/notifications")}
+          className="relative bg-gray-100 p-2 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
+        >
           <FaBell className="text-gray-600 text-lg" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-medium">
-              {unreadCount > 99 ? '99+' : unreadCount}
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </div>
+
+        {/* Bookings notification icon */}
+        <div
+          onClick={() => navigate("/admin/payment")}
+          className="relative bg-gray-100 p-2 rounded-lg cursor-pointer hover:bg-gray-200 transition-colors"
+        >
+          <FaCalendarAlt className="text-gray-600 text-lg" />
+          {unreadBookingCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full font-medium">
+              {unreadBookingCount > 99 ? "99+" : unreadBookingCount}
             </span>
           )}
         </div>
@@ -295,7 +327,9 @@ const Navbar = ({ onMenuClick }) => {
                 <p className="text-lg font-medium text-gray-900">
                   {admin?.name}
                 </p>
-                <p className="text-base text-gray-500 truncate">{admin?.email}</p>
+                <p className="text-base text-gray-500 truncate">
+                  {admin?.email}
+                </p>
               </div>
               <div className="py-1">
                 <button

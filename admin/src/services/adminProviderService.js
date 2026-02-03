@@ -1,11 +1,12 @@
 import axios from "axios";
+import { API_BASE } from "../config/api.js";
 
 /**
  * Admin Service Provider Management Service
  * Handles CRUD operations for service providers
  */
 
-const API_BASE = import.meta.env.VITE_BACKEND_URL;
+
 
 export const fetchServiceProviders = async () => {
   try {

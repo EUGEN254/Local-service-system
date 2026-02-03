@@ -12,14 +12,17 @@ import {
   FaBell,
 } from "react-icons/fa";
 import { useAdmin } from "../context/AdminContext";
-import { useAdminNotifications } from "../hooks/useAdminNotifications";
 
 // Define nav links with relative paths for nested routes
-const navLinks =(logoutAdmin)=>({
+const navLinks = (logoutAdmin) => ({
   menu: [
     { name: "Dashboard", icon: <FaTachometerAlt />, path: "dashboard" },
-    { name: "Bookings", icon: <FaDollarSign />, path: "payment" }, 
-    { name: "Categories", icon: <FaServicestack />, path: "service-categories" },
+    { name: "Bookings", icon: <FaDollarSign />, path: "payment" },
+    {
+      name: "Categories",
+      icon: <FaServicestack />,
+      path: "service-categories",
+    },
     { name: "Service Providers", icon: <FaInbox />, path: "service-providers" },
     { name: "User management", icon: <FaInbox />, path: "user-management" },
     { name: "Analytics", icon: <FaChartLine />, path: "analytics" },
@@ -27,19 +30,24 @@ const navLinks =(logoutAdmin)=>({
   ],
   other: [
     { name: "Settings", icon: <FaCog />, path: "settings" },
-    { name: "Logout", icon: <FaSignOutAlt />, danger: true, path: "/logout",onClick:logoutAdmin },
+    {
+      name: "Logout",
+      icon: <FaSignOutAlt />,
+      danger: true,
+      path: "/logout",
+      onClick: logoutAdmin,
+    },
   ],
 });
 
-
-
-const Sidebar = ({collapsed = false, onLinkClick }) => {
-  const { logoutAdmin, admin, unreadBookingCount } = useAdmin();
-  const { unreadCount } = useAdminNotifications();
+const Sidebar = ({ collapsed = false, onLinkClick }) => {
+  const { logoutAdmin, admin, unreadBookingCount, unreadCount } = useAdmin();
   const links = navLinks(logoutAdmin);
-  const location = useLocation()
+  const location = useLocation();
 
-   const isOnNotificationsPage = location.pathname.includes('/admin/notifications');
+  const isOnNotificationsPage = location.pathname.includes(
+    "/admin/notifications",
+  );
 
   return (
     <div
@@ -122,8 +130,8 @@ const Sidebar = ({collapsed = false, onLinkClick }) => {
                             ? "9+"
                             : totalUnread
                           : totalUnread > 99
-                          ? "99+"
-                          : totalUnread}
+                            ? "99+"
+                            : totalUnread}
                       </span>
                     )}
 
@@ -143,8 +151,29 @@ const Sidebar = ({collapsed = false, onLinkClick }) => {
                             ? "9+"
                             : unreadBookingCount
                           : unreadBookingCount > 99
-                          ? "99+"
-                          : unreadBookingCount}
+                            ? "99+"
+                            : unreadBookingCount}
+                      </span>
+                    )}
+
+                  {/* Unread notification count for Notification */}
+                  {link.name === "Notification" &&
+                    unreadCount > 0 &&
+                    !isOnNotificationsPage && (
+                      <span
+                        className={`absolute ${
+                          collapsed
+                            ? "-top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center"
+                            : "right-3 bg-red-500 text-white text-xs font-bold rounded-full px-2 py-1 min-w-5 text-center"
+                        }`}
+                      >
+                        {collapsed
+                          ? unreadCount > 9
+                            ? "9+"
+                            : unreadCount
+                          : unreadCount > 99
+                            ? "99+"
+                            : unreadCount}
                       </span>
                     )}
                 </NavLink>
@@ -219,9 +248,10 @@ const Sidebar = ({collapsed = false, onLinkClick }) => {
               <span className="text-gray-900 font-medium">SP</span>
             </div>
             <div>
-               <p className="text-sm text-gray-400">{admin?.name || "service provider"}</p>
-              <p className="font-medium">{admin?.Role || 'service provider'}</p>
-             
+              <p className="text-sm text-gray-400">
+                {admin?.name || "service provider"}
+              </p>
+              <p className="font-medium">{admin?.Role || "service provider"}</p>
             </div>
           </div>
         </div>
@@ -229,6 +259,5 @@ const Sidebar = ({collapsed = false, onLinkClick }) => {
     </div>
   );
 };
-
 
 export default Sidebar;

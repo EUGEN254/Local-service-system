@@ -4,14 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { FaUserShield } from "react-icons/fa";
 import { useAdmin } from "../context/AdminContext";
-import { loginAdmin } from "../services/adminAuthService";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { fetchCurrentAdmin } = useAdmin();
+  const adminAuth = useAdmin();
+
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -19,31 +19,17 @@ const AdminLogin = () => {
     if (!email || !password) {
       return toast.error("Email and password are required");
     }
-
     setLoading(true);
-
     try {
-      const data = await loginAdmin(email, password, "admin");
-
-      if (data.success && data.user) {
-        if (data.user.role !== "admin") {
-          toast.error("Access denied. Admin privileges required.");
-          return;
-        }
-
-        localStorage.setItem("isAdminLoggedIn", "true");
-        localStorage.setItem("adminUser", JSON.stringify(data.user));
-
-        toast.success(data.message);
-        await fetchCurrentAdmin();
+      const data = await adminAuth.loginAdmin(email, password, "admin");
+      if (data.success) {
+        await adminAuth.fetchCurrentAdmin();
         navigate("/admin");
-      } else {
-        toast.error(data.message || "Login failed");
       }
     } catch (err) {
-      console.error("Login error:", err);
+      console.error(err.message)
       toast.error(
-        err.response?.data?.message || "Login failed. Please try again."
+        err.response?.data?.message || "Login failed. Please try again.",
       );
     } finally {
       setLoading(false);
