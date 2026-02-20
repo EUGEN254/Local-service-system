@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import * as categoryService from "../services/categoryService";
 import * as landingPageService from "../services/landingPageService";
+import { toast } from "sonner";
 
 /**
  * useCategories Hook
@@ -44,7 +45,7 @@ export const useLandingPage = (backendUrl) => {
       const data = await landingPageService.fetchLandingCategories(backendUrl);
       setLandingCategories(data);
     } catch (error) {
-      console.error("Error fetching landing categories:", error);
+      toast.error("Error fetching landing categories:", error);
     }
   }, [backendUrl]);
 

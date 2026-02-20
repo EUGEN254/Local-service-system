@@ -64,14 +64,14 @@ const Dashboard = () => {
         setLoading(true);
         const data = await bookingService.fetchMyBookings(backendUrl, {
           page: 1,
-          limit: 1000
+          limit: 1000,
         });
 
         if (data.success) {
           setBookings(data.bookings || []);
           const totalBookings = data.bookings?.length || 0;
           const totalPages = Math.ceil(totalBookings / pagination.limit);
-          
+
           setPagination({
             currentPage: 1,
             totalPages: totalPages,
@@ -82,7 +82,10 @@ const Dashboard = () => {
           });
         }
       } catch (err) {
-        const msg = err?.response?.data?.message || err.message || 'Error fetching bookings';
+        const msg =
+          err?.response?.data?.message ||
+          err.message ||
+          "Error fetching bookings";
         toast.error(msg);
         setBookings([]);
         setPagination({
@@ -103,12 +106,17 @@ const Dashboard = () => {
 
   // Memoize filtered requests to prevent recalculations
   const filteredRequests = useMemo(() => {
-    return bookings.filter((b) =>
-      (statusFilter === "" || b.status === statusFilter) &&
-      (paymentFilter === "" || 
-        (paymentFilter === "Paid" ? b.is_paid : 
-         paymentFilter === "Cash" ? b.paymentMethod === "Cash" : 
-         paymentFilter === "Not Paid" ? !b.is_paid : true))
+    return bookings.filter(
+      (b) =>
+        (statusFilter === "" || b.status === statusFilter) &&
+        (paymentFilter === "" ||
+          (paymentFilter === "Paid"
+            ? b.is_paid
+            : paymentFilter === "Cash"
+              ? b.paymentMethod === "Cash"
+              : paymentFilter === "Not Paid"
+                ? !b.is_paid
+                : true)),
     );
   }, [bookings, statusFilter, paymentFilter]);
 
@@ -137,9 +145,12 @@ const Dashboard = () => {
   useEffect(() => {
     const totalFiltered = filteredRequests.length;
     const totalPages = Math.ceil(totalFiltered / pagination.limit);
-    const currentPage = Math.min(pagination.currentPage, Math.max(1, totalPages));
-    
-    setPagination(prev => ({
+    const currentPage = Math.min(
+      pagination.currentPage,
+      Math.max(1, totalPages),
+    );
+
+    setPagination((prev) => ({
       ...prev,
       totalPages: totalPages,
       totalBookings: totalFiltered,
@@ -208,13 +219,11 @@ const Dashboard = () => {
       }));
   }, [bookings, timeFilter]);
 
-  // Enhanced summary cards for users 
+  // Enhanced summary cards for users
   useEffect(() => {
     const totalSpent = bookings
       .filter((b) => b.is_paid)
       .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-
-    
 
     const upcomingBookings = bookings.filter(
       (b) =>
@@ -222,7 +231,6 @@ const Dashboard = () => {
         b.status !== "Cancelled" &&
         b.status !== "Completed",
     );
-    
 
     setSummaryCards([
       {
@@ -280,37 +288,40 @@ const Dashboard = () => {
   }, [bookings, currSymbol]);
 
   // Pie chart data for service status distribution
-  const pieChartData = useMemo(() => [
-    {
-      name: "Completed",
-      value: bookings.filter((b) => b.status === "Completed").length,
-      color: "#10B981", // Green
-    },
-    {
-      name: "In Progress",
-      value: bookings.filter(
-        (b) => b.status === "Waiting for Work" || b.status === "In Progress",
-      ).length,
-      color: "#F59E0B", // Amber
-    },
-    {
-      name: "Pending",
-      value: bookings.filter((b) => b.status === "Pending").length,
-      color: "#3B82F6", // Blue
-    },
-    {
-      name: "Cancelled",
-      value: bookings.filter((b) => b.status === "Cancelled").length,
-      color: "#EF4444", // Red
-    },
-  ], [bookings]);
+  const pieChartData = useMemo(
+    () => [
+      {
+        name: "Completed",
+        value: bookings.filter((b) => b.status === "Completed").length,
+        color: "#10B981", // Green
+      },
+      {
+        name: "In Progress",
+        value: bookings.filter(
+          (b) => b.status === "Waiting for Work" || b.status === "In Progress",
+        ).length,
+        color: "#F59E0B", // Amber
+      },
+      {
+        name: "Pending",
+        value: bookings.filter((b) => b.status === "Pending").length,
+        color: "#3B82F6", // Blue
+      },
+      {
+        name: "Cancelled",
+        value: bookings.filter((b) => b.status === "Cancelled").length,
+        color: "#EF4444", // Red
+      },
+    ],
+    [bookings],
+  );
 
   // Pagination handlers
   const handlePageChange = (page) => {
     if (page >= 1 && page <= pagination.totalPages) {
-      setPagination(prev => ({ ...prev, currentPage: page }));
+      setPagination((prev) => ({ ...prev, currentPage: page }));
       // Scroll to top of table
-      const tableContainer = document.querySelector('.table-container');
+      const tableContainer = document.querySelector(".table-container");
       if (tableContainer) {
         tableContainer.scrollTop = 0;
       }
@@ -320,8 +331,8 @@ const Dashboard = () => {
   const handleLimitChange = (newLimit) => {
     const limit = parseInt(newLimit);
     const totalPages = Math.ceil(filteredRequests.length / limit);
-    
-    setPagination(prev => ({
+
+    setPagination((prev) => ({
       ...prev,
       limit: limit,
       currentPage: 1,
@@ -408,7 +419,7 @@ const Dashboard = () => {
   const handleView = async (serviceId, index) => {
     try {
       const data = await fetchProviderDetails(backendUrl, serviceId);
-  
+
       if (data.success) {
         setSelectedService(data.data || data);
         const button = buttonRefs.current[index];
@@ -429,11 +440,13 @@ const Dashboard = () => {
         setServiceModalOpen(true);
       }
     } catch (err) {
-      const msg = err?.response?.data?.message || err.message || 'Error fetching service details';
+      const msg =
+        err?.response?.data?.message ||
+        err.message ||
+        "Error fetching service details";
       toast.error(msg);
     }
   };
-
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -535,7 +548,10 @@ const Dashboard = () => {
           </div>
 
           {/* Service Requests Table */}
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden mb-8 flex flex-col" style={{ height: '600px' }}>
+          <div
+            className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden mb-8 flex flex-col"
+            style={{ height: "600px" }}
+          >
             <div className="p-6 border-b border-gray-200 shrink-0">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <h2 className="text-xl font-bold text-gray-900">
@@ -594,18 +610,22 @@ const Dashboard = () => {
                     <option value="15">15</option>
                     <option value="20">20</option>
                   </select>
-                  <span className="text-sm text-gray-600">requests per page</span>
+                  <span className="text-sm text-gray-600">
+                    requests per page
+                  </span>
                 </div>
 
                 {/* Page info */}
                 <div className="text-sm text-gray-600">
                   Showing{" "}
                   <span className="font-semibold text-gray-800">
-                    {filteredRequests.length === 0 ? 0 : 
-                      (pagination.currentPage - 1) * pagination.limit + 1}-
+                    {filteredRequests.length === 0
+                      ? 0
+                      : (pagination.currentPage - 1) * pagination.limit + 1}
+                    -
                     {Math.min(
                       pagination.currentPage * pagination.limit,
-                      filteredRequests.length
+                      filteredRequests.length,
                     )}
                   </span>{" "}
                   of{" "}
@@ -620,7 +640,9 @@ const Dashboard = () => {
                   {/* First page */}
                   <button
                     onClick={() => handlePageChange(1)}
-                    disabled={!pagination.hasPrevPage || pagination.currentPage === 1}
+                    disabled={
+                      !pagination.hasPrevPage || pagination.currentPage === 1
+                    }
                     className={`p-2 rounded-lg transition-colors ${
                       !pagination.hasPrevPage || pagination.currentPage === 1
                         ? "text-gray-300 cursor-not-allowed"
@@ -813,7 +835,9 @@ const Dashboard = () => {
                         >
                           <div className="flex flex-col items-center">
                             <HiExclamationCircle className="text-3xl text-gray-400 mb-2" />
-                            <p>No service requests found for selected filters.</p>
+                            <p>
+                              No service requests found for selected filters.
+                            </p>
                             <p className="text-sm mt-1">
                               Try changing your filter criteria.
                             </p>
@@ -836,7 +860,9 @@ const Dashboard = () => {
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handlePageChange(1)}
-                      disabled={!pagination.hasPrevPage || pagination.currentPage === 1}
+                      disabled={
+                        !pagination.hasPrevPage || pagination.currentPage === 1
+                      }
                       className={`px-3 py-1.5 rounded-lg transition-colors ${
                         !pagination.hasPrevPage || pagination.currentPage === 1
                           ? "text-gray-300 cursor-not-allowed"
@@ -846,7 +872,9 @@ const Dashboard = () => {
                       First
                     </button>
                     <button
-                      onClick={() => handlePageChange(pagination.currentPage - 1)}
+                      onClick={() =>
+                        handlePageChange(pagination.currentPage - 1)
+                      }
                       disabled={!pagination.hasPrevPage}
                       className={`px-3 py-1.5 rounded-lg transition-colors ${
                         !pagination.hasPrevPage
@@ -857,7 +885,9 @@ const Dashboard = () => {
                       Previous
                     </button>
                     <button
-                      onClick={() => handlePageChange(pagination.currentPage + 1)}
+                      onClick={() =>
+                        handlePageChange(pagination.currentPage + 1)
+                      }
                       disabled={!pagination.hasNextPage}
                       className={`px-3 py-1.5 rounded-lg transition-colors ${
                         !pagination.hasNextPage
@@ -926,8 +956,8 @@ const Dashboard = () => {
                 </span>
               </div>
 
-              <div className="w-full h-64">
-                <ResponsiveContainer width={"100%"} height={100}>
+              <div className="w-full h-84">
+                <ResponsiveContainer width={"100%"} height="100%">
                   <BarChart
                     data={computeChartData}
                     margin={{ top: 20, bottom: 5 }}
@@ -968,7 +998,7 @@ const Dashboard = () => {
               </h3>
 
               <div className="w-full h-64">
-                <ResponsiveContainer width={"100%"} height={100}>
+                <ResponsiveContainer width={"100%"} height="100%">
                   <PieChart>
                     <Pie
                       data={pieChartData}
@@ -1089,7 +1119,6 @@ const Dashboard = () => {
                       {selectedService.provider?.phone}
                     </span>
                   </div>
-
                 </div>
               </div>
 

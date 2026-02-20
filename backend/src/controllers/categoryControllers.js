@@ -7,13 +7,14 @@ export const getCategories = async (req, res) => {
   try {
     const categories = await Category.find().sort({ createdAt: -1 });
 
-    // Compute servicesCount for each category by counting plumbing services
+    // Compute servicesCount for each category by counting 
     const categoriesWithCounts = await Promise.all(
       categories.map(async (cat) => {
         const count = await PlumbingService.countDocuments({ category: cat.name });
         return { ...cat.toObject(), servicesCount: count };
       })
     );
+
 
     res.json({
       success: true,

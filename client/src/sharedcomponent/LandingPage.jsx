@@ -12,6 +12,8 @@ import {
   FaChevronDown,
   FaTachometerAlt,
   FaCog,
+  FaFilter,
+  FaTimes
 } from "react-icons/fa";
 
 const LandingPage = () => {
@@ -22,7 +24,7 @@ const LandingPage = () => {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const { user, logoutUser, backendUrl, currSymbol } = useContext(ShareContext);
 
-  // Use hooks directly
+  // hooks from uselanding
   const {
     landingCategories,
     landingServices,
@@ -35,6 +37,7 @@ const LandingPage = () => {
   const [showProviderModal, setShowProviderModal] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
   // Helper function to get correct dashboard path based on user role
   const getDashboardPath = () => {
@@ -80,7 +83,7 @@ const LandingPage = () => {
         serviceId,
       );
       if (data.success) {
-        setSelectedProvider(data.data); // Set the entire data object, not just provider
+        setSelectedProvider(data.data);
         setShowProviderModal(true);
       } else {
         toast.error(data.message);
@@ -92,7 +95,6 @@ const LandingPage = () => {
 
   // Handle booking attempt from provider modal
   const handleBookClick = (provider) => {
-    // If not logged in, show signup/login
     if (!user) {
       setAuthMode("Sign Up");
       setShowAuthModal(true);
@@ -100,7 +102,6 @@ const LandingPage = () => {
       return;
     }
 
-    // Prevent booking own services
     const userId = user?._id || user?.id || user?.userId;
     const providerId = provider?._id || provider?.id || provider?._id;
     if (userId && providerId && userId.toString() === providerId.toString()) {
@@ -108,7 +109,6 @@ const LandingPage = () => {
       return;
     }
 
-    // If signed in as a service provider, show warning and CTA to switch role
     if (user?.role === "service-provider" || user?.role === "serviceprovider") {
       toast.warn(
         <div>
@@ -133,10 +133,8 @@ const LandingPage = () => {
       return;
     }
 
-    // Navigate to payment with service data
     navigate("/user/payment", { state: { service: selectedProvider?.service } });
     setShowProviderModal(false);
-   
   };
 
   // Render star rating with colors
@@ -148,21 +146,131 @@ const LandingPage = () => {
     ));
   };
 
-  // view of service provider modal
+  // Mobile Filter Sidebar Component
+  const MobileFilterSidebar = () => (
+    <div className="fixed inset-0 z-50 lg:hidden">
+      {/* Backdrop */}
+      <div 
+        className="fixed inset-0 bg-black/50 transition-opacity"
+        onClick={() => setIsMobileFilterOpen(false)}
+      />
+      
+      {/* Sidebar */}
+      <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
+        isMobileFilterOpen ? 'translate-x-0' : 'translate-x-full'
+      }`}>
+        {/* Header */}
+        <div className="flex items-center justify-between p-5 border-b border-gray-200">
+          <h2 className="text-xl font-bold text-gray-900">Categories</h2>
+          <button
+            onClick={() => setIsMobileFilterOpen(false)}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <FaTimes className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Categories List */}
+        <div className="p-5 overflow-y-auto h-full pb-24">
+          <button
+            onClick={() => {
+              setSelectedCategory("All");
+              setIsMobileFilterOpen(false);
+              setTimeout(() => {
+                document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
+              }, 100);
+            }}
+            className={`w-full flex items-center gap-4 p-4 rounded-lg text-left mb-2 ${
+              selectedCategory === "All"
+                ? "bg-gray-900 text-white"
+                : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+            }`}
+          >
+            <div className={`w-10 h-10 flex items-center justify-center rounded-lg ${
+              selectedCategory === "All"
+                ? "bg-white/20 text-white"
+                : "bg-gray-200 text-gray-700"
+            }`}>
+              <span className="font-bold text-lg">All</span>
+            </div>
+            <div className="flex-1">
+              <h3 className="font-medium">All Categories</h3>
+              <p className="text-sm opacity-80">View all services</p>
+            </div>
+            <span className="text-sm font-medium px-2 py-1 bg-white/20 rounded">
+              {landingServices.length}
+            </span>
+          </button>
+
+          {landingCategories.map((category) => (
+            <button
+              key={category._id}
+              onClick={() => {
+                setSelectedCategory(category.name);
+                setIsMobileFilterOpen(false);
+                setTimeout(() => {
+                  document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
+              className={`w-full flex items-center gap-4 p-4 rounded-lg text-left mb-2 ${
+                selectedCategory === category.name
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-50 text-gray-700 hover:bg-gray-100"
+              }`}
+            >
+              {category.image ? (
+                <img
+                  src={category.image}
+                  alt={category.name}
+                  className="w-10 h-10 object-cover rounded-lg"
+                />
+              ) : (
+                <div className={`w-10 h-10 flex items-center justify-center rounded-lg ${
+                  selectedCategory === category.name
+                    ? "bg-white/20"
+                    : "bg-gray-200"
+                }`}>
+                  <span className="font-bold text-lg">
+                    {category.name?.charAt(0)}
+                  </span>
+                </div>
+              )}
+              <div className="flex-1 text-left">
+                <h3 className="font-medium">{category.name}</h3>
+                <p className="text-sm opacity-80 line-clamp-1">
+                  {category.description}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+
+        {/* Footer with stats */}
+        <div className="absolute bottom-0 left-0 right-0 p-5 bg-white border-t border-gray-200">
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">Selected:</span>
+            <span className="text-sm font-medium text-gray-900">
+              {selectedCategory}
+            </span>
+          </div>
+          <div className="flex items-center justify-between mt-2">
+            <span className="text-sm text-gray-600">Services:</span>
+            <span className="text-sm font-medium bg-gray-100 px-3 py-1 rounded-full">
+              {filteredServices.length}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Provider Details Modal Component
   const ProviderDetailsModal = () => {
     if (!selectedProvider) return null;
 
     const provider = selectedProvider.provider || selectedProvider;
     const info = provider.serviceProviderInfo || {};
     const ratings = selectedProvider.ratings || { averageRating: 0, totalReviews: 0, reviews: [] };
-
-    const renderStars = (rating) => {
-      return Array.from({ length: 5 }, (_, i) => (
-        <span key={i} className={`text-lg ${i < Math.round(rating) ? 'text-yellow-400' : 'text-gray-300'}`}>
-          ★
-        </span>
-      ));
-    };
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -489,7 +597,7 @@ const LandingPage = () => {
                 {/* Dashboard button */}
                 <button
                   onClick={() => navigate(getDashboardPath())}
-                  className="hidden md:block text-gray-700 hover:text-gray-900 font-medium  px-4 py-2  hover:bg-gray-100"
+                  className="hidden md:block text-gray-700 hover:text-gray-900 font-medium px-4 py-2 hover:bg-gray-100"
                 >
                   Dashboard
                 </button>
@@ -591,7 +699,7 @@ const LandingPage = () => {
             <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-8 leading-tight">
               Find Trusted{" "}
               <span className="text-white">
-                Home Mantainance Service Providers
+                Home Maintenance Service Providers
               </span>
             </h1>
 
@@ -679,14 +787,32 @@ const LandingPage = () => {
         </div>
       </div>
 
-      {/* Main Content - Sidebar Layout */}
-      <div
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
-        id="categories"
-      >
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" id="categories">
+        {/* Mobile Filter Button - visible only on small screens */}
+        <div className="lg:hidden mb-6">
+          <button
+            onClick={() => setIsMobileFilterOpen(true)}
+            className="w-full flex items-center justify-between bg-white border border-gray-200 rounded-lg p-4 shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              <FaFilter className="text-gray-500" />
+              <span className="font-medium text-gray-900">Filter by Category</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
+                {selectedCategory}
+              </span>
+              <span className="text-sm font-medium bg-gray-900 text-white px-3 py-1 rounded-full">
+                {filteredServices.length}
+              </span>
+            </div>
+          </button>
+        </div>
+
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Left Sidebar - Categories */}
-          <div className="lg:w-1/3">
+          {/* Left Sidebar - Categories (Desktop only) */}
+          <div className="hidden lg:block lg:w-1/3">
             <div className="sticky top-24 bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
               <h2 className="text-xl font-bold text-gray-900 mb-6">
                 Browse Categories
@@ -704,69 +830,123 @@ const LandingPage = () => {
                     ))}
                   </div>
                 ) : landingCategories.length > 0 ? (
-                  landingCategories.map((category) => (
+                  <>
+                    {/* "All" category button */}
                     <button
-                      key={category._id}
-                      onClick={() => setSelectedCategory(category.name)}
+                      onClick={() => {
+                        setSelectedCategory("All");
+                        document.getElementById('services')?.scrollIntoView({ 
+                          behavior: 'smooth' 
+                        });
+                      }}
                       className={`w-full flex items-center gap-4 p-4 rounded-lg text-left ${
-                        selectedCategory === category.name
-                          ? "bg-gray-100 border border-gray-300"
+                        selectedCategory === "All"
+                          ? "bg-gray-900 text-white"
                           : "hover:bg-gray-50"
                       }`}
                     >
-                      {/* Category Image - fixed to use img tag */}
-                      {category.image ? (
-                        <img
-                          src={category.image}
-                          alt={category.name}
-                          className="w-10 h-10 object-cover rounded-lg"
-                        />
-                      ) : (
-                        <div
-                          className={`w-10 h-10 flex items-center justify-center rounded-lg ${
-                            selectedCategory === category.name
-                              ? "bg-gray-900 text-white"
-                              : "bg-gray-100 text-gray-700"
-                          }`}
-                        >
-                          <span className="font-bold">
-                            {category.name?.charAt(0)}
-                          </span>
-                        </div>
-                      )}
-
+                      <div className={`w-10 h-10 flex items-center justify-center rounded-lg ${
+                        selectedCategory === "All"
+                          ? "bg-white/20"
+                          : "bg-gray-100 text-gray-700"
+                      }`}>
+                        <span className="font-bold text-lg">All</span>
+                      </div>
                       <div className="flex-1 min-w-0">
-                        <h3
-                          className={`font-medium ${
-                            selectedCategory === category.name
-                              ? "text-gray-900"
-                              : "text-gray-700"
-                          }`}
-                        >
-                          {category.name}
+                        <h3 className={`font-medium ${
+                          selectedCategory === "All" ? "text-white" : "text-gray-900"
+                        }`}>
+                          All Categories
                         </h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {category.description}
+                        <p className={`text-sm mt-1 ${
+                          selectedCategory === "All" ? "text-white/80" : "text-gray-500"
+                        }`}>
+                          View all services
                         </p>
                       </div>
-
-                      {selectedCategory === category.name && (
-                        <div className="text-gray-900">
-                          <svg
-                            className="w-4 h-4"
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        </div>
-                      )}
+                      <span className={`text-sm font-medium px-2 py-1 rounded ${
+                        selectedCategory === "All"
+                          ? "bg-white/20 text-white"
+                          : "bg-gray-100 text-gray-700"
+                      }`}>
+                        {landingServices.length}
+                      </span>
                     </button>
-                  ))
+
+                    {landingCategories.map((category) => (
+                      <button
+                        key={category._id}
+                        onClick={() => {
+                          setSelectedCategory(category.name);
+                          document.getElementById('services')?.scrollIntoView({ 
+                            behavior: 'smooth' 
+                          });
+                        }}
+                        className={`w-full flex items-center gap-4 p-4 rounded-lg text-left ${
+                          selectedCategory === category.name
+                            ? "bg-gray-900 text-white"
+                            : "hover:bg-gray-50"
+                        }`}
+                      >
+                        {category.image ? (
+                          <img
+                            src={category.image}
+                            alt={category.name}
+                            className="w-10 h-10 object-cover rounded-lg"
+                          />
+                        ) : (
+                          <div
+                            className={`w-10 h-10 flex items-center justify-center rounded-lg ${
+                              selectedCategory === category.name
+                                ? "bg-white/20"
+                                : "bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            <span className="font-bold text-lg">
+                              {category.name?.charAt(0)}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="flex-1 min-w-0">
+                          <h3
+                            className={`font-medium ${
+                              selectedCategory === category.name
+                                ? "text-white"
+                                : "text-gray-900"
+                            }`}
+                          >
+                            {category.name}
+                          </h3>
+                          <p
+                            className={`text-sm mt-1 line-clamp-1 ${
+                              selectedCategory === category.name
+                                ? "text-white/80"
+                                : "text-gray-500"
+                            }`}
+                          >
+                            {category.description}
+                          </p>
+                        </div>
+
+                        {selectedCategory === category.name && (
+                          <div className="text-white">
+                            <svg
+                              className="w-4 h-4"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </>
                 ) : (
                   <p className="text-gray-500 text-center py-4">
                     No categories available
@@ -893,12 +1073,12 @@ const LandingPage = () => {
                   >
                     <div
                       onClick={() => handleQuickView(service._id)}
-                      className="relative overflow-hidden h-48"
+                      className="relative overflow-hidden h-48 cursor-pointer"
                     >
                       <img
                         src={service.image}
                         alt={service.serviceName}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                       />
                       <div className="absolute top-3 right-3">
                         <span className="bg-white text-gray-900 text-xs font-medium px-2 py-1 rounded">
@@ -943,9 +1123,7 @@ const LandingPage = () => {
 
                       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                         <button
-                          onClick={() =>
-                            handleQuickView(service._id)
-                          }
+                          onClick={() => handleQuickView(service._id)}
                           className="text-gray-600 hover:text-gray-900 font-medium text-sm"
                         >
                           Quick View
@@ -957,9 +1135,8 @@ const LandingPage = () => {
                                 navigate("/user/payment", {
                                   state: { service },
                                 });
-                                window.scrollTo(0, 0);
                               } else {
-                                toast.info("kindly register as a customer");
+                                toast.info("Kindly register as a customer");
                               }
                             }}
                             className="bg-gray-900 hover:bg-gray-800 text-white font-medium px-4 py-2 rounded transition-colors"
@@ -1063,7 +1240,7 @@ const LandingPage = () => {
                 </button>
                 <button
                   onClick={() => {
-                    document.querySelector("#services")?.scrollIntoView({ behavior: "smooth" });
+                    document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
                   }}
                   className="bg-white text-gray-900 font-bold text-lg px-8 py-4 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-colors"
                 >
@@ -1132,6 +1309,10 @@ const LandingPage = () => {
       {/* Provider Details Modal */}
       {showProviderModal && <ProviderDetailsModal />}
 
+      {/* Mobile Filter Sidebar */}
+      {isMobileFilterOpen && <MobileFilterSidebar />}
+
+      {/* Learn More Modal */}
       {showLearnMore && (
         <LearnMore
           onClose={() => setShowLearnMore(false)}

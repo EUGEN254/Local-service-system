@@ -35,8 +35,13 @@ const Dashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
 
   const { customers, loadingUsers, fetchCustomers } = useAdminUsers();
-  const { serviceProviders: contextServiceProviders, loadingProviders, fetchServiceProviders } = useAdminProviders();
-  const { allBookings, loadingAllBookings, fetchAllBookings } = useAdminBookings();
+  const {
+    serviceProviders: contextServiceProviders,
+    loadingProviders,
+    fetchServiceProviders,
+  } = useAdminProviders();
+  const { allBookings, loadingAllBookings, fetchAllBookings } =
+    useAdminBookings();
 
   // Fetch customers and service providers on component mount
   useEffect(() => {
@@ -84,7 +89,7 @@ const Dashboard = () => {
         (b) =>
           b.status === "Pending" ||
           b.status === "In Progress" ||
-          b.status === "Confirmed"
+          b.status === "Confirmed",
       ).length,
     };
   }, [allBookings, customers, contextServiceProviders]);
@@ -141,7 +146,7 @@ const Dashboard = () => {
         gradient: "from-teal-500 to-teal-600",
       },
     ],
-    [summaryStats]
+    [summaryStats],
   );
 
   // Generate chart data from actual bookings
@@ -265,7 +270,9 @@ const Dashboard = () => {
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4 mb-2">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">Admin Dashboard</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
+            Admin Dashboard
+          </h1>
           <p className="text-gray-600 text-xs sm:text-sm mt-1">
             Welcome to your administration panel
           </p>
@@ -330,7 +337,9 @@ const Dashboard = () => {
                           <p className="text-xs sm:text-sm font-medium text-gray-300">
                             {card.title}
                           </p>
-                          <p className="text-lg sm:text-2xl font-bold mt-1 sm:mt-2">{card.count}</p>
+                          <p className="text-lg sm:text-2xl font-bold mt-1 sm:mt-2">
+                            {card.count}
+                          </p>
                           <p className="text-xs text-gray-400 mt-1">
                             {card.description}
                           </p>
@@ -346,7 +355,7 @@ const Dashboard = () => {
                             width: `${Math.min(
                               (card.count / (summaryStats.totalBookings || 1)) *
                                 100,
-                              100
+                              100,
                             )}%`,
                           }}
                         ></div>
@@ -422,7 +431,7 @@ const Dashboard = () => {
                           borderRadius: "12px",
                           border: "1px solid #E5E7EB",
                           boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                          fontSize: "12px"
+                          fontSize: "12px",
                         }}
                       />
                       <Bar
@@ -518,7 +527,9 @@ const Dashboard = () => {
             {loadingAllBookings ? (
               <div className="flex flex-col items-center justify-center py-8 sm:py-12">
                 <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-500 mb-3 sm:mb-4"></div>
-                <p className="text-gray-500 text-sm sm:text-base">Loading bookings data...</p>
+                <p className="text-gray-500 text-sm sm:text-base">
+                  Loading bookings data...
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -554,7 +565,7 @@ const Dashboard = () => {
                             booking.status === statusFilter) &&
                           (paymentFilter === "" ||
                             (paymentFilter === "Paid" && booking.is_paid) ||
-                            (paymentFilter === "Unpaid" && !booking.is_paid))
+                            (paymentFilter === "Unpaid" && !booking.is_paid)),
                       )
                       .map((booking, idx) => (
                         <tr
@@ -596,12 +607,12 @@ const Dashboard = () => {
                                 booking.status === "Completed"
                                   ? "bg-green-100 text-green-800"
                                   : booking.status === "Cancelled"
-                                  ? "bg-red-100 text-red-800"
-                                  : booking.status === "In Progress"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : booking.status === "Confirmed"
-                                  ? "bg-purple-100 text-purple-800"
-                                  : "bg-yellow-100 text-yellow-800"
+                                    ? "bg-red-100 text-red-800"
+                                    : booking.status === "In Progress"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : booking.status === "Confirmed"
+                                        ? "bg-purple-100 text-purple-800"
+                                        : "bg-yellow-100 text-yellow-800"
                               }`}
                             >
                               {booking.status}
@@ -636,7 +647,7 @@ const Dashboard = () => {
                           </td>
                           <td className="p-3 sm:p-4 text-xs sm:text-sm text-gray-900">
                             {new Date(
-                              booking.delivery_date || booking.createdAt
+                              booking.delivery_date || booking.createdAt,
                             ).toLocaleDateString()}
                           </td>
                         </tr>
@@ -648,12 +659,16 @@ const Dashboard = () => {
                     (statusFilter === "" || booking.status === statusFilter) &&
                     (paymentFilter === "" ||
                       (paymentFilter === "Paid" && booking.is_paid) ||
-                      (paymentFilter === "Unpaid" && !booking.is_paid))
+                      (paymentFilter === "Unpaid" && !booking.is_paid)),
                 ).length === 0 && (
                   <div className="flex flex-col items-center justify-center py-8 sm:py-12 text-gray-500">
                     <i className="fas fa-inbox text-2xl sm:text-4xl mb-2 sm:mb-3 text-gray-300"></i>
-                    <p className="text-sm sm:text-lg font-medium">No bookings found</p>
-                    <p className="text-xs sm:text-sm">Try adjusting your filters</p>
+                    <p className="text-sm sm:text-lg font-medium">
+                      No bookings found
+                    </p>
+                    <p className="text-xs sm:text-sm">
+                      Try adjusting your filters
+                    </p>
                   </div>
                 )}
               </div>
@@ -695,13 +710,19 @@ const Dashboard = () => {
             {loadingUsers ? (
               <div className="flex flex-col items-center justify-center py-8 sm:py-12">
                 <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-500 mb-3 sm:mb-4"></div>
-                <p className="text-gray-500 text-sm sm:text-base">Loading customers...</p>
+                <p className="text-gray-500 text-sm sm:text-base">
+                  Loading customers...
+                </p>
               </div>
             ) : customers.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 sm:py-12 text-gray-500">
                 <i className="fas fa-users text-2xl sm:text-4xl mb-2 sm:mb-3 text-gray-300"></i>
-                <p className="text-sm sm:text-lg font-medium">No customers found</p>
-                <p className="text-xs sm:text-sm">Start by adding your first customer</p>
+                <p className="text-sm sm:text-lg font-medium">
+                  No customers found
+                </p>
+                <p className="text-xs sm:text-sm">
+                  Start by adding your first customer
+                </p>
               </div>
             ) : (
               <table className="w-full min-w-[600px]">
@@ -762,8 +783,8 @@ const Dashboard = () => {
                             customer.status === "active"
                               ? "bg-green-100 text-green-800"
                               : customer.status === "inactive"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-gray-100 text-gray-800"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-gray-100 text-gray-800"
                           }`}
                         >
                           {customer.status || "active"}
@@ -811,7 +832,9 @@ const Dashboard = () => {
             {loadingProviders ? (
               <div className="flex flex-col items-center justify-center py-8 sm:py-12">
                 <div className="animate-spin rounded-full h-8 w-8 sm:h-12 sm:w-12 border-b-2 border-blue-500 mb-3 sm:mb-4"></div>
-                <p className="text-gray-500 text-sm sm:text-base">Loading service providers...</p>
+                <p className="text-gray-500 text-sm sm:text-base">
+                  Loading service providers...
+                </p>
               </div>
             ) : contextServiceProviders.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 sm:py-12 text-gray-500">
@@ -897,8 +920,8 @@ const Dashboard = () => {
                             provider.status === "active"
                               ? "bg-green-100 text-green-800"
                               : provider.status === "inactive"
-                              ? "bg-red-100 text-red-800"
-                              : "bg-gray-100 text-gray-800"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-gray-100 text-gray-800"
                           }`}
                         >
                           {provider.status || "active"}

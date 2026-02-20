@@ -7,6 +7,7 @@ import {
   FaInbox,
   FaTachometerAlt,
   FaCog,
+  FaHome,
 } from "react-icons/fa";
 import { ShareContext } from "../../sharedcontext/SharedContext";
 import { assets } from "../../assets/assets";
@@ -17,7 +18,6 @@ const Navbar = ({ onMenuClick }) => {
   const navigate = useNavigate();
   const { user, logoutUser, totalUnread, notificationUnreadCount } =
     useContext(ShareContext);
-
 
   return (
     <div className="flex ml-1 items-center justify-between px-4 md:px-9 py-3 bg-white shadow-md">
@@ -34,7 +34,7 @@ const Navbar = ({ onMenuClick }) => {
         <div className="hidden md:block">
           <img
             src={user?.image || assets.avatar_icon}
-            alt="logo"
+            alt="user-image"
             className="w-10 h-10 rounded-full"
           />
         </div>
@@ -69,7 +69,7 @@ const Navbar = ({ onMenuClick }) => {
           <FaBell className="text-gray-600 text-lg" />
           {notificationUnreadCount > 0 && (
             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded-full min-w-[1.5rem] flex items-center justify-center">
-              {notificationUnreadCount > 99 ? '99+' : notificationUnreadCount}
+              {notificationUnreadCount > 99 ? "99+" : notificationUnreadCount}
             </span>
           )}
         </div>
@@ -93,9 +93,21 @@ const Navbar = ({ onMenuClick }) => {
                 <p className="text-lg font-medium text-gray-900">
                   {user?.name}
                 </p>
-                <p className="text-base text-gray-500 truncate">{user?.email}</p>
+                <p className="text-base text-gray-500 truncate">
+                  {user?.email}
+                </p>
               </div>
               <div className="py-1">
+                <button
+                  onClick={() => {
+                    navigate("/");
+                    setDropdownOpen(false);
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-3 text-gray-700 hover:bg-gray-50 transition-colors text-base"
+                >
+                  <FaHome className="text-gray-500" />
+                  <span className="font-medium">Home</span>
+                </button>
                 <button
                   onClick={() => {
                     navigate("/user/dashboard");
@@ -106,6 +118,7 @@ const Navbar = ({ onMenuClick }) => {
                   <FaTachometerAlt className="text-gray-500" />
                   <span className="font-medium">Dashboard</span>
                 </button>
+
                 <button
                   onClick={() => {
                     navigate("/user/settings");

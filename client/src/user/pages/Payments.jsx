@@ -22,11 +22,6 @@ const Payments = () => {
   const navigate = useNavigate();
   const { backendUrl, currSymbol } = useContext(ShareContext);
 
-  // Scroll to top when component mounts
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
-
   const { service } = location.state || {};
   const [paymentHistory, setPaymentHistory] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -46,13 +41,16 @@ const Payments = () => {
       const data = await bookingService.fetchMyBookings(backendUrl, {
         page: 1,
         limit: 100,
-        paymentStatus: "all"
+        paymentStatus: "all",
       });
       if (data.success) {
         setPaymentHistory(data.bookings || []);
       }
     } catch (err) {
-      const msg = err?.response?.data?.message || err.message || 'Failed to fetch payment history';
+      const msg =
+        err?.response?.data?.message ||
+        err.message ||
+        "Failed to fetch payment history";
       toast.error(msg);
     } finally {
       setLoadingHistory(false);
@@ -202,7 +200,10 @@ const Payments = () => {
 
       checkStatus();
     } catch (err) {
-      const msg = err?.response?.data?.message || err.message || 'Payment failed. Please try again.';
+      const msg =
+        err?.response?.data?.message ||
+        err.message ||
+        "Payment failed. Please try again.";
       toast.error(msg);
       setMessage("");
       setError(msg);
@@ -300,8 +301,15 @@ const Payments = () => {
     </div>
   );
 
+  useEffect(() => {
+    // Scroll to specific section when component mounts
+    document.getElementById("payment-section")?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
+    <div className="min-h-screen bg-gray-50 py-8 px-4" id="payment-section">
       <div className="max-w-4xl mx-auto">
         <button
           onClick={() => navigate(-1)}
@@ -324,272 +332,276 @@ const Payments = () => {
             </div>
 
             <div className="grid md:grid-cols-2 gap-8">
-          {/* Left: Service Details */}
-          <div>
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-              <h3 className="text-lg font-semibold mb-4">Service Details</h3>
-              <div className="flex gap-4">
-                <div className="flex-shrink-0">
-                  {displayService.image ? (
-                    <img
-                      src={displayService.image}
-                      alt={displayService.serviceName}
-                      className="w-24 h-24 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center">
-                      <span className="text-gray-400">No Image</span>
+              {/* Left: Service Details */}
+              <div>
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                  <h3 className="text-lg font-semibold mb-4">
+                    Service Details
+                  </h3>
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0">
+                      {displayService.image ? (
+                        <img
+                          src={displayService.image}
+                          alt={displayService.serviceName}
+                          className="w-24 h-24 rounded-lg object-cover"
+                        />
+                      ) : (
+                        <div className="w-24 h-24 rounded-lg bg-gray-100 flex items-center justify-center">
+                          <span className="text-gray-400">No Image</span>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="flex-1">
-                  <h4 className="text-xl font-bold text-gray-900">
-                    {displayService.serviceName}
-                  </h4>
-                  <p className="text-gray-600 mb-2">
-                    Category: {displayService.category}
-                  </p>
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="flex text-yellow-400">
-                      {[...Array(5)].map((_, i) => (
-                        <FaStar key={i} className="w-4 h-4" />
-                      ))}
+                    <div className="flex-1">
+                      <h4 className="text-xl font-bold text-gray-900">
+                        {displayService.serviceName}
+                      </h4>
+                      <p className="text-gray-600 mb-2">
+                        Category: {displayService.category}
+                      </p>
+                      <div className="flex items-center gap-2 mb-3">
+                        <div className="flex text-yellow-400">
+                          {[...Array(5)].map((_, i) => (
+                            <FaStar key={i} className="w-4 h-4" />
+                          ))}
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          (4.8 • 124 reviews)
+                        </span>
+                      </div>
+                      <div className="text-2xl font-bold text-gray-900">
+                        {currSymbol} {displayService.amount.toLocaleString()}
+                      </div>
                     </div>
-                    <span className="text-sm text-gray-500">
-                      (4.8 • 124 reviews)
-                    </span>
-                  </div>
-                  <div className="text-2xl font-bold text-gray-900">
-                    {currSymbol} {displayService.amount.toLocaleString()}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Contact Details Form */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold mb-6">Your Details</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <div className="flex items-center gap-1">
-                      <FiUser className="w-4 h-4 text-gray-500" />
-                      <span>Full Name</span>
-                      <span className="text-red-500">*</span>
-                    </div>
-                  </label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleChange}
-                    placeholder="Enter your full name"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <div className="flex items-center gap-1">
-                      <FiSmartphone className="w-4 h-4 text-gray-500" />
-                      <span>Phone Number (M-Pesa)</span>
-                      <span className="text-red-500">*</span>
-                    </div>
-                  </label>
-                  <div className="flex">
-                    <div className="flex items-center px-4 py-3 border border-r-0 border-gray-300 rounded-l-lg bg-gray-50">
-                      <span className="text-gray-700 font-medium">+254</span>
-                    </div>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      placeholder="7XX XXX XXX"
-                      className="flex-1 px-4 py-3 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                      required
-                    />
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <div className="flex items-center gap-1">
-                      <FiHome className="w-4 h-4 text-gray-500" />
-                      <span>City/County</span>
-                      <span className="text-red-500">*</span>
-                    </div>
-                  </label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleChange}
-                    placeholder="Enter your city or county"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <div className="flex items-center gap-1">
-                      <FiCalendar className="w-4 h-4 text-gray-500" />
-                      <span>Preferred Date</span>
-                      <span className="text-red-500">*</span>
-                    </div>
-                  </label>
-                  <input
-                    type="date"
-                    name="delivery_date"
-                    value={formatDateForInput(formData.delivery_date)}
-                    onChange={handleChange}
-                    min={new Date().toISOString().split("T")[0]}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    <div className="flex items-center gap-1">
-                      <FiMapPin className="w-4 h-4 text-gray-500" />
-                      <span>Address</span>
-                      <span className="text-red-500">*</span>
-                    </div>
-                  </label>
-                  <textarea
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                    placeholder="Enter your complete address"
-                    rows="3"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right: Payment Section */}
-          <div>
-            {/* Payment Methods */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
-              <h3 className="text-lg font-semibold mb-6">Payment Method</h3>
-              <div className="space-y-4">
-                <PaymentMethodCard
-                  icon={<FiSmartphone className="w-5 h-5 text-green-600" />}
-                  title="M-Pesa"
-                  description="Pay instantly via M-Pesa"
-                  value="mpesa"
-                  selected={paymentMethod === "mpesa"}
-                />
-
-                <PaymentMethodCard
-                  icon={<FiCreditCard className="w-5 h-5 text-gray-600" />}
-                  title="Cash on Delivery"
-                  description="Pay when service is completed"
-                  value="cash"
-                  selected={paymentMethod === "cash"}
-                />
-              </div>
-
-              {paymentMethod === "mpesa" && (
-                <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
-                  <h4 className="font-medium text-blue-800 mb-2">
-                    M-Pesa Payment
-                  </h4>
-                  <div className="mb-3">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Amount to Pay
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-700 font-medium">
-                        {currSymbol}
-                      </span>
+                {/* Contact Details Form */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <h3 className="text-lg font-semibold mb-6">Your Details</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <div className="flex items-center gap-1">
+                          <FiUser className="w-4 h-4 text-gray-500" />
+                          <span>Full Name</span>
+                          <span className="text-red-500">*</span>
+                        </div>
+                      </label>
                       <input
-                        type="number"
-                        value={mpesaAmount}
-                        onChange={(e) => setMpesaAmount(e.target.value)}
-                        className="w-full pl-12 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        type="text"
+                        name="name"
+                        value={formData.name}
+                        onChange={handleChange}
+                        placeholder="Enter your full name"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <div className="flex items-center gap-1">
+                          <FiSmartphone className="w-4 h-4 text-gray-500" />
+                          <span>Phone Number (M-Pesa)</span>
+                          <span className="text-red-500">*</span>
+                        </div>
+                      </label>
+                      <div className="flex">
+                        <div className="flex items-center px-4 py-3 border border-r-0 border-gray-300 rounded-l-lg bg-gray-50">
+                          <span className="text-gray-700 font-medium">
+                            +254
+                          </span>
+                        </div>
+                        <input
+                          type="tel"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleChange}
+                          placeholder="7XX XXX XXX"
+                          className="flex-1 px-4 py-3 border border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                          required
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <div className="flex items-center gap-1">
+                          <FiHome className="w-4 h-4 text-gray-500" />
+                          <span>City/County</span>
+                          <span className="text-red-500">*</span>
+                        </div>
+                      </label>
+                      <input
+                        type="text"
+                        name="city"
+                        value={formData.city}
+                        onChange={handleChange}
+                        placeholder="Enter your city or county"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <div className="flex items-center gap-1">
+                          <FiCalendar className="w-4 h-4 text-gray-500" />
+                          <span>Preferred Date</span>
+                          <span className="text-red-500">*</span>
+                        </div>
+                      </label>
+                      <input
+                        type="date"
+                        name="delivery_date"
+                        value={formatDateForInput(formData.delivery_date)}
+                        onChange={handleChange}
+                        min={new Date().toISOString().split("T")[0]}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <div className="flex items-center gap-1">
+                          <FiMapPin className="w-4 h-4 text-gray-500" />
+                          <span>Address</span>
+                          <span className="text-red-500">*</span>
+                        </div>
+                      </label>
+                      <textarea
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        placeholder="Enter your complete address"
+                        rows="3"
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
+                        required
                       />
                     </div>
                   </div>
-                  <div className="flex items-start gap-2 text-sm text-blue-700">
-                    <FiCheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                    <p>
-                      You'll receive an M-Pesa prompt on your phone to complete
-                      payment
-                    </p>
-                  </div>
                 </div>
-              )}
-            </div>
+              </div>
 
-            {/* Action Buttons */}
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="space-y-4">
-                <button
-                  onClick={handleSubmit}
-                  disabled={loading}
-                  className={`w-full py-3 px-4 rounded-lg font-medium transition ${
-                    paymentMethod === "mpesa"
-                      ? "bg-green-600 hover:bg-green-700 text-white"
-                      : "bg-blue-600 hover:bg-blue-700 text-white"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
-                >
-                  {loading ? (
-                    <span className="flex items-center justify-center gap-2">
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Processing...
-                    </span>
-                  ) : paymentMethod === "mpesa" ? (
-                    "Pay with M-Pesa"
-                  ) : (
-                    "Confirm Cash Booking"
+              {/* Right: Payment Section */}
+              <div>
+                {/* Payment Methods */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+                  <h3 className="text-lg font-semibold mb-6">Payment Method</h3>
+                  <div className="space-y-4">
+                    <PaymentMethodCard
+                      icon={<FiSmartphone className="w-5 h-5 text-green-600" />}
+                      title="M-Pesa"
+                      description="Pay instantly via M-Pesa"
+                      value="mpesa"
+                      selected={paymentMethod === "mpesa"}
+                    />
+
+                    <PaymentMethodCard
+                      icon={<FiCreditCard className="w-5 h-5 text-gray-600" />}
+                      title="Cash on Delivery"
+                      description="Pay when service is completed"
+                      value="cash"
+                      selected={paymentMethod === "cash"}
+                    />
+                  </div>
+
+                  {paymentMethod === "mpesa" && (
+                    <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
+                      <h4 className="font-medium text-blue-800 mb-2">
+                        M-Pesa Payment
+                      </h4>
+                      <div className="mb-3">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Amount to Pay
+                        </label>
+                        <div className="relative">
+                          <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-700 font-medium">
+                            {currSymbol}
+                          </span>
+                          <input
+                            type="number"
+                            value={mpesaAmount}
+                            onChange={(e) => setMpesaAmount(e.target.value)}
+                            className="w-full pl-12 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-start gap-2 text-sm text-blue-700">
+                        <FiCheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                        <p>
+                          You'll receive an M-Pesa prompt on your phone to
+                          complete payment
+                        </p>
+                      </div>
+                    </div>
                   )}
-                </button>
+                </div>
 
-                {checkoutId && (
-                  <div className="text-center">
-                    <p className="text-sm text-gray-600">
-                      Reference:{" "}
-                      <span className="font-mono text-gray-800">
-                        {checkoutId.slice(-8)}
-                      </span>
-                    </p>
-                  </div>
-                )}
+                {/* Action Buttons */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <div className="space-y-4">
+                    <button
+                      onClick={handleSubmit}
+                      disabled={loading}
+                      className={`w-full py-3 px-4 rounded-lg font-medium transition ${
+                        paymentMethod === "mpesa"
+                          ? "bg-green-600 hover:bg-green-700 text-white"
+                          : "bg-blue-600 hover:bg-blue-700 text-white"
+                      } disabled:opacity-50 disabled:cursor-not-allowed`}
+                    >
+                      {loading ? (
+                        <span className="flex items-center justify-center gap-2">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Processing...
+                        </span>
+                      ) : paymentMethod === "mpesa" ? (
+                        "Pay with M-Pesa"
+                      ) : (
+                        "Confirm Cash Booking"
+                      )}
+                    </button>
 
-                {message && (
-                  <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                    <p className="text-sm text-green-700 flex items-center gap-2">
-                      <FiCheckCircle className="w-4 h-4" />
-                      {message}
-                    </p>
-                  </div>
-                )}
+                    {checkoutId && (
+                      <div className="text-center">
+                        <p className="text-sm text-gray-600">
+                          Reference:{" "}
+                          <span className="font-mono text-gray-800">
+                            {checkoutId.slice(-8)}
+                          </span>
+                        </p>
+                      </div>
+                    )}
 
-                {error && (
-                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-700">{error}</p>
-                  </div>
-                )}
+                    {message && (
+                      <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <p className="text-sm text-green-700 flex items-center gap-2">
+                          <FiCheckCircle className="w-4 h-4" />
+                          {message}
+                        </p>
+                      </div>
+                    )}
 
-                <div className="mt-6 pt-6 border-t border-gray-200">
-                  <h4 className="font-medium mb-3">Need Help?</h4>
-                  <div className="space-y-2 text-sm text-gray-600">
-                    <p>• Check your phone for M-Pesa prompt</p>
-                    <p>• Ensure you have sufficient balance</p>
-                    <p>• Contact support: 0700 000 000</p>
+                    {error && (
+                      <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                        <p className="text-sm text-red-700">{error}</p>
+                      </div>
+                    )}
+
+                    <div className="mt-6 pt-6 border-t border-gray-200">
+                      <h4 className="font-medium mb-3">Need Help?</h4>
+                      <div className="space-y-2 text-sm text-gray-600">
+                        <p>• Check your phone for M-Pesa prompt</p>
+                        <p>• Ensure you have sufficient balance</p>
+                        <p>• Contact support: 0700 000 000</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
           </>
         ) : (
           <>
@@ -614,58 +626,89 @@ const Payments = () => {
                     <table className="w-full">
                       <thead className="bg-gray-50 border-b border-gray-200 sticky top-0 z-10">
                         <tr>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Service</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Provider</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Amount</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Payment Method</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Status</th>
-                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Date</th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                            Service
+                          </th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                            Provider
+                          </th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                            Amount
+                          </th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                            Payment Method
+                          </th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                            Status
+                          </th>
+                          <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">
+                            Date
+                          </th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {paymentHistory
-                          .slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+                          .slice(
+                            (currentPage - 1) * itemsPerPage,
+                            currentPage * itemsPerPage,
+                          )
                           .map((booking) => (
-                          <tr key={booking._id} className="hover:bg-gray-50 transition-colors">
-                            <td className="px-6 py-4">
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">{booking.serviceName}</p>
-                                <p className="text-xs text-gray-500">{booking.categoryName}</p>
-                              </div>
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {booking.providerName || booking.serviceProvider}
-                            </td>
-                            <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                              {currSymbol}{booking.amount?.toLocaleString() || 0}
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                booking.paymentMethod === 'Mpesa' 
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-blue-100 text-blue-800'
-                              }`}>
-                                {booking.paymentMethod || 'Cash'}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-sm">
-                              <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                booking.is_paid
-                                  ? 'bg-green-100 text-green-800'
-                                  : 'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {booking.is_paid ? 'Paid' : 'Pending'}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 text-sm text-gray-600">
-                              {new Date(booking.createdAt).toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                              })}
-                            </td>
-                          </tr>
-                        ))}
+                            <tr
+                              key={booking._id}
+                              className="hover:bg-gray-50 transition-colors"
+                            >
+                              <td className="px-6 py-4">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-900">
+                                    {booking.serviceName}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {booking.categoryName}
+                                  </p>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-600">
+                                {booking.providerName ||
+                                  booking.serviceProvider}
+                              </td>
+                              <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                                {currSymbol}
+                                {booking.amount?.toLocaleString() || 0}
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-600">
+                                <span
+                                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                    booking.paymentMethod === "Mpesa"
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-blue-100 text-blue-800"
+                                  }`}
+                                >
+                                  {booking.paymentMethod || "Cash"}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-sm">
+                                <span
+                                  className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                    booking.is_paid
+                                      ? "bg-green-100 text-green-800"
+                                      : "bg-yellow-100 text-yellow-800"
+                                  }`}
+                                >
+                                  {booking.is_paid ? "Paid" : "Pending"}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-sm text-gray-600">
+                                {new Date(booking.createdAt).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                  },
+                                )}
+                              </td>
+                            </tr>
+                          ))}
                       </tbody>
                     </table>
                   </div>
@@ -674,31 +717,51 @@ const Payments = () => {
                 {/* Pagination Controls */}
                 <div className="flex items-center justify-between bg-white px-6 py-4 rounded-lg shadow border border-gray-200">
                   <div className="text-sm text-gray-700">
-                    Showing <span className="font-medium">{((currentPage - 1) * itemsPerPage) + 1}</span> to{' '}
-                    <span className="font-medium">{Math.min(currentPage * itemsPerPage, paymentHistory.length)}</span> of{' '}
-                    <span className="font-medium">{paymentHistory.length}</span> payments
+                    Showing{" "}
+                    <span className="font-medium">
+                      {(currentPage - 1) * itemsPerPage + 1}
+                    </span>{" "}
+                    to{" "}
+                    <span className="font-medium">
+                      {Math.min(
+                        currentPage * itemsPerPage,
+                        paymentHistory.length,
+                      )}
+                    </span>{" "}
+                    of{" "}
+                    <span className="font-medium">{paymentHistory.length}</span>{" "}
+                    payments
                   </div>
                   <div className="flex space-x-2">
                     <button
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      onClick={() =>
+                        setCurrentPage((prev) => Math.max(prev - 1, 1))
+                      }
                       disabled={currentPage === 1}
                       className={`px-4 py-2 border rounded-md text-sm font-medium ${
-                        currentPage === 1 
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                        currentPage === 1
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
                       }`}
                     >
                       Previous
                     </button>
                     <div className="flex items-center gap-2">
-                      {Array.from({ length: Math.ceil(paymentHistory.length / itemsPerPage) }, (_, i) => i + 1).map(page => (
+                      {Array.from(
+                        {
+                          length: Math.ceil(
+                            paymentHistory.length / itemsPerPage,
+                          ),
+                        },
+                        (_, i) => i + 1,
+                      ).map((page) => (
                         <button
                           key={page}
                           onClick={() => setCurrentPage(page)}
                           className={`px-3 py-2 rounded-md text-sm font-medium ${
                             currentPage === page
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                              ? "bg-blue-600 text-white"
+                              : "bg-white text-gray-700 border border-gray-300 hover:bg-gray-50"
                           }`}
                         >
                           {page}
@@ -706,12 +769,23 @@ const Payments = () => {
                       ))}
                     </div>
                     <button
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(paymentHistory.length / itemsPerPage)))}
-                      disabled={currentPage === Math.ceil(paymentHistory.length / itemsPerPage)}
+                      onClick={() =>
+                        setCurrentPage((prev) =>
+                          Math.min(
+                            prev + 1,
+                            Math.ceil(paymentHistory.length / itemsPerPage),
+                          ),
+                        )
+                      }
+                      disabled={
+                        currentPage ===
+                        Math.ceil(paymentHistory.length / itemsPerPage)
+                      }
                       className={`px-4 py-2 border rounded-md text-sm font-medium ${
-                        currentPage === Math.ceil(paymentHistory.length / itemsPerPage)
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : 'bg-white text-gray-700 hover:bg-gray-50'
+                        currentPage ===
+                        Math.ceil(paymentHistory.length / itemsPerPage)
+                          ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                          : "bg-white text-gray-700 hover:bg-gray-50"
                       }`}
                     >
                       Next
@@ -722,8 +796,12 @@ const Payments = () => {
             ) : (
               <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-200">
                 <div className="mb-4 text-6xl">📋</div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">No Payment History</h3>
-                <p className="text-gray-600 mb-8">You haven't made any payments yet</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  No Payment History
+                </h3>
+                <p className="text-gray-600 mb-8">
+                  You haven't made any payments yet
+                </p>
                 <button
                   onClick={() => navigate("/user/browse-services")}
                   className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
