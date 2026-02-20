@@ -440,23 +440,26 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
         {/* Google Login */}
         <div className="relative">
           <div className={`w-full ${googleLoading ? "opacity-50" : ""}`}>
-            <GoogleLogin
-              onSuccess={handleGoogleLogin}
-              onError={() =>
-                !googleLoading && toast.error("Google login failed")
-              }
-              disabled={isLoading}
-              shape="rectangular"
-              size="large"
-              width={360}
-            />
+            <div className="google-button-container" style={{ width: "100%" }}>
+              <GoogleLogin
+                onSuccess={handleGoogleLogin}
+                onError={() =>
+                  !googleLoading && toast.error("Google login failed")
+                }
+                disabled={googleLoading}
+                shape="rectangular"
+                size="large"
+                width="100%" 
+                theme="outline"
+                text="signin_with"
+              />
+            </div>
           </div>
 
           {/* Google Loading Overlay */}
           {googleLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/90 rounded-lg animate-in fade-in duration-200">
+            <div className="absolute inset-0 flex items-center justify-center bg-white/90 rounded-lg">
               <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600 mb-1"></div>
                 <p className="text-sm text-gray-600">
                   Signing in with Google...
                 </p>
