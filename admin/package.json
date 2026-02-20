@@ -22,6 +22,10 @@
     "sonner": "^2.0.7",
     "tailwindcss": "^4.1.14"
   },
+  "overrides": {
+  "minimatch": "^10.2.1",
+  "ajv": "^8.18.0"
+},
   "devDependencies": {
     "@eslint/js": "^9.36.0",
     "@types/react": "^19.1.16",
