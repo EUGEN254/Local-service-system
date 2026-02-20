@@ -288,7 +288,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
                 placeholder="you@example.com"
                 required
                 value={email}
-                 autoComplete="username email"
+                autoComplete="username email"
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
                 className="w-full pl-10 pr-3 py-2.5 text-base rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 focus:outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
@@ -439,10 +439,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
 
         {/* Google Login */}
         <div className="relative">
-          <div
-            className={googleLoading ? "opacity-50" : ""}
-            style={{ width: "100%", minWidth: "240px" }}
-          >
+          <div className={`w-full ${googleLoading ? "opacity-50" : ""}`}>
             <GoogleLogin
               onSuccess={handleGoogleLogin}
               onError={() =>
@@ -451,15 +448,15 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
               disabled={isLoading}
               shape="rectangular"
               size="large"
-              width="100%"
+              width={360}
             />
           </div>
 
           {/* Google Loading Overlay */}
           {googleLoading && (
-            <div className="absolute inset-0 flex items-center justify-center bg-white/90 rounded-lg">
+            <div className="absolute inset-0 flex items-center justify-center bg-white/90 rounded-lg animate-in fade-in duration-200">
               <div className="text-center">
-                <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-1"></div>
+                <div className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600 mb-1"></div>
                 <p className="text-sm text-gray-600">
                   Signing in with Google...
                 </p>
