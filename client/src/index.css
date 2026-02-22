@@ -78,6 +78,19 @@ body {
   color: black;
 }
 
+
+.google-login-button-wrapper {
+  width: 100% !important;
+}
+
+.google-login-button-wrapper > div {
+  width:  100%  !important;
+}
+
+.google-login-button-wrapper iframe {
+  width: 100% !important;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;

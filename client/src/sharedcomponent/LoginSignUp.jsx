@@ -440,7 +440,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
         {/* Google Login */}
         <div className="relative">
           <div className={`w-full ${googleLoading ? "opacity-50" : ""}`}>
-            <div className="google-button-container" style={{ width: "100%" }}>
+             <div className="google-login-button-wrapper w-full">
               <GoogleLogin
                 onSuccess={handleGoogleLogin}
                 onError={() =>
@@ -449,7 +449,7 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
                 disabled={googleLoading}
                 shape="rectangular"
                 size="large"
-                width="100%" 
+                width="100%"
                 theme="outline"
                 text="signin_with"
               />
