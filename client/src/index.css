@@ -82,16 +82,25 @@ body {
 
 
 .google-login-button-wrapper {
-  width: 100% !important;
+  width: 100%;
+  height: 44px;
+  margin: -2px -10px;
+  position: relative;
 }
 
 .google-login-button-wrapper > div {
-  width:  100%  !important;
+  width: 100% !important;
+  height: 44px !important;
 }
 
-.google-login-button-wrapper iframe {
+.google-login-button-wrapper > div > div,
+.google-login-button-wrapper [role="button"] {
   width: 100% !important;
+  height: 44px !important;
+  border-radius: 4px !important;
+  transition: all 0.2s ease !important;
 }
+
 
 @keyframes fadeIn {
   from {

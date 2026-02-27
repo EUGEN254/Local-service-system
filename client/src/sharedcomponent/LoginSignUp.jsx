@@ -449,7 +449,6 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
                 disabled={googleLoading}
                 shape="rectangular"
                 size="large"
-                width="100%"
                 theme="outline"
                 text="signin_with"
               />
