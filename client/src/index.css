@@ -88,18 +88,7 @@ body {
   position: relative;
 }
 
-.google-login-button-wrapper > div {
-  width: 100% !important;
-  height: 44px !important;
-}
 
-.google-login-button-wrapper > div > div,
-.google-login-button-wrapper [role="button"] {
-  width: 100% !important;
-  height: 44px !important;
-  border-radius: 4px !important;
-  transition: all 0.2s ease !important;
-}
 
 
 @keyframes fadeIn {
