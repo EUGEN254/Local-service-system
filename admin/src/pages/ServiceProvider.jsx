@@ -213,7 +213,9 @@ const ServiceProvider = () => {
 
   const handleDeleteConfirm = async () => {
     const success = await deleteProvider(selectedProvider._id);
+
     if (success) {
+      toast.success(success.message);
       setShowDeleteModal(false);
     } else {
       toast.error("Failed to delete provider");
@@ -556,10 +558,11 @@ const ServiceProvider = () => {
                   </button>
                   <button
                     onClick={() => handleApprove(selectedProvider._id)}
+                    disabled={updatingProvider}
                     className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                   >
                     <FaCheck />
-                    Approve
+                    {updatingProvider ? "Approving..." : "Approve"}
                   </button>
                 </div>
               )}

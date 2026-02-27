@@ -26,35 +26,62 @@ export const useAdminProviders = () => {
     }
   }, []);
 
-  const updateVerificationStatus = useCallback(async (providerId, isVerified) => {
-    setUpdatingProvider(true);
-    try {
-      const data = await adminProviderService.updateVerificationStatus(providerId, isVerified);
-      if (data.success) {
-        setServiceProviders((prev) =>
-          prev.map((provider) =>
-            provider._id === providerId ? { ...provider, isVerified } : provider
-          )
+  const updateVerificationStatus = useCallback(
+    async (providerId, status, rejectionReason) => {
+      setUpdatingProvider(true);
+      try {
+        const data = await adminProviderService.updateVerificationStatus(
+          providerId,
+          status,
+          rejectionReason,
         );
+
+        if (data.success) {
+          setServiceProviders((prev) =>
+            prev.map((provider) =>
+              provider._id === providerId
+                ? {
+                    ...provider,
+                    serviceProviderInfo: {
+                      ...provider.serviceProviderInfo,
+                      idVerification: {
+                        ...provider.serviceProviderInfo?.idVerification,
+                        status: status,
+                        ...(status === "rejected" && rejectionReason
+                          ? { rejectionReason }
+                          : {}),
+                      },
+                    },
+                  }
+                : provider,
+            ),
+          );
+        }
+        return data;
+      } catch (error) {
+        console.error("Error updating verification status:", error);
+        throw error;
+      } finally {
+        setUpdatingProvider(false);
       }
-      return data;
-    } catch (error) {
-      console.error("Error updating verification status:", error);
-      throw error;
-    } finally {
-      setUpdatingProvider(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   const updateProviderProfile = useCallback(async (providerId, formData) => {
     setUpdatingProvider(true);
     try {
-      const data = await adminProviderService.updateProviderProfile(providerId, formData);
+      const data = await adminProviderService.updateProviderProfile(
+        providerId,
+        formData,
+      );
       if (data.success) {
         setServiceProviders((prev) =>
           prev.map((provider) =>
-            provider._id === providerId ? { ...provider, ...data.user } : provider
-          )
+            provider._id === providerId
+              ? { ...provider, ...data.user }
+              : provider,
+          ),
         );
       }
       return data;
@@ -87,7 +114,7 @@ export const useAdminProviders = () => {
       const data = await adminProviderService.deleteProvider(providerId);
       if (data.success) {
         setServiceProviders((prev) =>
-          prev.filter((provider) => provider._id !== providerId)
+          prev.filter((provider) => provider._id !== providerId),
         );
       }
       return data;

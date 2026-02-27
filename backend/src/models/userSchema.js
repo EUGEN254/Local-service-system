@@ -30,7 +30,7 @@ const userSchema = new mongoose.Schema(
       enum: ["active", "inactive"],
       default: "active",
     },
-    // Add Google-specific fields
+ 
     googleId: { type: String }, // Store Google ID
     emailVerified: { type: Boolean, default: false },
 

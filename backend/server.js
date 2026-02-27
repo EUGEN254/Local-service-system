@@ -39,7 +39,7 @@ const allowedOrigins = [
   "https://local-service-system.vercel.app",
   "https://local-service-system.onrender.com",
 ];
-app.use(express.json({ limit: "4mb" }));
+app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 

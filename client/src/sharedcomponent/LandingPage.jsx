@@ -13,7 +13,7 @@ import {
   FaTachometerAlt,
   FaCog,
   FaFilter,
-  FaTimes
+  FaTimes,
 } from "react-icons/fa";
 
 const LandingPage = () => {
@@ -38,6 +38,7 @@ const LandingPage = () => {
   const [selectedProvider, setSelectedProvider] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const [loadingQuickView, setLoadingQuickView] = useState({});
 
   // Helper function to get correct dashboard path based on user role
   const getDashboardPath = () => {
@@ -77,6 +78,7 @@ const LandingPage = () => {
         );
 
   const handleQuickView = async (serviceId) => {
+    setLoadingQuickView((prev) => ({ ...prev, [serviceId]: true }));
     try {
       const data = await landingPageService.fetchProviderDetails(
         backendUrl,
@@ -90,6 +92,8 @@ const LandingPage = () => {
       }
     } catch (error) {
       toast.error(error.message);
+    } finally {
+      setLoadingQuickView((prev) => ({ ...prev, [serviceId]: false }));
     }
   };
 
@@ -133,14 +137,19 @@ const LandingPage = () => {
       return;
     }
 
-    navigate("/user/payment", { state: { service: selectedProvider?.service } });
+    navigate("/user/payment", {
+      state: { service: selectedProvider?.service },
+    });
     setShowProviderModal(false);
   };
 
   // Render star rating with colors
   const renderStars = (rating) => {
     return Array.from({ length: 5 }, (_, i) => (
-      <span key={i} className={`text-lg ${i < Math.round(rating) ? 'text-yellow-400' : 'text-gray-300'}`}>
+      <span
+        key={i}
+        className={`text-lg ${i < Math.round(rating) ? "text-yellow-400" : "text-gray-300"}`}
+      >
         ★
       </span>
     ));
@@ -150,15 +159,17 @@ const LandingPage = () => {
   const MobileFilterSidebar = () => (
     <div className="fixed inset-0 z-50 lg:hidden">
       {/* Backdrop */}
-      <div 
+      <div
         className="fixed inset-0 bg-black/50 transition-opacity"
         onClick={() => setIsMobileFilterOpen(false)}
       />
-      
+
       {/* Sidebar */}
-      <div className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
-        isMobileFilterOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}>
+      <div
+        className={`fixed top-0 right-0 h-full w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
+          isMobileFilterOpen ? "translate-x-0" : "translate-x-full"
+        }`}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-gray-200">
           <h2 className="text-xl font-bold text-gray-900">Categories</h2>
@@ -177,7 +188,9 @@ const LandingPage = () => {
               setSelectedCategory("All");
               setIsMobileFilterOpen(false);
               setTimeout(() => {
-                document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
+                document
+                  .getElementById("services")
+                  ?.scrollIntoView({ behavior: "smooth" });
               }, 100);
             }}
             className={`w-full flex items-center gap-4 p-4 rounded-lg text-left mb-2 ${
@@ -186,11 +199,13 @@ const LandingPage = () => {
                 : "bg-gray-50 text-gray-700 hover:bg-gray-100"
             }`}
           >
-            <div className={`w-10 h-10 flex items-center justify-center rounded-lg ${
-              selectedCategory === "All"
-                ? "bg-white/20 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}>
+            <div
+              className={`w-10 h-10 flex items-center justify-center rounded-lg ${
+                selectedCategory === "All"
+                  ? "bg-white/20 text-white"
+                  : "bg-gray-200 text-gray-700"
+              }`}
+            >
               <span className="font-bold text-lg">All</span>
             </div>
             <div className="flex-1">
@@ -209,7 +224,9 @@ const LandingPage = () => {
                 setSelectedCategory(category.name);
                 setIsMobileFilterOpen(false);
                 setTimeout(() => {
-                  document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
+                  document
+                    .getElementById("services")
+                    ?.scrollIntoView({ behavior: "smooth" });
                 }, 100);
               }}
               className={`w-full flex items-center gap-4 p-4 rounded-lg text-left mb-2 ${
@@ -225,11 +242,13 @@ const LandingPage = () => {
                   className="w-10 h-10 object-cover rounded-lg"
                 />
               ) : (
-                <div className={`w-10 h-10 flex items-center justify-center rounded-lg ${
-                  selectedCategory === category.name
-                    ? "bg-white/20"
-                    : "bg-gray-200"
-                }`}>
+                <div
+                  className={`w-10 h-10 flex items-center justify-center rounded-lg ${
+                    selectedCategory === category.name
+                      ? "bg-white/20"
+                      : "bg-gray-200"
+                  }`}
+                >
                   <span className="font-bold text-lg">
                     {category.name?.charAt(0)}
                   </span>
@@ -270,11 +289,15 @@ const LandingPage = () => {
 
     const provider = selectedProvider.provider || selectedProvider;
     const info = provider.serviceProviderInfo || {};
-    const ratings = selectedProvider.ratings || { averageRating: 0, totalReviews: 0, reviews: [] };
+    const ratings = selectedProvider.ratings || {
+      averageRating: 0,
+      totalReviews: 0,
+      reviews: [],
+    };
 
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div className="bg-white rounded-xl w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+        <div className="bg-white rounded-xl w-full max-w-4xl h-[90vh] overflow-y-auto">
           {/* Modal Header */}
           <div className="sticky top-0 bg-white border-b border-gray-200 p-6 flex justify-between items-center">
             <div>
@@ -315,11 +338,11 @@ const LandingPage = () => {
                 <div className="bg-gray-50 rounded-lg p-6">
                   <div className="text-center">
                     <img
-                      src={provider.image}
-                      alt={provider.name}
+                      src={provider?.image}
+                      alt={provider?.name}
                       className="w-32 h-32 rounded-full mx-auto object-cover border-4 border-white shadow"
                     />
-                    <h3 className="text-xl font-bold mt-4">{provider.name}</h3>
+                    <h3 className="text-xl font-bold mt-4">{provider?.name}</h3>
                     <div className="mt-2">
                       <span
                         className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -465,7 +488,7 @@ const LandingPage = () => {
                   <h3 className="text-lg font-bold text-gray-900 mb-3">
                     Customer Reviews
                   </h3>
-                  
+
                   {/* Average Rating Display */}
                   <div className="flex items-center gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
                     <div>
@@ -485,7 +508,10 @@ const LandingPage = () => {
                   {ratings.reviews && ratings.reviews.length > 0 ? (
                     <div className="space-y-3 max-h-64 overflow-y-auto">
                       {ratings.reviews.map((review) => (
-                        <div key={review._id} className="border border-gray-200 rounded-lg p-3">
+                        <div
+                          key={review._id}
+                          className="border border-gray-200 rounded-lg p-3"
+                        >
                           <div className="flex items-start justify-between mb-2">
                             <div className="flex items-center gap-2">
                               {review.userImage ? (
@@ -504,7 +530,9 @@ const LandingPage = () => {
                                   {review.userName}
                                 </p>
                                 <p className="text-xs text-gray-500">
-                                  {new Date(review.createdAt).toLocaleDateString()}
+                                  {new Date(
+                                    review.createdAt,
+                                  ).toLocaleDateString()}
                                 </p>
                               </div>
                             </div>
@@ -788,7 +816,10 @@ const LandingPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12" id="categories">
+      <div
+        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12"
+        id="categories"
+      >
         {/* Mobile Filter Button - visible only on small screens */}
         <div className="lg:hidden mb-6">
           <button
@@ -797,7 +828,9 @@ const LandingPage = () => {
           >
             <div className="flex items-center gap-3">
               <FaFilter className="text-gray-500" />
-              <span className="font-medium text-gray-900">Filter by Category</span>
+              <span className="font-medium text-gray-900">
+                Filter by Category
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-600 bg-gray-100 px-3 py-1 rounded-full">
@@ -835,8 +868,8 @@ const LandingPage = () => {
                     <button
                       onClick={() => {
                         setSelectedCategory("All");
-                        document.getElementById('services')?.scrollIntoView({ 
-                          behavior: 'smooth' 
+                        document.getElementById("services")?.scrollIntoView({
+                          behavior: "smooth",
                         });
                       }}
                       className={`w-full flex items-center gap-4 p-4 rounded-lg text-left ${
@@ -845,30 +878,42 @@ const LandingPage = () => {
                           : "hover:bg-gray-50"
                       }`}
                     >
-                      <div className={`w-10 h-10 flex items-center justify-center rounded-lg ${
-                        selectedCategory === "All"
-                          ? "bg-white/20"
-                          : "bg-gray-100 text-gray-700"
-                      }`}>
+                      <div
+                        className={`w-10 h-10 flex items-center justify-center rounded-lg ${
+                          selectedCategory === "All"
+                            ? "bg-white/20"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
                         <span className="font-bold text-lg">All</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className={`font-medium ${
-                          selectedCategory === "All" ? "text-white" : "text-gray-900"
-                        }`}>
+                        <h3
+                          className={`font-medium ${
+                            selectedCategory === "All"
+                              ? "text-white"
+                              : "text-gray-900"
+                          }`}
+                        >
                           All Categories
                         </h3>
-                        <p className={`text-sm mt-1 ${
-                          selectedCategory === "All" ? "text-white/80" : "text-gray-500"
-                        }`}>
+                        <p
+                          className={`text-sm mt-1 ${
+                            selectedCategory === "All"
+                              ? "text-white/80"
+                              : "text-gray-500"
+                          }`}
+                        >
                           View all services
                         </p>
                       </div>
-                      <span className={`text-sm font-medium px-2 py-1 rounded ${
-                        selectedCategory === "All"
-                          ? "bg-white/20 text-white"
-                          : "bg-gray-100 text-gray-700"
-                      }`}>
+                      <span
+                        className={`text-sm font-medium px-2 py-1 rounded ${
+                          selectedCategory === "All"
+                            ? "bg-white/20 text-white"
+                            : "bg-gray-100 text-gray-700"
+                        }`}
+                      >
                         {landingServices.length}
                       </span>
                     </button>
@@ -878,8 +923,8 @@ const LandingPage = () => {
                         key={category._id}
                         onClick={() => {
                           setSelectedCategory(category.name);
-                          document.getElementById('services')?.scrollIntoView({ 
-                            behavior: 'smooth' 
+                          document.getElementById("services")?.scrollIntoView({
+                            behavior: "smooth",
                           });
                         }}
                         className={`w-full flex items-center gap-4 p-4 rounded-lg text-left ${
@@ -1104,7 +1149,8 @@ const LandingPage = () => {
 
                       <div className="flex items-center justify-between mb-4">
                         <span className="text-xl font-bold text-gray-900">
-                          {currSymbol}{service.amount}
+                          {currSymbol}
+                          {service.amount}
                         </span>
                         <span className="text-xs text-gray-500">
                           starting price
@@ -1124,9 +1170,12 @@ const LandingPage = () => {
                       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                         <button
                           onClick={() => handleQuickView(service._id)}
+                          disabled={loadingQuickView[service._id]}
                           className="text-gray-600 hover:text-gray-900 font-medium text-sm"
                         >
-                          Quick View
+                          {loadingQuickView[service._id]
+                            ? "Loading..."
+                            : "Quick View"}
                         </button>
                         {user ? (
                           <button
@@ -1229,7 +1278,8 @@ const LandingPage = () => {
                 Ready to Book a Service?
               </h2>
               <p className="text-lg text-gray-600 mb-8">
-                Browse our verified service providers and book your next appointment today
+                Browse our verified service providers and book your next
+                appointment today
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
@@ -1240,7 +1290,9 @@ const LandingPage = () => {
                 </button>
                 <button
                   onClick={() => {
-                    document.getElementById('services')?.scrollIntoView({ behavior: 'smooth' });
+                    document
+                      .getElementById("services")
+                      ?.scrollIntoView({ behavior: "smooth" });
                   }}
                   className="bg-white text-gray-900 font-bold text-lg px-8 py-4 rounded-lg border-2 border-gray-300 hover:border-gray-400 transition-colors"
                 >

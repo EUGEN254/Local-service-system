@@ -20,11 +20,15 @@ export const fetchServiceProviders = async () => {
   }
 };
 
-export const updateVerificationStatus = async (providerId, isVerified) => {
+export const updateVerificationStatus = async (providerId, status, rejectionReason) => {
   try {
     const { data } = await axios.put(
       `${API_BASE}/api/admin/verify-provider/${providerId}`,
-      { isVerified },
+      { 
+        userId: providerId,  
+        status: status,
+        ...(rejectionReason && { rejectionReason }) 
+      },
       { withCredentials: true }
     );
     return data;

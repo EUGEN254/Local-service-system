@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { v2 as cloudinary } from "cloudinary";
 import Booking from "../models/bookingSchema.js";
 import { createNotification } from "./notificationController.js";
+import { PlumbingService } from "../models/index.js";
 
 // Get all service providers
 export const getServiceProviders = async (req, res) => {
@@ -369,11 +370,16 @@ export const deleteProvider = async (req, res) => {
       });
     }
 
+    // Delete all services associated with this provider
+    await PlumbingService.deleteMany({ serviceProvider: id });
+
+    // Delete the provider
     await User.findByIdAndDelete(id);
 
     res.json({
       success: true,
-      message: "Service provider deleted successfully",
+      message:
+        "Service provider and their associated services deleted successfully",
     });
   } catch (error) {
     console.error("Error deleting provider:", error);
@@ -383,7 +389,6 @@ export const deleteProvider = async (req, res) => {
     });
   }
 };
-
 // Get all customers (users with role "customer")
 export const getCustomers = async (req, res) => {
   try {

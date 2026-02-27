@@ -23,7 +23,7 @@ const adminRouter = express.Router();
 
 // Service Provider Routes
 adminRouter.get("/service-providers", userAuth, adminAuth, getServiceProviders);
-adminRouter.put("/update-verification", userAuth, adminAuth, updateVerificationStatus);
+adminRouter.put("/verify-provider/:id", userAuth, adminAuth, updateVerificationStatus);
 adminRouter.put("/update-provider/:id", userAuth, adminAuth, upload.single("image"), updateProviderProfile);
 adminRouter.post("/create-provider", userAuth, adminAuth, upload.single("image"), createProvider);
 adminRouter.delete("/delete-provider/:id", userAuth, adminAuth, deleteProvider);
