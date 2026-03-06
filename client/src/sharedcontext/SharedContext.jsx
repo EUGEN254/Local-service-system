@@ -1,26 +1,24 @@
-// sharedcontext/SharedContext.jsx
-import { createContext, useEffect, useRef } from "react";
+import { createContext, useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { io } from "socket.io-client";
-
-// Import custom hooks
 import { useAuth } from "../hooks/useAuth";
 import { useChat } from "../hooks/useChat";
 
 export const ShareContext = createContext();
 
-// the main component
 const AppContextProvider = (props) => {
+  // 1) App-level config and navigation helpers.
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
   const currSymbol = "KES";
 
-  // Initialize essential hooks
+  // 2) Authentication state and actions.
   const authState = useAuth(backendUrl, navigate);
   const { user, authLoading, verified, fetchCurrentUser, logoutUser } =
     authState;
 
+  // 3) Chat/notification state and actions from custom hook.
   const chatState = useChat(backendUrl, user);
   const {
     unreadBySender,
@@ -38,133 +36,141 @@ const AppContextProvider = (props) => {
     markChatAsRead,
   } = chatState;
 
-  // Online users
-  const onlineUsersRef = useRef([]);
+  // 4) Local reactive UI state.
+  const [onlineUsers, setOnlineUsers] = useState([]);
+  const [messages, setMessages] = useState({});
 
-  // Messages state for all chats
-  const messagesRef = useRef({});
-  const setMessages = (value) => {
-    if (typeof value === "function") {
-      messagesRef.current = value(messagesRef.current);
-    } else {
-      messagesRef.current = value;
-    }
-  };
-
+  // 5) Mutable refs used by socket callbacks without forcing re-renders.
+  const socket = useRef(null);
   const activeRoomIdRef = useRef(null);
-  const activeRoomId = activeRoomIdRef.current;
-  const setActiveRoomId = (value) => {
-    activeRoomIdRef.current = value;
+
+  const setActiveRoomId = (roomId) => {
+    activeRoomIdRef.current = roomId;
   };
 
-  const socket = useRef();
-
-  // Helper function to check if user is a service provider
-  const isServiceProvider = (user) => {
+  const isServiceProvider = useCallback((currentUser) => {
     return (
-      user &&
-      (user.role === "serviceprovider" || user.role === "service-provider")
+      currentUser &&
+      (currentUser.role === "serviceprovider" ||
+        currentUser.role === "service-provider")
     );
-  };
+  }, []);
 
-  // Helper to get messages
-  const messages = messagesRef.current;
-  
-  // Online users for context
-  const onlineUsers = onlineUsersRef.current;
-  const setOnlineUsers = (users) => {
-    onlineUsersRef.current = users.map((id) => id.toString());
-  };
+  // Verify user session once on app boot.
+  useEffect(() => {
+    fetchCurrentUser(false);
+  }, [fetchCurrentUser]);
 
-  // ---------- SOCKET SETUP & REAL-TIME UPDATES ----------
+  // Create and maintain socket connection after user is available.
   useEffect(() => {
     if (!user) return;
 
-    socket.current = io(backendUrl, { withCredentials: true });
+    // If socket exists but is disconnected, reset it before reconnecting.
+    if (socket.current && !socket.current.connected) {
+      socket.current.removeAllListeners();
+      socket.current.disconnect();
+      socket.current = null;
+    }
 
-    // Join main user room
-    socket.current.emit("joinUserRoom", {
-      userId: user._id,
-      userName: user.name,
-      userRole: user.role,
+    // Avoid duplicate connections.
+    if (socket.current?.connected) return;
+
+    socket.current = io(backendUrl, {
+      withCredentials: true,
+      reconnection: true,
+      reconnectionAttempts: 10,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      timeout: 20000,
+      transports: ["websocket", "polling"],
     });
 
-    // Listen for online users
-    socket.current.on("onlineUsers", (users) => {
-      setOnlineUsers(users);
+    socket.current.on("connect", () => {
+      socket.current.emit("joinUserRoom", { userId: user._id });
     });
 
-    // Listen for new messages
-    socket.current.on("receiveMessage", (message) => {
-      if (message.receiver === user._id) {
-        if (
-          activeRoomIdRef.current &&
-          activeRoomIdRef.current === message.roomId
-        ) {
-          return;
-        }
+    socket.current.on("reconnect", () => {
+      socket.current.emit("joinUserRoom", { userId: user._id });
+    });
 
-        setUnreadBySender((prev) => {
-          const newCount = (prev[message.sender] || 0) + 1;
-          return { ...prev, [message.sender]: newCount };
-        });
-        setTotalUnread((prev) => prev + 1);
+    socket.current.on("disconnect", (reason) => {
+      if (reason === "io server disconnect") {
+        socket.current.connect();
       }
     });
 
-    // Listen for new bookings
+    socket.current.on("onlineUsers", (users) => {
+      setOnlineUsers(users.map((id) => id.toString()));
+    });
+
+    socket.current.on("receiveMessage", (message) => {
+      if (message.receiver !== user._id) return;
+
+      // If user is not viewing this room, count as unread and notify.
+      if (activeRoomIdRef.current !== message.roomId) {
+        setUnreadBySender((prev) => ({
+          ...prev,
+          [message.sender]: (prev[message.sender] || 0) + 1,
+        }));
+        setTotalUnread((prev) => prev + 1);
+        toast.info("New message received");
+      }
+    });
+
     socket.current.on("newBooking", (bookingData) => {
       const shouldReceiveNotification =
         isServiceProvider(user) &&
         user.name?.trim().toLowerCase() ===
           bookingData.providerName?.trim().toLowerCase();
 
-      if (shouldReceiveNotification) {
-        setBookingNotifications((prev) => [bookingData, ...prev]);
-        setUnreadBookingCount((prev) => prev + 1);
-        toast.info(
-          `New booking: ${bookingData.serviceName} from ${bookingData.customerName}`
-        );
-      }
+      if (!shouldReceiveNotification) return;
+
+      setBookingNotifications((prev) => [bookingData, ...prev]);
+      setUnreadBookingCount((prev) => prev + 1);
+      toast.info(
+        `New booking: ${bookingData.serviceName} from ${bookingData.customerName}`,
+      );
     });
 
     return () => {
-      socket.current.disconnect();
+      if (socket.current) {
+        socket.current.removeAllListeners();
+        socket.current.disconnect();
+        socket.current = null;
+      }
     };
-  }, [user, isServiceProvider, setUnreadBySender, setTotalUnread, setBookingNotifications, setUnreadBookingCount]);
+  }, [
+    user,
+    backendUrl,
+    isServiceProvider,
+    setUnreadBySender,
+    setTotalUnread,
+    setBookingNotifications,
+    setUnreadBookingCount,
+  ]);
 
-  // ---------- PERIODIC UNREAD COUNT FETCHING ----------
+  // Keep unread chat counts fresh while user is logged in.
   useEffect(() => {
     if (!user) return;
 
-    // Fetch immediately
     fetchUnreadCounts();
-
-    // Then fetch every 10 seconds for chat
     const chatInterval = setInterval(fetchUnreadCounts, 10000);
 
-    return () => {
-      clearInterval(chatInterval);
-    };
+    return () => clearInterval(chatInterval);
   }, [user, fetchUnreadCounts]);
 
-  // ---------- FETCH BOOKING NOTIFICATIONS FOR SERVICE PROVIDERS ----------
+  // Poll booking notifications only for service providers.
   useEffect(() => {
-    if (isServiceProvider(user)) {
-      fetchBookingNotifications();
-      const interval = setInterval(fetchBookingNotifications, 30000);
-      return () => clearInterval(interval);
-    }
+    if (!isServiceProvider(user)) return;
+
+    fetchBookingNotifications();
+    const bookingInterval = setInterval(fetchBookingNotifications, 30000);
+
+    return () => clearInterval(bookingInterval);
   }, [user, isServiceProvider, fetchBookingNotifications]);
 
-  // ---------- VERIFY SESSION ----------
-  useEffect(() => {
-    fetchCurrentUser(false);
-  }, [fetchCurrentUser]);
-
-  // ---------- CONTEXT VALUE ----------
+  // Shared context object consumed by app components.
   const value = {
-    // Essential global items
     backendUrl,
     currSymbol,
     user,
@@ -172,24 +178,18 @@ const AppContextProvider = (props) => {
     verified,
     fetchCurrentUser,
     logoutUser,
-
-    // Socket & Real-time communication
     socket,
     onlineUsers,
     messages,
     setMessages,
-    activeRoomId,
+    activeRoomId: activeRoomIdRef.current,
     setActiveRoomId,
-
-    // Chat/Messaging
     unreadBySender,
     setUnreadBySender,
     totalUnread,
     setTotalUnread,
     fetchUnreadCounts,
     markChatAsRead,
-
-    // Booking Notifications (service providers)
     bookingNotifications,
     setBookingNotifications,
     unreadBookingCount,

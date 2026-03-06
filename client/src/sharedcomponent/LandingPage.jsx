@@ -738,28 +738,50 @@ const LandingPage = () => {
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <button
-                onClick={() => {
-                  setAuthMode("Sign Up");
-                  setShowAuthModal(true);
-                }}
-                className="bg-gray-800 hover:bg-gray-700 text-white font-bold text-lg px-8 py-4 rounded-lg transition-colors flex items-center gap-2"
-              >
-                <span>Get Started Free</span>
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              {user ? (
+                <button
+                  onClick={() => navigate("/user/dashboard")}
+                  className="bg-gray-900 hover:bg-gray-800 text-white font-bold text-lg px-8 py-4 rounded-lg transition-colors flex items-center gap-2"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M13 7l5 5m0 0l-5 5m5-5H6"
-                  />
-                </svg>
-              </button>
+                  <span> Go to Dashboard</span>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M13 7l5 5m0 0l-5 5m5-5H6"
+                    />
+                  </svg>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setAuthMode("Sign Up");
+                    setShowAuthModal(true);
+                  }}
+                  className="bg-gray-800 hover:bg-gray-700 text-white font-bold text-lg px-8 py-4 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <span>Get Started Free</span>
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M13 7l5 5m0 0l-5 5m5-5H6"
+                    />
+                  </svg>
+                </button>
+              )}
 
               <button
                 onClick={() => setShowLearnMore(true)}

@@ -3,25 +3,28 @@ import React, { useContext, useState, useMemo } from "react";
 import { ShareContext } from "../../sharedcontext/SharedContext.jsx";
 import { assets } from "../../assets/assets.js";
 
-const ChatSidebar = ({ 
-  selectedUser, 
-  setSelectedUser, 
-  services = [], // Provide default value
+const ChatSidebar = ({
+  selectedUser,
+  setSelectedUser,
+  services = [],
   onRemoveService,
-  onClearAll 
+  onClearAll,
 }) => {
-  const { user, socket, onlineUsers, unreadBySender, markChatAsRead } = useContext(ShareContext);
+  const { user, socket, onlineUsers, unreadBySender, markChatAsRead } =
+    useContext(ShareContext);
   const [showConfirmClear, setShowConfirmClear] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+
+  console.log("chat side bar online users", onlineUsers);
 
   // Filter services based on search term - ALWAYS call useMemo
   const filteredServices = useMemo(() => {
     if (!services || services.length === 0) return [];
-    
+
     if (!searchTerm.trim()) return services;
 
     const term = searchTerm.toLowerCase().trim();
-    return services.filter(service => {
+    return services.filter((service) => {
       const { serviceProvider } = service;
       return (
         serviceProvider?.name?.toLowerCase().includes(term) ||
@@ -36,13 +39,15 @@ const ChatSidebar = ({
     return (
       <div className="bg-white h-full border-r border-gray-200 p-5 rounded-tl-2xl rounded-bl-2xl flex items-center justify-center">
         <div className="text-center">
-          <img 
-            src={assets.search_icon} 
-            alt="No conversations" 
+          <img
+            src={assets.search_icon}
+            alt="No conversations"
             className="w-16 h-16 opacity-30 mx-auto mb-3"
           />
           <p className="text-gray-400 text-sm">No conversations yet</p>
-          <p className="text-gray-400 text-xs mt-1">Your service providers will appear here</p>
+          <p className="text-gray-400 text-xs mt-1">
+            Your service providers will appear here
+          </p>
         </div>
       </div>
     );
@@ -57,36 +62,34 @@ const ChatSidebar = ({
     if (socket.current) {
       socket.current.emit("joinUserRoom", {
         userId: user._id,
-        userName: user.name,
-        userRole: user.role,
-        roomProvider: serviceProvider.name,
-        serviceName: service.serviceName,
         roomId,
       });
     }
 
-    // ✅ Mark messages as read when selecting the user
+    // Mark messages as read when selecting the user
     markChatAsRead(serviceProvider._id);
   };
 
   const handleRemoveService = (e, serviceId) => {
     e.stopPropagation(); // Prevent triggering the select user
-    
+
     // Find the service being removed to get the serviceProvider ID
-    const serviceToRemove = services.find(service => service._id === serviceId);
-    
+    const serviceToRemove = services.find(
+      (service) => service._id === serviceId,
+    );
+
     //Mark messages as read before removing the service
     if (serviceToRemove && serviceToRemove.serviceProvider) {
       markChatAsRead(serviceToRemove.serviceProvider._id);
     }
-    
+
     onRemoveService(serviceId);
   };
 
   const handleClearAll = () => {
     if (services.length > 0) {
       // ✅ Mark ALL conversations as read before clearing
-      services.forEach(service => {
+      services.forEach((service) => {
         const { serviceProvider } = service;
         if (serviceProvider && serviceProvider._id) {
           markChatAsRead(serviceProvider._id);
@@ -129,13 +132,21 @@ const ChatSidebar = ({
                 Clear All
               </button>
             )}
-            <img src={assets.menu_icon} alt="Menu" className="w-5 cursor-pointer" />
+            <img
+              src={assets.menu_icon}
+              alt="Menu"
+              className="w-5 cursor-pointer"
+            />
           </div>
         </div>
 
         {/* Search Bar */}
         <div className="relative flex items-center gap-2 bg-gray-100 rounded-full px-3 py-2">
-          <img src={assets.search_icon} alt="search" className="w-4 opacity-60" />
+          <img
+            src={assets.search_icon}
+            alt="search"
+            className="w-4 opacity-60"
+          />
           <input
             type="text"
             value={searchTerm}
@@ -149,8 +160,18 @@ const ChatSidebar = ({
               onClick={clearSearch}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           )}
@@ -178,13 +199,13 @@ const ChatSidebar = ({
       <div className="mt-2 space-y-2">
         {filteredServices.length === 0 ? (
           <div className="text-center py-8">
-            <img 
-              src={assets.search_icon} 
-              alt="No results" 
+            <img
+              src={assets.search_icon}
+              alt="No results"
               className="w-12 h-12 opacity-30 mx-auto mb-3"
             />
             <p className="text-sm text-gray-400">
-              {searchTerm ? 'No conversations found' : 'No conversations yet'}
+              {searchTerm ? "No conversations found" : "No conversations yet"}
             </p>
             {searchTerm && (
               <p className="text-xs text-gray-400 mt-1">
@@ -195,11 +216,14 @@ const ChatSidebar = ({
         ) : (
           filteredServices.map((service) => {
             const { serviceProvider } = service;
-            const isOnline = onlineUsers.includes(serviceProvider._id);
+            const isOnline = onlineUsers.includes(
+              serviceProvider._id.toString(),
+            );
             const unread = unreadBySender[serviceProvider._id] || 0;
-            
-            // ✅ Only show unread count if this is NOT the selected user
-            const showUnreadBadge = unread > 0 && selectedUser?._id !== serviceProvider._id;
+
+            //Only show unread count if this is NOT the selected user
+            const showUnreadBadge =
+              unread > 0 && selectedUser?._id !== serviceProvider._id;
 
             return (
               <div
@@ -230,9 +254,15 @@ const ChatSidebar = ({
                       ×
                     </button>
                   </div>
-                  <span className="text-xs text-gray-500 truncate">{serviceProvider.email}</span>
-                  <span className="text-xs text-gray-500">Service: {service.serviceName}</span>
-                  <span className={`text-xs ${isOnline ? "text-green-500" : "text-gray-400"}`}>
+                  <span className="text-xs text-gray-500 truncate">
+                    {serviceProvider.email}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    Service: {service.serviceName}
+                  </span>
+                  <span
+                    className={`text-xs ${isOnline ? "text-green-500" : "text-gray-400"}`}
+                  >
                     {isOnline ? "Online" : "Offline"}
                   </span>
                 </div>
@@ -253,9 +283,12 @@ const ChatSidebar = ({
       {showConfirmClear && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-sm mx-4">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Clear All Conversations?</h3>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Clear All Conversations?
+            </h3>
             <p className="text-gray-600 mb-4">
-              This will remove all service providers from your chat list. This action cannot be undone.
+              This will remove all service providers from your chat list. This
+              action cannot be undone.
             </p>
             <div className="flex gap-3 justify-end">
               <button
