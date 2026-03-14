@@ -11,6 +11,7 @@ const ForgetPassword = () => {
   const { backendUrl } = useContext(ShareContext);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authMode, setAuthMode] = useState("Sign Up");
+  const [showLoginSignUp, setShowLoginSignUp] = useState(false);
   const navigate = useNavigate();
   const inputRefs = useRef([]);
 
@@ -61,7 +62,11 @@ const ForgetPassword = () => {
     const enteredOtp = inputRefs.current.map((e) => e.value).join("");
     setIsLoading(true);
     try {
-      const data = await passwordResetService.verifyResetOtp(backendUrl, email, enteredOtp);
+      const data = await passwordResetService.verifyResetOtp(
+        backendUrl,
+        email,
+        enteredOtp,
+      );
       if (data.success) {
         toast.success("OTP Verified");
         setOtp(enteredOtp);
@@ -78,7 +83,12 @@ const ForgetPassword = () => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const data = await passwordResetService.resetPassword(backendUrl, email, otp, newPassword);
+      const data = await passwordResetService.resetPassword(
+        backendUrl,
+        email,
+        otp,
+        newPassword,
+      );
       if (data.success) {
         toast.success(data.message);
         setAuthMode("Login");
@@ -361,7 +371,7 @@ const ForgetPassword = () => {
       {/* Back to login link */}
       <div className="mt-8 text-center">
         <NavLink
-          to="/"
+          onClick={() => setShowAuthModal(true)}
           className="inline-flex items-center gap-2 text-gray-700 hover:text-gray-900 transition-colors group text-base"
         >
           <div className="p-2 bg-gray-100 rounded-lg group-hover:bg-gray-200 transition-colors">

@@ -12,7 +12,10 @@ import {
   sendResetOtp,
   verifyResetOtp,
   resetPassword,
-  googleLoginUser
+  googleLoginUser,
+  verifyEmail,
+  resendVerificationEmail,
+  checkVerificationStatus
 } from "../controllers/userControllers.js";
 
 const userRouter = express.Router();
@@ -24,6 +27,12 @@ userRouter.post("/login-admin", loginAdmin);
 userRouter.post("/logoutAdmin", logoutAdmin);
 userRouter.post("/logout", logoutUser);
 userRouter.get("/me", userAuth, getMe);
+
+
+// verification routes
+userRouter.get('/verify-email/:token', verifyEmail);
+userRouter.post('/resend-verification', resendVerificationEmail);
+userRouter.get('/verification-status', userAuth, checkVerificationStatus);
 
 
 // Password routes

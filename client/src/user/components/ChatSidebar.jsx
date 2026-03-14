@@ -15,7 +15,7 @@ const ChatSidebar = ({
   const [showConfirmClear, setShowConfirmClear] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
 
-  console.log("chat side bar online users", onlineUsers);
+ 
 
   // Filter services based on search term - ALWAYS call useMemo
   const filteredServices = useMemo(() => {

@@ -1,4 +1,3 @@
-// server.js
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
@@ -21,17 +20,16 @@ import { Chat } from "./src/models/index.js";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import { User } from "./src/models/index.js";
-
-// Import from new src structure
 import { errorHandler } from "./src/middleware/index.js";
 
-// -------------------- EXPRESS + HTTP --------------------
+// -------------------- EXPRESS + HTTP SETUP --------------------
 const app = express();
-const server = http.createServer(app); // needed for Socket.IO
+const server = http.createServer(app);
 const port = process.env.PORT || 4000;
 
 // -------------------- MIDDLEWARE --------------------
 connectCloudinary();
+
 const allowedOrigins = [
   "http://localhost:5173",
   "http://localhost:5174",
@@ -39,27 +37,25 @@ const allowedOrigins = [
   "https://local-service-system.vercel.app",
   "https://local-service-system.onrender.com",
 ];
+
 app.use(express.json({ limit: "10mb" }));
 app.use(cookieParser());
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 
-// Test route
-app.use("/api/status", (req, res) =>
-  res.send("😁 SERVER IS LIVE - Programmer Eugen"),
-);
+app.use("/api/status", (req, res) => res.send("SERVER IS LIVE"));
 
-// -------------------- MONGODB --------------------
+// -------------------- DATABASE --------------------
 await connectDb();
 
-// -------------------- SOCKET.IO --------------------
+// -------------------- SOCKET.IO SETUP --------------------
 const io = new Server(server, {
   cors: { origin: allowedOrigins, credentials: true },
 });
 
-// Track online users (userId -> Set of socketIds)
+// Track online users: userId -> Set of socketIds
 export const connectedUsers = {};
 
-// ---------------- SOCKET AUTH (verify cookie JWT) ----------------
+// -------------------- SOCKET AUTH --------------------
 io.use(async (socket, next) => {
   try {
     const cookieHeader = socket.handshake.headers?.cookie || "";
@@ -69,10 +65,7 @@ io.use(async (socket, next) => {
       .find((c) => c.startsWith("token="))
       ?.split("=")[1];
 
-    if (!token) {
-      // Reject connection if no token is present
-      return next(new Error("Authentication error: missing token"));
-    }
+    if (!token) return next(new Error("Authentication error: missing token"));
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     if (!decoded?.id) return next(new Error("Authentication error"));
@@ -88,61 +81,56 @@ io.use(async (socket, next) => {
   }
 });
 
+// -------------------- HELPER: EMIT ONLINE USERS --------------------
+const emitOnlineUsers = () => {
+  // Send the list of all currently online user IDs to every connected socket
+  const onlineUserIds = Object.keys(connectedUsers);
+  io.emit("onlineUsers", onlineUserIds);
+};
+
+// -------------------- SOCKET CONNECTION --------------------
 io.on("connection", (socket) => {
-  // New socket connected: socket.id available on socket object (logging removed)
+  // ---------------- JOIN USER ROOM --------------------
+  socket.on("joinUserRoom", ({ userId, roomId }) => {
+    const authUserId = socket.user?._id?.toString();
+    const targetId = userId?.toString();
 
-  // ---------------- JOIN USER ROOM (COMBINED FOR CHAT & NOTIFICATIONS) ----------------
-  socket.on(
-    "joinUserRoom",
-    ({ userId, userName, userRole, roomProvider, serviceName, roomId }) => {
-      // Only allow the socket to join the user room if it matches the authenticated socket user
-      const authUserId = socket.user?._id?.toString();
-      const targetId = userId?.toString();
+    // Prevent impersonation
+    if (!targetId || !authUserId || targetId !== authUserId) {
+      console.warn(`Socket ${socket.id} attempted to join room for ${userId}`);
+      return;
+    }
 
-      if (!targetId || !authUserId || targetId !== authUserId) {
-        console.warn(
-          `Socket ${socket.id} attempted to join user room for ${userId} (auth ${authUserId})`,
-        );
-        return; // don't allow impersonation
-      }
+    // Track socket in connectedUsers
+    if (!connectedUsers[targetId]) connectedUsers[targetId] = new Set();
+    connectedUsers[targetId].add(socket.id);
 
-      if (!connectedUsers[targetId]) connectedUsers[targetId] = new Set();
-      connectedUsers[targetId].add(socket.id);
+    // Join personal room for notifications(booking ...)
+    socket.join(targetId);
 
-      // Join user's personal room for notifications (using userId)
-      socket.join(targetId);
+    // Join chat room if provided
+    if (roomId) socket.join(roomId);
 
-      // Also join chat room if provided
-      if (roomId) {
-        socket.join(roomId);
-      }
+    // Emit updated online users to all clients
+    emitOnlineUsers();
+  });
 
-      // User joined notification room (logging removed)
-
-      io.emit("onlineUsers", Object.keys(connectedUsers));
-    },
-  );
-
-  // ---------------- JOIN / LEAVE ROOMS ----------------
+  // ---------------- JOIN / LEAVE ROOMS --------------------
   socket.on("joinRoom", (roomId) => {
     socket.join(roomId);
-    // Socket joined room (logging removed)
   });
 
   socket.on("leaveRoom", (roomId) => {
     socket.leave(roomId);
-    // Socket left room (logging removed)
   });
 
   socket.on("leaveAllRooms", () => {
-    const rooms = Array.from(socket.rooms);
-    rooms.forEach((room) => {
+    Array.from(socket.rooms).forEach((room) => {
       if (room !== socket.id) socket.leave(room);
     });
-    // Socket left all rooms (logging removed)
   });
 
-  // ---------------- SEND / RECEIVE MESSAGES ----------------
+  // ---------------- SEND / RECEIVE MESSAGES --------------------
   socket.on(
     "sendMessage",
     async ({ messageId, sender, receiver, text, roomId, createdAt, image }) => {
@@ -156,8 +144,10 @@ io.on("connection", (socket) => {
         createdAt: createdAt || new Date(),
       };
 
+      // Emit to everyone in the room
       io.to(roomId).emit("receiveMessage", message);
 
+      // Save message to database
       try {
         let chat = await Chat.findOne({
           participants: { $all: [sender, receiver] },
@@ -165,7 +155,6 @@ io.on("connection", (socket) => {
         if (!chat)
           chat = new Chat({ participants: [sender, receiver], messages: [] });
 
-        // Prevent duplicates
         const exists = chat.messages.find((m) => m.messageId === messageId);
         if (!exists) {
           chat.messages.push({
@@ -177,52 +166,50 @@ io.on("connection", (socket) => {
           });
           chat.updatedAt = new Date();
           await chat.save();
-          // Message saved to DB: messageId
-        } else {
-          // Duplicate message ignored: messageId
         }
       } catch (err) {
-        console.error("❌ Error saving message:", err.message);
+        console.error("Error saving message:", err.message);
       }
     },
   );
 
-  // ---------------- BOOKING EVENTS ----------------
+  // ---------------- BOOKING EVENTS --------------------
   socket.on("newBooking", (bookingData) => {
-    // Emit to the specific service provider
-    if (bookingData.providerId) {
+    if (bookingData.providerId)
       io.to(bookingData.providerId.toString()).emit("newBooking", bookingData);
-    }
   });
 
   socket.on("bookingStatusUpdate", (updateData) => {
-    // Emit to both customer and provider
-    if (updateData.customerId) {
+    if (updateData.customerId)
       io.to(updateData.customerId.toString()).emit(
         "bookingStatusUpdate",
         updateData,
       );
-    }
-    if (updateData.providerId) {
+    if (updateData.providerId)
       io.to(updateData.providerId.toString()).emit(
         "bookingStatusUpdate",
         updateData,
       );
-    }
   });
 
-  // ---------------- DISCONNECT ----------------
-  socket.on("disconnect", () => {
+  // ---------------- DISCONNECT --------------------
+  // In server.js, update the disconnect handler:
+  socket.on("disconnect", (reason) => {
+    console.log(`  Socket ${socket.id} disconnected. Reason:`, reason);
+    console.log(`   User:`, socket.user?._id?.toString() || "Unknown");
+
     for (const userId in connectedUsers) {
       connectedUsers[userId].delete(socket.id);
-      if (connectedUsers[userId].size === 0) delete connectedUsers[userId];
+      if (connectedUsers[userId].size === 0) {
+        delete connectedUsers[userId];
+        console.log(`   User ${userId} now has no connections`);
+      }
     }
-    io.emit("onlineUsers", Object.keys(connectedUsers));
+    emitOnlineUsers();
   });
 });
 
 // -------------------- ROUTES --------------------
-
 app.use("/api/user", userRouter);
 app.use("/api/serviceprovider", serviceRouter);
 app.use("/api/customer", customerRouter);
@@ -237,13 +224,11 @@ app.use("/api/landingpage", landipageDetailsRouter);
 // -------------------- GLOBAL ERROR HANDLER --------------------
 app.use(errorHandler);
 
-// -------------------- EXPORT IO FOR USE IN OTHER FILES --------------------
-export { io };
-
-// -------------------- START SERVER LOCALLY --------------------
+// -------------------- START SERVER --------------------
 server.listen(port, () => {
-  console.log(`🚀 Server started on port ${port}`);
+  console.log(`Server started on port ${port}`);
 });
 
-// -------------------- EXPORT FOR VERCEL --------------------
+// Export io for other modules
+export { io };
 export default server;

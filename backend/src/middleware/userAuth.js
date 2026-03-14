@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import User from "../models/userSchema.js";
 
 const userAuth = async (req, res, next) => {
-  const token = req.cookies.token;
+  const token = req.cookies.token || req.cookies.jwtToken;
 
   if (!token) {
     return res.status(401).json({
@@ -21,7 +21,9 @@ const userAuth = async (req, res, next) => {
     // Fetch user from DB and attach to req.user
     const user = await User.findById(decoded.id).select("-password");
     if (!user) {
-      return res.status(401).json({ success: false, message: "User not found" });
+      return res
+        .status(401)
+        .json({ success: false, message: "User not found" });
     }
 
     req.user = user;

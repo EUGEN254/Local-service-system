@@ -6,7 +6,7 @@ export const fetchCurrentUser = async (backendUrl) => {
   try {
     const { data } = await axios.get(`${backendUrl}/api/user/me`, {
       withCredentials: true,
-      validateStatus: (status) => status < 500, 
+      validateStatus: (status) => status < 500,
     });
 
     if (data.success && data.user) {
@@ -21,7 +21,7 @@ export const fetchCurrentUser = async (backendUrl) => {
   } catch (err) {
     localStorage.removeItem("user");
     localStorage.removeItem("role");
-    return null; 
+    return null;
   }
 };
 
@@ -31,7 +31,7 @@ export const logoutUser = async (backendUrl, socket, navigate) => {
     const { data } = await axios.post(
       `${backendUrl}/api/user/logout`,
       {},
-      { withCredentials: true }
+      { withCredentials: true },
     );
 
     localStorage.removeItem("user");
@@ -58,16 +58,19 @@ export const isUserVerified = (user) => {
 };
 
 // Register user
-export const register = async (backendUrl, { name, email, password, termsAccepted, role }) => {
+export const register = async (
+  backendUrl,
+  { name, email, password, termsAccepted, role },
+) => {
   try {
     const { data } = await axios.post(
       `${backendUrl}/api/user/register`,
       { name, email, password, termsAccepted, role },
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return data;
   } catch (err) {
-    console.error('Register error', err);
+    console.error("Register error", err);
     throw err;
   }
 };
@@ -78,11 +81,11 @@ export const login = async (backendUrl, { email, password, role }) => {
     const { data } = await axios.post(
       `${backendUrl}/api/user/login`,
       { email, password, role },
-      { withCredentials: true, validateStatus: () => true }
+      { withCredentials: true, validateStatus: () => true },
     );
     return data;
   } catch (err) {
-    console.error('Login error', err);
+    console.error("Login error", err);
     throw err;
   }
 };
@@ -93,11 +96,47 @@ export const googleLogin = async (backendUrl, { token, role }) => {
     const { data } = await axios.post(
       `${backendUrl}/api/user/google-login`,
       { token, role },
-      { withCredentials: true }
+      { withCredentials: true },
     );
     return data;
   } catch (err) {
-    console.error('Google login error', err);
+    console.error("Google login error", err);
     throw err;
+  }
+};
+
+// Email verification
+export const verifyEmail = async (backendUrl,token) => {
+  try {
+    const response = await axios.get(
+      `${backendUrl}/api/user/verify-email/${token}`,
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const resendVerificationEmail = async (backendUrl, { email }) => {
+  try {
+    const response = await axios.post(
+      `${backendUrl}/api/user/resend-verification`,
+      { email },
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
+  }
+};
+
+export const checkVerificationStatus = async (backendUrl) => {
+  try {
+    const response = await axios.get(
+      `${backendUrl}/api/user/verification-status`,
+      { withCredentials: true },
+    );
+    return response.data;
+  } catch (error) {
+    throw error.response?.data || error;
   }
 };

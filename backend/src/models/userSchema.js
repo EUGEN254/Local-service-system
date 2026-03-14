@@ -30,9 +30,18 @@ const userSchema = new mongoose.Schema(
       enum: ["active", "inactive"],
       default: "active",
     },
- 
+
     googleId: { type: String }, // Store Google ID
     emailVerified: { type: Boolean, default: false },
+
+    emailVerificationToken: {
+      type: String,
+      default: null,
+    },
+    emailVerificationExpires: {
+      type: Date,
+      default: null,
+    },
 
     // Service Provider Specific Fields
     serviceProviderInfo: {
@@ -46,7 +55,7 @@ const userSchema = new mongoose.Schema(
           image: String,
           status: String,
           dateAdded: Date,
-          serviceId: { type: mongoose.Schema.Types.ObjectId, ref: "Service" }, 
+          serviceId: { type: mongoose.Schema.Types.ObjectId, ref: "Service" },
         },
       ],
       rating: { type: Number, default: 0 },

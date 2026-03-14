@@ -34,6 +34,7 @@ import UserNotification from "./user/pages/UserNotification";
 import ForgetPassword from "./user/pages/ForgetPassword";
 import AllProviders from "./user/pages/AllProviders";
 import { Toaster } from "./sharedcomponent/Sonner";
+import VerifyEmailPage from "./pages/VerifyEmailPage";
 
 
 const App = () => {
@@ -47,6 +48,7 @@ const App = () => {
         {/* Public routes - exact paths */}
         <Route path="/" element={<LandingPage />} />
         <Route path="forget-password" element={<ForgetPassword />} />
+        <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
 
         <Route
           path="/auth"
