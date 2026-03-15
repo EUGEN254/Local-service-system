@@ -284,13 +284,14 @@ export const googleLoginUser = async (req, res) => {
         .update(verificationToken)
         .digest("hex");
 
-      user = await User.create({
+ 
+      user = new User({
         name,
         email,
         password: null,
         image: picture,
         role,
-        termsAccepted: true,
+        termsAccepted: true, 
         emailVerified: email_verified,
         googleId: sub,
         emailVerificationToken: email_verified ? null : hashedToken,
@@ -298,6 +299,9 @@ export const googleLoginUser = async (req, res) => {
           ? null
           : Date.now() + 24 * 60 * 60 * 1000,
       });
+
+      // Save the user with validation
+      await user.save();
 
       // Send verification email if Google didn't verify
       if (!email_verified) {

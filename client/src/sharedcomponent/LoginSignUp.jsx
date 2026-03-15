@@ -80,15 +80,13 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
         data = await authService.login(backendUrl, { email, password, role });
       }
 
-      console.log("Auth response:", data);
-
       // LOGIN SUCCESS
       if (data.success) {
         const user = data.user;
 
         if (currState === "Sign Up") {
-          setOpenVerifyModal(true);
-          toast.success("Registration successful! Please verify your email.");
+          setOpenVerifyModal(true); //verify user after sign up
+          toast.success(data.message);
         } else {
           if (user?.emailVerified) {
             await fetchCurrentUser();
@@ -156,13 +154,11 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
         role,
       });
 
-      console.log("Google login response:", data); // Debug log
-
       if (data.success) {
         if (currState === "Sign Up") {
           if (data.emailVerified) {
             //Email already verified by Google - redirect to dashboard
-            toast.success("Account created successfully!");
+            toast.success(data.message);
 
             // Fetch user data
             await fetchCurrentUser();

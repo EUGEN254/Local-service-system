@@ -1,8 +1,13 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { FiMail, FiCheckCircle, FiAlertCircle, FiRefreshCw } from 'react-icons/fi';
-import { ShareContext } from '../sharedcontext/SharedContext';
-import * as authService from '../services/authService';
-import { toast } from 'sonner';
+import React, { useState, useEffect, useContext } from "react";
+import {
+  FiMail,
+  FiCheckCircle,
+  FiAlertCircle,
+  FiRefreshCw,
+} from "react-icons/fi";
+import { ShareContext } from "../sharedcontext/SharedContext";
+import * as authService from "../services/authService";
+import { toast } from "sonner";
 
 const VerifyUser = ({ open, onClose, email }) => {
   const [resending, setResending] = useState(false);
@@ -28,34 +33,37 @@ const VerifyUser = ({ open, onClose, email }) => {
 
   const handleResendEmail = async () => {
     if (!canResend) return;
-    
+
     setResending(true);
     try {
-      const response = await authService.resendVerificationEmail(backendUrl, { email });
+      const response = await authService.resendVerificationEmail(backendUrl, {
+        email,
+      });
       if (response.success) {
-        toast.success('Verification email resent successfully!');
+        toast.success("Verification email resent successfully!");
         setCanResend(false);
         setTimeLeft(60);
       } else {
-        toast.error(response.message || 'Failed to resend email');
+        toast.error(response.message || "Failed to resend email");
       }
     } catch (error) {
-      toast.error('Failed to resend verification email');
+      toast.error("Failed to resend verification email");
     } finally {
       setResending(false);
     }
   };
 
   const handleCheckInbox = () => {
-    window.open('https://mail.google.com', '_blank');
+    window.open("https://mail.google.com", "_blank");
   };
 
   if (!open) return null;
 
   return (
     <div
-    onclick={onClose}
-     className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[70]">
+      onclick={onClose}
+      className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-[70]"
+    >
       <div className="bg-white rounded-xl shadow-2xl max-w-md w-full mx-auto overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-gray-600 to-gray-700 p-6 text-center">
@@ -78,7 +86,7 @@ const VerifyUser = ({ open, onClose, email }) => {
                 We've sent a verification email to:
               </p>
               <p className="font-semibold text-gray-900 bg-white p-3 rounded-lg border border-gray-200 text-center">
-                {email || 'your email address'}
+                {email || "your email address"}
               </p>
             </div>
           </div>
@@ -89,10 +97,11 @@ const VerifyUser = ({ open, onClose, email }) => {
                 <FiCheckCircle className="text-green-500 text-lg mt-0.5" />
               </div>
               <p className="text-sm text-gray-600">
-                Click the verification button in the email to activate your account
+                Click the verification button in the email to activate your
+                account
               </p>
             </div>
-            
+
             <div className="flex items-start space-x-3">
               <div className="flex-shrink-0">
                 <FiAlertCircle className="text-yellow-500 text-lg mt-0.5" />
@@ -114,8 +123,8 @@ const VerifyUser = ({ open, onClose, email }) => {
                 disabled={!canResend || resending}
                 className={`flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors ${
                   canResend && !resending
-                    ? 'bg-blue-600 hover:bg-blue-700 text-white'
-                    : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : "bg-gray-200 text-gray-500 cursor-not-allowed"
                 }`}
               >
                 {resending ? (
@@ -147,7 +156,7 @@ const VerifyUser = ({ open, onClose, email }) => {
               <FiMail />
               <span>Open Gmail</span>
             </button>
-            
+
             <button
               onClick={onClose}
               className="w-full py-3 px-4 border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium rounded-lg transition-colors"
