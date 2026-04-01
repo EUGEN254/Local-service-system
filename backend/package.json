@@ -29,8 +29,7 @@
     "moment-timezone": "^0.6.0",
     "mongoose": "^8.19.0",
     "multer": "^2.0.2",
-    "ngrok": "^4.2.2",
-    "nodemailer": "^7.0.10",
+    "nodemailer": "^8.0.4",
     "nodemon": "^3.1.10",
     "qs": "^6.14.1",
     "resend": "^6.4.2",
@@ -42,6 +41,7 @@
   },
   "devDependencies": {
     "body-parser": ">=2.2.1",
-    "js-yaml": ">=4.1.1"
+    "js-yaml": ">=4.1.1",
+    "ngrok": "^5.0.0-beta.2"
   }
 }
