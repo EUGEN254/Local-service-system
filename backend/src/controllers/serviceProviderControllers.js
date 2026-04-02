@@ -1,11 +1,11 @@
 import { v2 as cloudinary } from "cloudinary";
-import plumbingServiceSchema from "../models/plumbingServiceSchema.js";
 import Booking from "../models/bookingSchema.js";
 import User from "../models/userSchema.js";
 import mpesaTransactionsSchema from "../models/mpesaTransactionsSchema.js";
 import Rating from "../models/ratingSchema.js";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import services from "../models/services.js";
 
 // Add a new service
 export const addService = async (req, res) => {
@@ -29,7 +29,7 @@ export const addService = async (req, res) => {
       folder: "services",
     });
 
-    const newService = new plumbingServiceSchema({
+    const newService = new services({
       category,
       serviceName,
       amount,
@@ -73,12 +73,12 @@ export const getMyServices = async (req, res) => {
     const skip = (page - 1) * limit;
 
     // Get total count
-    const totalServices = await plumbingServiceSchema.countDocuments({
+    const totalServices = await services.countDocuments({
       serviceProvider: req.user._id,
     });
 
     // Fetch services with pagination
-    const services = await plumbingServiceSchema
+    const servicess = await services
       .find({ serviceProvider: req.user._id })
       .sort({ dateAdded: -1 })
       .skip(skip)
@@ -89,7 +89,7 @@ export const getMyServices = async (req, res) => {
 
     res.json({
       success: true,
-      services,
+      services: servicess,
       pagination: {
         currentPage: page,
         totalPages: totalPages,
@@ -162,7 +162,7 @@ export const getCustomerDetails = async (req, res) => {
 export const getServiceDetails = async (req, res) => {
   try {
     const { serviceId } = req.params;
-    const service = await plumbingServiceSchema.findById(serviceId);
+    const service = await services.findById(serviceId);
 
     if (!service) {
       return res
@@ -193,7 +193,7 @@ export const deleteService = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const service = await plumbingServiceSchema.findById(id);
+    const service = await services.findById(id);
     if (!service) {
       return res
         .status(404)
@@ -226,7 +226,7 @@ export const editService = async (req, res) => {
     const { id } = req.params;
     const { category, serviceName, amount, status } = req.body;
 
-    const service = await plumbingServiceSchema.findById(id);
+    const service = await services.findById(id);
     if (!service) {
       return res
         .status(404)

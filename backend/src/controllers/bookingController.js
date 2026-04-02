@@ -1,5 +1,5 @@
 import Booking from "../models/bookingSchema.js";
-import plumbingServiceSchema from "../models/plumbingServiceSchema.js";
+import plumbingServiceSchema from "../models/services.js";
 import User from "../models/userSchema.js";
 import { io } from "../../server.js";
 import { createNotification } from "./notificationController.js";

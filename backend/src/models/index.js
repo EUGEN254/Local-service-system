@@ -7,6 +7,6 @@ export { default as Message } from './messages.js';
 export { default as MpesaTransaction } from './mpesaTransactionsSchema.js';
 export { default as Notification } from './notificationSchema.js';
 export { default as PasswordReset } from './passwordReset.js';
-export { default as PlumbingService } from './plumbingServiceSchema.js';
+export { default as PlumbingService } from './services.js';
 export { default as SupportTicket } from './supportTicketSchema.js';
 export { default as Rating } from './ratingSchema.js';

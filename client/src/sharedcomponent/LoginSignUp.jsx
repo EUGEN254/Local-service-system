@@ -1,5 +1,5 @@
 import React, { useContext, useState } from "react";
-import { FiMail, FiLock, FiUserPlus, FiAlertTriangle } from "react-icons/fi";
+import { FiMail, FiLock, FiUserPlus, FiAlertTriangle, FiCheck, FiRefreshCw } from "react-icons/fi";
 import { Link, NavLink, useNavigate } from "react-router-dom";
 import * as authService from "../services/authService";
 import { toast } from "sonner";
@@ -20,11 +20,70 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showRoleConfirm, setShowRoleConfirm] = useState(false);
   const [pendingRole, setPendingRole] = useState("");
+  const [passwordRequirements, setPasswordRequirements] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    specialChar: false
+  });
 
   const { backendUrl, fetchCurrentUser } = useContext(ShareContext);
   const navigate = useNavigate();
 
   const isLoading = formLoading || googleLoading;
+
+  // Password validation function
+  const validatePassword = (pwd) => {
+    setPasswordRequirements({
+      length: pwd.length >= 8,
+      uppercase: /[A-Z]/.test(pwd),
+      lowercase: /[a-z]/.test(pwd),
+      number: /[0-9]/.test(pwd),
+      specialChar: /[!@#$%^&*(),.?":{}|<>]/.test(pwd)
+    });
+  };
+
+  const handlePasswordChange = (e) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    if (currState === "Sign Up") {
+      validatePassword(newPassword);
+    }
+  };
+
+  // Check if all password requirements are met
+  const isPasswordValid = () => {
+    return Object.values(passwordRequirements).every(req => req === true);
+  };
+
+  // Auto-generate secure password
+  const generateSecurePassword = () => {
+    const length = 12;
+    const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const lowercase = "abcdefghijklmnopqrstuvwxyz";
+    const numbers = "0123456789";
+    const specialChars = "!@#$%^&*()";
+    
+    let password = "";
+    // Ensure at least one from each category
+    password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += specialChars[Math.floor(Math.random() * specialChars.length)];
+    
+    // Fill the rest randomly
+    const allChars = uppercase + lowercase + numbers + specialChars;
+    for (let i = password.length; i < length; i++) {
+      password += allChars[Math.floor(Math.random() * allChars.length)];
+    }
+    
+    // Shuffle the password
+    password = password.split('').sort(() => Math.random() - 0.5).join('');
+    setPassword(password);
+    validatePassword(password);
+    toast.success("Secure password generated!");
+  };
 
   const handleRoleSelect = (selectedRole) => {
     if (currState === "Sign Up") {
@@ -58,9 +117,16 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
   const onsubmitHandler = async (e) => {
     e.preventDefault();
 
-    if (currState === "Sign Up" && !termsAccepted) {
-      toast.error("Please accept the terms and conditions");
-      return;
+    if (currState === "Sign Up") {
+      if (!termsAccepted) {
+        toast.error("Please accept the terms and conditions");
+        return;
+      }
+      
+      if (!isPasswordValid()) {
+        toast.error("Please meet all password requirements");
+        return;
+      }
     }
 
     setFormLoading(true);
@@ -370,24 +436,96 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
                 <input
                   type={passwordVisible ? "text" : "password"}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={handlePasswordChange}
                   placeholder="••••••••"
-                  autoComplete="current-password"
+                  autoComplete={currState === "Sign Up" ? "new-password" : "current-password"}
                   required
                   disabled={isLoading}
-                  className="w-full pl-10 pr-10 py-2.5 text-base rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 focus:outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  className="w-full pl-10 pr-24 py-2.5 text-base rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-200 focus:outline-none transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
-                <button
-                  type="button"
-                  onClick={() =>
-                    !isLoading && setPasswordVisible(!passwordVisible)
-                  }
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 text-base disabled:opacity-50"
-                  disabled={isLoading}
-                >
-                  {passwordVisible ? "Hide" : "Show"}
-                </button>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex gap-2">
+                  {currState === "Sign Up" && (
+                    <button
+                      type="button"
+                      onClick={() => !isLoading && generateSecurePassword()}
+                      className="text-gray-500 hover:text-gray-700 text-base disabled:opacity-50"
+                      disabled={isLoading}
+                      title="Generate secure password"
+                    >
+                      <FiRefreshCw className="text-lg" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      !isLoading && setPasswordVisible(!passwordVisible)
+                    }
+                    className="text-gray-500 hover:text-gray-700 text-base disabled:opacity-50"
+                    disabled={isLoading}
+                  >
+                    {passwordVisible ? "Hide" : "Show"}
+                  </button>
+                </div>
               </div>
+
+              {/* Password Requirements - Only for Sign Up */}
+              {currState === "Sign Up" && (
+                <div className="mt-3 space-y-2 text-sm">
+                  <p className="text-gray-600 font-medium mb-1">Password must contain:</p>
+                  <div className="grid grid-cols-1 gap-1">
+                    <div className="flex items-center gap-2">
+                      {passwordRequirements.length ? (
+                        <FiCheck className="text-green-500 text-sm" />
+                      ) : (
+                        <div className="w-4 h-4 border border-gray-300 rounded-full"></div>
+                      )}
+                      <span className={passwordRequirements.length ? "text-green-600" : "text-gray-500"}>
+                        At least 8 characters
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {passwordRequirements.uppercase ? (
+                        <FiCheck className="text-green-500 text-sm" />
+                      ) : (
+                        <div className="w-4 h-4 border border-gray-300 rounded-full"></div>
+                      )}
+                      <span className={passwordRequirements.uppercase ? "text-green-600" : "text-gray-500"}>
+                        One uppercase letter
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {passwordRequirements.lowercase ? (
+                        <FiCheck className="text-green-500 text-sm" />
+                      ) : (
+                        <div className="w-4 h-4 border border-gray-300 rounded-full"></div>
+                      )}
+                      <span className={passwordRequirements.lowercase ? "text-green-600" : "text-gray-500"}>
+                        One lowercase letter
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {passwordRequirements.number ? (
+                        <FiCheck className="text-green-500 text-sm" />
+                      ) : (
+                        <div className="w-4 h-4 border border-gray-300 rounded-full"></div>
+                      )}
+                      <span className={passwordRequirements.number ? "text-green-600" : "text-gray-500"}>
+                        One number
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {passwordRequirements.specialChar ? (
+                        <FiCheck className="text-green-500 text-sm" />
+                      ) : (
+                        <div className="w-4 h-4 border border-gray-300 rounded-full"></div>
+                      )}
+                      <span className={passwordRequirements.specialChar ? "text-green-600" : "text-gray-500"}>
+                        One special character (!@#$%^&*)
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Forgot Password Link */}
@@ -432,7 +570,8 @@ const LoginSignUp = ({ initialState = "Sign Up", setShowAuthModal }) => {
             <button
               type="submit"
               disabled={
-                isLoading || (currState === "Sign Up" && !termsAccepted)
+                isLoading || 
+                (currState === "Sign Up" && (!termsAccepted || !isPasswordValid()))
               }
               className="w-full py-3 px-4 rounded-lg font-medium bg-gray-900 hover:bg-gray-800 text-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center text-base"
             >

@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const plumbingServiceSchema = new mongoose.Schema({
+const services = new mongoose.Schema({
   category: { type: String, required: true },
   serviceName: { type: String, required: true },
   amount: { type: Number, required: true },
@@ -21,4 +21,4 @@ const plumbingServiceSchema = new mongoose.Schema({
   },
 });
 
-export default mongoose.model("PlumbingService", plumbingServiceSchema);
+export default mongoose.model("Service", services);

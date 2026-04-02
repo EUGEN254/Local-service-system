@@ -1,4 +1,4 @@
-import plumbingServiceSchema from "../models/plumbingServiceSchema.js";
+import plumbingServiceSchema from "../models/services.js";
 import ratingSchema from "../models/ratingSchema.js";
 
 // Fetch all services for customers
