@@ -193,6 +193,13 @@ export const loginUser = async (req, res) => {
       });
     }
 
+    if (!user.password) {
+      return res.status(400).json({
+        success: false,
+        message: "This account uses Google Sign-In. Please log in with Google.",
+      });
+    }
+
     // Verify password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
@@ -284,14 +291,13 @@ export const googleLoginUser = async (req, res) => {
         .update(verificationToken)
         .digest("hex");
 
- 
       user = new User({
         name,
         email,
         password: null,
         image: picture,
         role,
-        termsAccepted: true, 
+        termsAccepted: true,
         emailVerified: email_verified,
         googleId: sub,
         emailVerificationToken: email_verified ? null : hashedToken,

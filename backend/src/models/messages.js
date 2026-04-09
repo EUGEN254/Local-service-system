@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const messageSchema = new mongoose.Schema({
   messageId: {
     type: String,
-    required: true, // ✅ ensures every message has a unique ID
+    required: true, 
   },
   sender: {
     type: mongoose.Schema.Types.ObjectId,
