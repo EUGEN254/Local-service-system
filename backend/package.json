@@ -25,7 +25,7 @@
     "express": "^5.1.0",
     "google-auth-library": "^10.5.0",
     "jsonwebtoken": "^9.0.2",
-    "jspdf": "^4.0.0",
+    "jspdf": "^4.2.1",
     "moment-timezone": "^0.6.0",
     "mongoose": "^8.19.0",
     "multer": "^2.0.2",
@@ -34,11 +34,12 @@
     "qs": "^6.14.1",
     "resend": "^6.4.2",
     "smile-identity-core": "^3.1.0",
-    "socket.io": "^4.8.1",
+    "socket.io": "^4.8.3",
     "validator": "^13.15.15"
   },
   "overrides": {
-    "minimatch": "^10.2.1"
+    "minimatch": "^10.2.1",
+    "socket.io-parser": "^4.2.4"
   },
   "devDependencies": {
     "body-parser": ">=2.2.1",
