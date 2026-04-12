@@ -26,6 +26,7 @@ const navLinks = (logoutAdmin) => ({
     { name: "Service Providers", icon: <FaInbox />, path: "service-providers" },
     { name: "User management", icon: <FaInbox />, path: "user-management" },
     { name: "Analytics", icon: <FaChartLine />, path: "analytics" },
+    { name: "Payment Report", icon: <FaChartLine />, path: "payment-report" },
     { name: "Notification", icon: <FaBell />, path: "notifications" },
   ],
   other: [

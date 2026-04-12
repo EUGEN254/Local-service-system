@@ -21,6 +21,7 @@ import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
 import { User } from "./src/models/index.js";
 import { errorHandler } from "./src/middleware/index.js";
+import paymentAnalytics from "./src/routes/paymentAnalytics.js";
 
 // -------------------- EXPRESS + HTTP SETUP --------------------
 const app = express();
@@ -209,6 +210,7 @@ app.use("/api/categories", categoryRouter);
 app.use("/api/notifications", notificationRouter);
 app.use("/api/support", supportRouter);
 app.use("/api/landingpage", landipageDetailsRouter);
+app.use("/api/payment-analytics", paymentAnalytics);
 
 // -------------------- GLOBAL ERROR HANDLER --------------------
 app.use(errorHandler);

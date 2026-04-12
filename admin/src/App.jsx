@@ -14,6 +14,7 @@ import AdminLogin from "./pages/AdminLogin";
 import NotFound from "./components/NotFound";
 import { Toaster } from "./components/Sonner";
 import { useAdmin } from "./context/AdminContext";
+import PaymentReport from "./components/PaymentReport";
 
 // Enhanced Protected Route Wrapper — uses in-memory `admin` state
 const ProtectedRoute = ({ children, admin }) => {
@@ -71,6 +72,7 @@ const App = () => {
           <Route path="service-categories" element={<ServiceCategories />} />
           <Route path="service-providers" element={<ServiceProvider />} />
           <Route path="user-management" element={<UserManagement />} />
+          <Route path="payment-report" element={<PaymentReport />} />
         </Route>
 
         {/* Fallback */}
