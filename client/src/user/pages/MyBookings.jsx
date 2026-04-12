@@ -1,4 +1,10 @@
-import React, { useEffect, useState, useContext, useRef, useCallback } from "react";
+import React, {
+  useEffect,
+  useState,
+  useContext,
+  useRef,
+  useCallback,
+} from "react";
 import { toast } from "sonner";
 import { Link } from "react-router-dom";
 import {
@@ -77,66 +83,81 @@ const MyBookings = () => {
   }, [searchTerm]);
 
   // Fetch bookings from backend with all filters
-  const fetchBookings = useCallback(async (page = 1, isFilterChange = false) => {
-    try {
-      // Cancel previous requests if any
-      if (window.controller) {
-        window.controller.abort();
-      }
+  const fetchBookings = useCallback(
+    async (page = 1, isFilterChange = false) => {
+      try {
+        // Cancel previous requests if any
+        if (window.controller) {
+          window.controller.abort();
+        }
 
-      const controller = new AbortController();
-      window.controller = controller;
+        const controller = new AbortController();
+        window.controller = controller;
 
-      setLoading(true);
+        setLoading(true);
 
-      const params = {
-        page,
-        limit: pagination.limit,
-        search: debouncedSearchTerm,
-        paymentStatus: statusFilter,
-        dateTo,
-        sort: sortBy,
-      };
+        const params = {
+          page,
+          limit: pagination.limit,
+          search: debouncedSearchTerm,
+          paymentStatus: statusFilter,
+          dateTo,
+          sort: sortBy,
+        };
 
-      const data = await bookingService.fetchMyBookings(backendUrl, params, { signal: controller.signal });
+        const data = await bookingService.fetchMyBookings(backendUrl, params, {
+          signal: controller.signal,
+        });
 
-      if (data.success) {
-        setBookings(data.bookings || []);
-        setPagination(
-          data.pagination || {
-            currentPage: 1,
-            totalPages: 1,
-            totalBookings: 0,
-            limit: 10,
-            hasNextPage: false,
-            hasPrevPage: false,
-            nextPage: null,
-            prevPage: null,
-          },
-        );
-      } else {
-        setBookings([]);
-      }
+        if (data.success) {
+          setBookings(data.bookings || []);
+          setPagination(
+            data.pagination || {
+              currentPage: 1,
+              totalPages: 1,
+              totalBookings: 0,
+              limit: 10,
+              hasNextPage: false,
+              hasPrevPage: false,
+              nextPage: null,
+              prevPage: null,
+            },
+          );
+        } else {
+          setBookings([]);
+        }
       } catch (err) {
-      // Abort errors are expected when canceling
-      if (err.name === 'CanceledError' || err.name === 'AbortError') {
-        console.log('Request canceled:', err.message || err);
-      } else {
-        const msg = err?.response?.data?.message || err.message || 'Error fetching bookings';
-        toast.error(msg);
-        setBookings([]);
+        // Abort errors are expected when canceling
+        if (err.name === "CanceledError" || err.name === "AbortError") {
+          console.log("Request canceled:", err.message || err);
+        } else {
+          const msg =
+            err?.response?.data?.message ||
+            err.message ||
+            "Error fetching bookings";
+          toast.error(msg);
+          setBookings([]);
+        }
+      } finally {
+        if (isMounted.current) {
+          setLoading(false);
+        }
       }
-    } finally {
-      if (isMounted.current) {
-        setLoading(false);
-      }
-    }
-  }, [backendUrl, debouncedSearchTerm, statusFilter, dateTo, sortBy, pagination.limit]);
+    },
+    [
+      backendUrl,
+      debouncedSearchTerm,
+      statusFilter,
+      dateTo,
+      sortBy,
+      pagination.limit,
+    ],
+  );
 
   // FIXED: Single useEffect for fetching data
   useEffect(() => {
     isMounted.current = true;
-    
+
     // Add a small delay to prevent rapid successive calls
     const timer = setTimeout(() => {
       fetchBookings(pagination.currentPage);
@@ -160,15 +181,15 @@ const MyBookings = () => {
       case "status":
         setStatusFilter(value);
         // Reset to page 1 when filter changes
-        setPagination(prev => ({ ...prev, currentPage: 1 }));
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
         break;
       case "date":
         setDateTo(value);
-        setPagination(prev => ({ ...prev, currentPage: 1 }));
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
         break;
       case "sort":
         setSortBy(value);
-        setPagination(prev => ({ ...prev, currentPage: 1 }));
+        setPagination((prev) => ({ ...prev, currentPage: 1 }));
         break;
       default:
         break;
@@ -178,7 +199,7 @@ const MyBookings = () => {
   // FIXED: Handle limit change
   const handleLimitChange = (newLimit) => {
     const limit = parseInt(newLimit);
-    setPagination(prev => ({
+    setPagination((prev) => ({
       ...prev,
       limit: limit,
       currentPage: 1,
@@ -192,6 +213,7 @@ const MyBookings = () => {
 
       if (data.success) {
         setSelectedService(data.data || data);
+        console.log("Selected service set for modal:", data.data);
 
         const button = buttonRefs.current[index];
         if (button) {
@@ -211,7 +233,10 @@ const MyBookings = () => {
         setServiceModalOpen(true);
       }
     } catch (err) {
-      const msg = err?.response?.data?.message || err.message || 'Error fetching provider details';
+      const msg =
+        err?.response?.data?.message ||
+        err.message ||
+        "Error fetching provider details";
       toast.error(msg);
     }
   };
@@ -232,7 +257,9 @@ const MyBookings = () => {
     if (page >= 1 && page <= pagination.totalPages) {
       setPagination((prev) => ({ ...prev, currentPage: page }));
       // Scroll to top of bookings list
-      const bookingsContainer = document.querySelector(".bookings-list-container");
+      const bookingsContainer = document.querySelector(
+        ".bookings-list-container",
+      );
       if (bookingsContainer) {
         bookingsContainer.scrollTop = 0;
       }
@@ -245,7 +272,7 @@ const MyBookings = () => {
     setStatusFilter("all");
     setDateTo("");
     setSortBy("date-desc");
-    setPagination(prev => ({ ...prev, currentPage: 1 }));
+    setPagination((prev) => ({ ...prev, currentPage: 1 }));
   };
 
   // Check if any filter is active
@@ -520,7 +547,10 @@ const MyBookings = () => {
         </div>
 
         {/* 📄 Bookings Container - FIXED HEIGHT FOR SCROLLING */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col" style={{ height: 'calc(100vh - 300px)', minHeight: '500px' }}>
+        <div
+          className="bg-white rounded-lg border border-gray-200 shadow-sm flex flex-col"
+          style={{ height: "calc(100vh - 300px)", minHeight: "500px" }}
+        >
           {loading ? (
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
@@ -885,11 +915,11 @@ const MyBookings = () => {
           </button>
 
           {/* Provider Image */}
-          {selectedService.serviceProvider?.image && (
+          {selectedService.provider?.image && (
             <div className="w-full h-40 overflow-hidden rounded-lg mb-4 border border-gray-200">
               <img
-                src={selectedService.serviceProvider.image}
-                alt={selectedService.serviceProvider.name}
+                src={selectedService.provider.image}
+                alt={selectedService.provider.name}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -904,7 +934,7 @@ const MyBookings = () => {
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <span className="font-medium">Name:</span>
               <span className="font-semibold text-blue-600">
-                {selectedService.serviceProvider?.name || "N/A"}
+                {selectedService.provider?.name || "N/A"}
               </span>
             </div>
 
@@ -913,7 +943,7 @@ const MyBookings = () => {
                 <FaPhone className="mr-2 text-green-500" /> Phone:
               </span>
               <span className="font-semibold text-green-600">
-                {selectedService.serviceProvider?.phone || "N/A"}
+                {selectedService.provider?.phone || "N/A"}
               </span>
             </div>
 
@@ -922,7 +952,7 @@ const MyBookings = () => {
                 <FaEnvelope className="mr-2 text-purple-500" /> Email:
               </span>
               <span className="font-semibold text-purple-600 text-sm">
-                {selectedService.serviceProvider?.email || "N/A"}
+                {selectedService.provider?.email || "N/A"}
               </span>
             </div>
           </div>

@@ -25,6 +25,7 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
     markChatAsRead,
     setActiveRoomId,
   } = useContext(ShareContext);
+
   const [newMessage, setNewMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -32,24 +33,21 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
   const [imagePreview, setImagePreview] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
 
-  const scrollEnd = useRef();
   const fileInputRef = useRef();
   const messageEndRef = useRef(null);
   const prevMessagesLengthRef = useRef(0);
+  const hasFetchedRef = useRef(false);
 
-  // Get current chat ID and messages from context
   const currentChatId = useMemo(
     () => (selectedUser ? [user._id, selectedUser._id].sort().join("_") : null),
     [selectedUser, user._id],
   );
 
-  // Use a ref to store currentChatId for socket listener
   const currentChatIdRef = useRef(currentChatId);
   useEffect(() => {
     currentChatIdRef.current = currentChatId;
   }, [currentChatId]);
 
-  // Get messages for current chat
   const chatMessages = useMemo(
     () => (currentChatId ? messages[currentChatId] || [] : []),
     [messages, currentChatId],
@@ -65,18 +63,19 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
     prevMessagesLengthRef.current = chatMessages.length;
   }, [chatMessages]);
 
+  // Reset fetch flag when user changes
+  useEffect(() => {
+    hasFetchedRef.current = false;
+  }, [selectedUser]);
+
   // Fetch old messages from DB
   useEffect(() => {
-    if (!selectedUser) return;
+    if (!selectedUser || hasFetchedRef.current) return;
 
     const abortController = new AbortController();
 
     const fetchMessages = async () => {
-      // Don't refetch if we already have messages for this chat
-      if (chatMessages.length > 0) {
-        return;
-      }
-
+      hasFetchedRef.current = true;
       setLoading(true);
       try {
         const data = await chatService.fetchMessages(
@@ -84,11 +83,13 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
           selectedUser._id,
           { signal: abortController.signal },
         );
-        if (data.success) {
+           if (data.success) {
+          console.log("📥 fetch returned messages:", data.messages.map(m => m.messageId));
           setMessages((prev) => ({ ...prev, [currentChatId]: data.messages }));
         }
       } catch (err) {
         if (err.name !== "AbortError") {
+          hasFetchedRef.current = false;
           const msg =
             err?.response?.data?.message ||
             err.message ||
@@ -101,15 +102,8 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
     };
 
     fetchMessages();
-
     return () => abortController.abort();
-  }, [
-    selectedUser,
-    backendUrl,
-    currentChatId,
-    setMessages,
-    chatMessages.length,
-  ]);
+  }, [selectedUser, backendUrl, currentChatId, setMessages]);
 
   // Mark this room as the active room
   useEffect(() => {
@@ -119,45 +113,6 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
     }
     setActiveRoomId(null);
   }, [selectedUser, currentChatId, setActiveRoomId]);
-
-  // Receive messages via socket
-  const handleReceiveMessage = useCallback(
-    (msg) => {
-      // Only process messages for current chat
-      if (msg.roomId !== currentChatIdRef.current) return;
-
-      setMessages((prev) => {
-        const existingMessages = prev[currentChatIdRef.current] || [];
-
-        // Check if message already exists
-        if (existingMessages.some((m) => m.messageId === msg.messageId)) {
-          return prev;
-        }
-
-        // If message is from selected user to current user, mark as read
-        if (msg.sender === selectedUser?._id && msg.receiver === user._id) {
-          markChatAsRead(msg.sender).catch(() => {});
-        }
-
-        return {
-          ...prev,
-          [currentChatIdRef.current]: [...existingMessages, msg],
-        };
-      });
-    },
-    [selectedUser?._id, user._id, markChatAsRead, setMessages],
-  );
-
-  // Socket listener setup
-  useEffect(() => {
-    if (!socket.current) return;
-
-    socket.current.on("receiveMessage", handleReceiveMessage);
-
-    return () => {
-      socket.current.off("receiveMessage", handleReceiveMessage);
-    };
-  }, [socket, handleReceiveMessage]);
 
   // Handle image selection
   const handleImageSelect = useCallback((e) => {
@@ -176,16 +131,13 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      setImagePreview({
-        file: file,
-        previewUrl: e.target.result,
-      });
+      setImagePreview({ file: file, previewUrl: e.target.result });
       setShowPreview(true);
     };
     reader.readAsDataURL(file);
   }, []);
 
-  // Handle send message - WITH OPTIMISTIC UPDATE
+  // Handle send message
   const handleSend = useCallback(async () => {
     if ((!newMessage.trim() && !imagePreview) || !selectedUser) return;
 
@@ -197,7 +149,6 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
     if (imagePreview) {
       await handleSendImage(messageId, roomId);
     } else {
-      // Create message payload
       const messagePayload = {
         messageId,
         sender: user._id,
@@ -207,7 +158,7 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
         createdAt: new Date(),
       };
 
-      // OPTIMISTIC UPDATE - Show message immediately
+      // Optimistic update
       setMessages((prev) => ({
         ...prev,
         [currentChatId]: [...(prev[currentChatId] || []), messagePayload],
@@ -216,20 +167,15 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
       setNewMessage("");
 
       try {
-        // Emit via socket for real-time to other user
         socket.current.emit("sendMessage", messagePayload);
-
-        // Save to DB
         await chatService.sendMessage(backendUrl, messagePayload);
       } catch (err) {
-        // If error, remove the optimistic message
         setMessages((prev) => ({
           ...prev,
           [currentChatId]: (prev[currentChatId] || []).filter(
             (m) => m.messageId !== messageId,
           ),
         }));
-
         const msg =
           err?.response?.data?.message ||
           err.message ||
@@ -250,26 +196,24 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
     setMessages,
   ]);
 
-  // Handle send image - WITH OPTIMISTIC UPDATE
+  // Handle send image
   const handleSendImage = useCallback(
     async (messageId, roomId) => {
       if (!imagePreview || !selectedUser) return;
 
       setUploading(true);
 
-      // Create optimistic image message
       const optimisticMessage = {
         messageId,
         sender: user._id,
         receiver: selectedUser._id,
         text: newMessage || "📷 Image",
-        image: imagePreview.previewUrl, // Use preview URL temporarily
+        image: imagePreview.previewUrl,
         roomId,
         createdAt: new Date(),
-        isOptimistic: true, // Mark as optimistic
+        isOptimistic: true,
       };
 
-      // OPTIMISTIC UPDATE - Show image immediately with preview
       setMessages((prev) => ({
         ...prev,
         [currentChatId]: [...(prev[currentChatId] || []), optimisticMessage],
@@ -287,7 +231,6 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
         const data = await chatService.sendImage(backendUrl, formData);
 
         if (data.success) {
-          // Update the optimistic message with real image URL
           setMessages((prev) => ({
             ...prev,
             [currentChatId]: (prev[currentChatId] || []).map((msg) =>
@@ -297,36 +240,30 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
             ),
           }));
 
-          // Emit socket event for other user
           socket.current.emit("sendMessage", {
             ...optimisticMessage,
             image: data.imageUrl,
             isOptimistic: false,
           });
 
-          // Clear inputs
           setNewMessage("");
           setImagePreview(null);
           setShowPreview(false);
         }
       } catch (err) {
-        // Remove optimistic message on error
         setMessages((prev) => ({
           ...prev,
           [currentChatId]: (prev[currentChatId] || []).filter(
             (m) => m.messageId !== messageId,
           ),
         }));
-
         const msg =
           err?.response?.data?.message || err.message || "Failed to send image";
         toast.error(msg);
       } finally {
         setUploading(false);
         setIsSending(false);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = "";
-        }
+        if (fileInputRef.current) fileInputRef.current.value = "";
       }
     },
     [
@@ -341,13 +278,10 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
     ],
   );
 
-  // Cancel image preview
   const handleCancelPreview = useCallback(() => {
     setImagePreview(null);
     setShowPreview(false);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   }, []);
 
   const handleKeyDown = useCallback(
@@ -366,18 +300,11 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
     [selectedUser, onlineUsers],
   );
 
-  // If no user selected, show placeholder
   if (!selectedUser) {
     return (
       <div className="flex flex-col items-center justify-center h-full text-gray-500">
-        <img
-          src={assets.logo_icon}
-          alt="Chat"
-          className="w-16 opacity-40 mb-4"
-        />
-        <p className="text-lg font-medium">
-          Select a service provider to start chatting
-        </p>
+        <img src={assets.logo_icon} alt="Chat" className="w-16 opacity-40 mb-4" />
+        <p className="text-lg font-medium">Select a service provider to start chatting</p>
         <p className="text-sm mt-2">Your conversations will appear here</p>
       </div>
     );
@@ -399,22 +326,14 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
             }`}
           />
         </div>
-
         <div className="flex-1">
           <p className="text-lg font-semibold text-gray-800">
             {selectedUser?.name || "Chat"}
           </p>
-          <div className="flex items-center gap-2">
-            <span
-              className={`text-xs font-medium ${
-                isOnline ? "text-green-500" : "text-gray-500"
-              }`}
-            >
-              {isOnline ? "Online" : "Offline"}
-            </span>
-          </div>
+          <span className={`text-xs font-medium ${isOnline ? "text-green-500" : "text-gray-500"}`}>
+            {isOnline ? "Online" : "Offline"}
+          </span>
         </div>
-
         <img
           onClick={() => setSelectedUser(null)}
           src={assets.arrow_icon}
@@ -442,15 +361,11 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
                   msg.sender === user._id ? "justify-end" : "justify-start"
                 }`}
               >
-                <div
-                  className={`flex flex-col ${msg.sender === user._id ? "items-end" : "items-start"}`}
-                >
+                <div className={`flex flex-col ${msg.sender === user._id ? "items-end" : "items-start"}`}>
                   {msg.image ? (
                     <div
                       className={`p-2 rounded-lg max-w-xs ${
-                        msg.sender === user._id
-                          ? "bg-yellow-500"
-                          : "bg-white border"
+                        msg.sender === user._id ? "bg-yellow-500" : "bg-white border"
                       } ${msg.isOptimistic ? "opacity-70" : ""}`}
                     >
                       <img
@@ -460,9 +375,7 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
                         onClick={() => window.open(msg.image, "_blank")}
                       />
                       {msg.text && msg.text !== "📷 Image" && (
-                        <p
-                          className={`mt-2 text-sm ${msg.sender === user._id ? "text-gray-900" : "text-gray-800"}`}
-                        >
+                        <p className={`mt-2 text-sm ${msg.sender === user._id ? "text-gray-900" : "text-gray-800"}`}>
                           {msg.text}
                         </p>
                       )}
@@ -499,30 +412,24 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
         <div className="border-t border-gray-300 bg-white flex-shrink-0">
           <div className="flex items-center gap-3 p-3 bg-gray-50 border-b border-gray-200">
             <div className="flex items-center gap-3 flex-1">
-              <div className="relative">
-                <img
-                  src={imagePreview.previewUrl}
-                  alt="Preview"
-                  className="w-12 h-12 object-cover rounded-lg border border-gray-300"
-                />
-              </div>
+              <img
+                src={imagePreview.previewUrl}
+                alt="Preview"
+                className="w-12 h-12 object-cover rounded-lg border border-gray-300"
+              />
               <div className="flex-1">
                 <p className="text-sm font-medium text-gray-700">Photo</p>
-                <p className="text-xs text-gray-500">
-                  Add a caption (optional)
-                </p>
+                <p className="text-xs text-gray-500">Add a caption (optional)</p>
               </div>
             </div>
             <button
               onClick={handleCancelPreview}
-              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition text-gray-500"
               type="button"
+              className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 transition text-gray-500"
             >
               <FaTimes />
             </button>
           </div>
-
-          {/* Caption input */}
           <div className="px-3 py-2">
             <input
               type="text"
@@ -530,12 +437,7 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
               onChange={(e) => setNewMessage(e.target.value)}
               placeholder="Add a caption..."
               className="w-full p-2 border border-gray-300 rounded-lg outline-none focus:border-yellow-500 text-sm"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleSend();
-                }
-              }}
+              onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSend(); } }}
             />
           </div>
         </div>
@@ -553,7 +455,6 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
             onChange={handleImageSelect}
             disabled={!isOnline || uploading}
           />
-
           <label
             htmlFor="image"
             className={`cursor-pointer p-2 rounded-full transition-all ${
@@ -564,40 +465,26 @@ const ChatContainer = ({ selectedUser, setSelectedUser }) => {
           >
             <FaImage className="w-5 h-5 text-gray-600" />
           </label>
-
           <input
             type="text"
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={
-              isOnline ? "Type a message..." : "Service provider is offline"
-            }
+            placeholder={isOnline ? "Type a message..." : "Service provider is offline"}
             className={`flex-1 p-2 rounded-full border outline-none ${
-              isOnline
-                ? "border-gray-300 focus:border-yellow-500"
-                : "border-gray-400 bg-gray-100"
+              isOnline ? "border-gray-300 focus:border-yellow-500" : "border-gray-400 bg-gray-100"
             }`}
             disabled={!isOnline || uploading}
           />
-
           <button
             onClick={handleSend}
-            disabled={
-              !isOnline ||
-              (!newMessage.trim() && !imagePreview) ||
-              uploading ||
-              isSending
-            }
+            type="button"
+            disabled={!isOnline || (!newMessage.trim() && !imagePreview) || uploading || isSending}
             className={`p-2 rounded-full transition ${
-              isOnline &&
-              (newMessage.trim() || imagePreview) &&
-              !uploading &&
-              !isSending
+              isOnline && (newMessage.trim() || imagePreview) && !uploading && !isSending
                 ? "bg-yellow-500 hover:bg-yellow-400 shadow-sm"
                 : "bg-gray-300 cursor-not-allowed"
             }`}
-            type="button"
           >
             {isSending || uploading ? (
               <FaCircleNotch className="w-4 h-4 text-white animate-spin" />

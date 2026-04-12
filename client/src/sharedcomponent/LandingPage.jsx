@@ -1072,7 +1072,7 @@ const LandingPage = () => {
                     </span>{" "}
                     services
                   </div>
-                  <button
+                  {/* <button
                     onClick={() => {
                       setAuthMode("Sign Up");
                       setShowAuthModal(true);
@@ -1093,7 +1093,7 @@ const LandingPage = () => {
                       />
                     </svg>
                     Post a Request
-                  </button>
+                  </button> */}
                 </div>
               </div>
 

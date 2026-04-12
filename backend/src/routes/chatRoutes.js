@@ -1,7 +1,7 @@
 import express from "express";
 import Chat from "../models/Chat.js";
 import Message from "../models/messages.js";
-import Booking from "../models/bookingSchema.js"; 
+import Booking from "../models/bookingSchema.js";
 import userAuth from "../middleware/userAuth.js";
 import { io } from "../../server.js";
 import { v2 as cloudinary } from "cloudinary";
@@ -35,14 +35,21 @@ chatRouter.get("/my-customers", userAuth, async (req, res) => {
       .populate("participants", "name email image")
       .sort({ updatedAt: -1 });
 
+    const seen = new Set();
     const customers = chats
       .map((chat) =>
         chat.participants.find(
           (participant) =>
-            participant._id.toString() !== req.user._id.toString()
-        )
+            participant._id.toString() !== req.user._id.toString(),
+        ),
       )
-      .filter(Boolean);
+      .filter(Boolean)
+      .filter((participant) => {
+        const id = participant._id.toString();
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
 
     res.json({ success: true, customers });
   } catch (err) {
@@ -58,7 +65,6 @@ chatRouter.get("/my-customers", userAuth, async (req, res) => {
 chatRouter.get("/messages/:userId", userAuth, async (req, res) => {
   try {
     const { userId } = req.params;
-    
 
     // Find chat
     const chat = await Chat.findOne({
@@ -70,10 +76,9 @@ chatRouter.get("/messages/:userId", userAuth, async (req, res) => {
     // ✅ Mark all unread messages from this user as read
     await Message.updateMany(
       { sender: userId, receiver: req.user._id, isRead: false },
-      { $set: { isRead: true } }
+      { $set: { isRead: true } },
     );
 
-    
     res.json({ success: true, messages: chat.messages });
   } catch (err) {
     console.error("❌ Error fetching messages:", err);
@@ -138,11 +143,6 @@ chatRouter.post("/send", userAuth, async (req, res) => {
 
     await chat.populate("participants", "name email image");
 
-    // ✅ Emit message in real-time
-    if (roomId && io) {
-      io.to(roomId).emit("receiveMessage", message);
-    }
-
     res.json({ success: true, message });
   } catch (err) {
     console.error("❌ Error sending message:", err);
@@ -156,8 +156,8 @@ chatRouter.post("/send", userAuth, async (req, res) => {
 chatRouter.get("/unread-count", userAuth, async (req, res) => {
   try {
     const unreadCounts = await Message.aggregate([
-      { $match: { receiver: req.user._id, isRead: false } },//find current message to the logged in user
-      { $group: { _id: "$sender", count: { $sum: 1 } } },//group by sender and count
+      { $match: { receiver: req.user._id, isRead: false } }, //find current message to the logged in user
+      { $group: { _id: "$sender", count: { $sum: 1 } } }, //group by sender and count
     ]);
 
     res.json({ success: true, unreadCounts });
@@ -170,81 +170,82 @@ chatRouter.get("/unread-count", userAuth, async (req, res) => {
 /* ===========================================================
    🔹 SEND IMAGE (upload to cloudinary + save message)
 =========================================================== */
-chatRouter.post("/send-image", userAuth, upload.single("image"), async (req, res) => {
-  try {
-    const { sender, receiver, roomId, messageId, text } = req.body;
+chatRouter.post(
+  "/send-image",
+  userAuth,
+  upload.single("image"),
+  async (req, res) => {
+    try {
+      const { sender, receiver, roomId, messageId, text } = req.body;
 
-    if (!req.file) {
-      return res.status(400).json({
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "Image file is required",
+        });
+      }
+
+      // Upload image to Cloudinary using req.file.path
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "chat_images",
+      });
+
+      // Find or create chat
+      let chat = await Chat.findOne({
+        participants: { $all: [sender, receiver] },
+      });
+
+      if (!chat) {
+        chat = new Chat({
+          participants: [sender, receiver],
+          messages: [],
+        });
+      }
+
+      // Create message with image
+      const message = {
+        messageId,
+        sender: req.user._id,
+        receiver: receiver,
+        text: text || "📷 Image",
+        image: result.secure_url,
+        createdAt: new Date(),
+        isRead: false,
+      };
+
+      // Save message for unread tracking
+      await Message.create(message);
+
+      // Push to chat document
+      chat.messages.push({
+        messageId,
+        sender: req.user._id,
+        text: text || "📷 Image",
+        image: result.secure_url,
+        createdAt: message.createdAt,
+      });
+
+      chat.updatedAt = new Date();
+      await chat.save();
+
+      await chat.populate("participants", "name email image");
+
+   
+
+      res.json({
+        success: true,
+        message,
+        imageUrl: result.secure_url,
+      });
+    } catch (err) {
+      console.error("❌ Error in send-image:", err);
+      res.status(500).json({
         success: false,
-        message: "Image file is required",
+        message: err.message,
       });
     }
-
-    // Upload image to Cloudinary using req.file.path
-    const result = await cloudinary.uploader.upload(req.file.path, { 
-      folder: "chat_images" 
-    });
-
-    // Find or create chat
-    let chat = await Chat.findOne({
-      participants: { $all: [sender, receiver] },
-    });
-
-    if (!chat) {
-      chat = new Chat({
-        participants: [sender, receiver],
-        messages: [],
-      });
-    }
-
-    // Create message with image
-    const message = {
-      messageId,
-      sender: req.user._id,
-      receiver: receiver,
-      text: text || "📷 Image",
-      image: result.secure_url,
-      createdAt: new Date(),
-      isRead: false,
-    };
-
-    // Save message for unread tracking
-    await Message.create(message);
-
-    // Push to chat document
-    chat.messages.push({
-      messageId,
-      sender: req.user._id,
-      text: text || "📷 Image",
-      image: result.secure_url,
-      createdAt: message.createdAt,
-    });
-
-    chat.updatedAt = new Date();
-    await chat.save();
-
-    await chat.populate("participants", "name email image");
-
-    // Emit message in real-time
-    if (roomId && io) {
-      io.to(roomId).emit("receiveMessage", message);
-    }
-
-    res.json({ 
-      success: true, 
-      message,
-      imageUrl: result.secure_url 
-    });
-
-  } catch (err) {
-    console.error("❌ Error in send-image:", err);
-    res.status(500).json({ 
-      success: false, 
-      message: err.message 
-    });
-  }
-});
+  },
+);
 
 /* ===========================================================
    🔹 MARK MESSAGES AS READ
@@ -262,26 +263,25 @@ chatRouter.post("/mark-read", userAuth, async (req, res) => {
 
     // Mark all unread messages from this sender as read
     await Message.updateMany(
-      { 
-        sender: senderId, 
-        receiver: req.user._id, 
-        isRead: false 
+      {
+        sender: senderId,
+        receiver: req.user._id,
+        isRead: false,
       },
-      { 
-        $set: { isRead: true } 
-      }
+      {
+        $set: { isRead: true },
+      },
     );
 
-    res.json({ 
-      success: true, 
-      message: "Messages marked as read" 
+    res.json({
+      success: true,
+      message: "Messages marked as read",
     });
-
   } catch (err) {
     console.error("❌ Error marking messages as read:", err);
-    res.status(500).json({ 
-      success: false, 
-      message: err.message 
+    res.status(500).json({
+      success: false,
+      message: err.message,
     });
   }
 });
@@ -296,23 +296,23 @@ chatRouter.get("/booking-notifications", userAuth, async (req, res) => {
     // Find bookings for this provider by NAME
     const notifications = await Booking.find({
       providerName: req.user.name, // Use providerName field
-      createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+      createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
     })
-    .populate('customer', 'name email')
-    .sort({ createdAt: -1 });
+      .populate("customer", "name email")
+      .sort({ createdAt: -1 });
 
     const unreadCount = await Booking.countDocuments({
       providerName: req.user.name,
-      read: false
+      read: false,
     });
 
     // Format notifications
-    const formattedNotifications = notifications.map(booking => ({
+    const formattedNotifications = notifications.map((booking) => ({
       _id: booking._id,
       serviceName: booking.serviceName,
       categoryName: booking.categoryName,
-      customerName: booking.customer?.name || 'Unknown Customer',
-      customerEmail: booking.customer?.email || '',
+      customerName: booking.customer?.name || "Unknown Customer",
+      customerEmail: booking.customer?.email || "",
       amount: booking.amount,
       address: booking.address,
       city: booking.city,
@@ -323,13 +323,13 @@ chatRouter.get("/booking-notifications", userAuth, async (req, res) => {
       read: booking.read,
       createdAt: booking.createdAt,
       customerId: booking.customer?._id,
-      providerName: booking.providerName
+      providerName: booking.providerName,
     }));
 
     res.json({
       success: true,
       notifications: formattedNotifications,
-      unreadCount
+      unreadCount,
     });
   } catch (error) {
     console.error("❌ Error fetching booking notifications:", error);
@@ -342,19 +342,19 @@ chatRouter.get("/booking-notifications", userAuth, async (req, res) => {
 chatRouter.post("/mark-notification-read", userAuth, async (req, res) => {
   try {
     const { notificationId } = req.body;
-    
+
     if (!notificationId) {
       return res.status(400).json({
         success: false,
-        message: "Notification ID is required"
+        message: "Notification ID is required",
       });
     }
 
     await Booking.findByIdAndUpdate(notificationId, { read: true });
-    
-    res.json({ 
-      success: true, 
-      message: "Notification marked as read" 
+
+    res.json({
+      success: true,
+      message: "Notification marked as read",
     });
   } catch (error) {
     console.error("❌ Error marking notification as read:", error);
@@ -368,20 +368,20 @@ chatRouter.post("/mark-notification-read", userAuth, async (req, res) => {
 chatRouter.post("/mark-all-notifications-read", userAuth, async (req, res) => {
   try {
     const providerName = req.user.name; // Use the user's name, not ID
-    
+
     await Booking.updateMany(
-      { 
+      {
         providerName: providerName, // Compare string with string
-        read: false 
+        read: false,
       },
-      { 
-        $set: { read: true } 
-      }
+      {
+        $set: { read: true },
+      },
     );
-    
-    res.json({ 
-      success: true, 
-      message: "All notifications marked as read" 
+
+    res.json({
+      success: true,
+      message: "All notifications marked as read",
     });
   } catch (error) {
     console.error("❌ Error marking all notifications as read:", error);

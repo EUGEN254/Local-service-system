@@ -144,32 +144,21 @@ io.on("connection", (socket) => {
         createdAt: createdAt || new Date(),
       };
 
+      console.log(
+        "📨 sendMessage received from socket:",
+        socket.id,
+        "| messageId:",
+        messageId,
+      );
+      console.log(
+        "📡 Broadcasting to room:",
+        roomId,
+        "| EXCLUDING sender socket:",
+        socket.id,
+      );
+
       // Emit to everyone in the room
-      io.to(roomId).emit("receiveMessage", message);
-
-      // Save message to database
-      try {
-        let chat = await Chat.findOne({
-          participants: { $all: [sender, receiver] },
-        });
-        if (!chat)
-          chat = new Chat({ participants: [sender, receiver], messages: [] });
-
-        const exists = chat.messages.find((m) => m.messageId === messageId);
-        if (!exists) {
-          chat.messages.push({
-            messageId,
-            sender,
-            text,
-            image,
-            createdAt: message.createdAt,
-          });
-          chat.updatedAt = new Date();
-          await chat.save();
-        }
-      } catch (err) {
-        console.error("Error saving message:", err.message);
-      }
+      socket.to(roomId).emit("receiveMessage", message);
     },
   );
 

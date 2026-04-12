@@ -499,13 +499,13 @@ const Payments = () => {
                       selected={paymentMethod === "mpesa"}
                     />
 
-                    <PaymentMethodCard
+                    {/* <PaymentMethodCard
                       icon={<FiCreditCard className="w-5 h-5 text-gray-600" />}
                       title="Cash on Delivery"
                       description="Pay when service is completed"
                       value="cash"
                       selected={paymentMethod === "cash"}
-                    />
+                    /> */}
                   </div>
 
                   {paymentMethod === "mpesa" && (

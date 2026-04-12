@@ -8,17 +8,13 @@ import { useChat } from "../hooks/useChat";
 export const ShareContext = createContext();
 
 const AppContextProvider = (props) => {
-  // 1) App-level config and navigation helpers.
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const navigate = useNavigate();
   const currSymbol = "KES";
 
-  // 2) Authentication state and actions.
   const authState = useAuth(backendUrl, navigate);
-  const { user, authLoading, verified, fetchCurrentUser, logoutUser } =
-    authState;
+  const { user, authLoading, verified, fetchCurrentUser, logoutUser } = authState;
 
-  // 3) Chat/notification state and actions from custom hook.
   const chatState = useChat(backendUrl, user);
   const {
     unreadBySender,
@@ -36,11 +32,9 @@ const AppContextProvider = (props) => {
     markChatAsRead,
   } = chatState;
 
-  // 4) Local reactive UI state.
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [messages, setMessages] = useState({});
 
-  // 5) Mutable refs used by socket callbacks without forcing re-renders.
   const socket = useRef(null);
   const activeRoomIdRef = useRef(null);
 
@@ -56,23 +50,19 @@ const AppContextProvider = (props) => {
     );
   }, []);
 
-  // Verify user session once on app boot.
   useEffect(() => {
     fetchCurrentUser(false);
   }, [fetchCurrentUser]);
 
-  // Create and maintain socket connection after user is available.
   useEffect(() => {
     if (!user) return;
 
-    // If socket exists but is disconnected, reset it before reconnecting.
     if (socket.current && !socket.current.connected) {
       socket.current.removeAllListeners();
       socket.current.disconnect();
       socket.current = null;
     }
 
-    // Avoid duplicate connections.
     if (socket.current?.connected) return;
 
     socket.current = io(backendUrl, {
@@ -103,10 +93,24 @@ const AppContextProvider = (props) => {
       setOnlineUsers(users.map((id) => id.toString()));
     });
 
+    // ✅ Single centralized receiveMessage handler
     socket.current.on("receiveMessage", (message) => {
-      if (message.receiver !== user._id) return;
+      // Only handle messages meant for this user
+      if (message.receiver?.toString() !== user._id?.toString()) return;
 
-      // If user is not viewing this room, count as unread and notify.
+  console.log("📩 receiveMessage in context | messageId:", message.messageId, "| roomId:", message.roomId);
+
+
+      // Add to messages state with deduplication
+      setMessages((prev) => {
+        const roomMessages = prev[message.roomId] || [];
+        if (roomMessages.some((m) => m.messageId === message.messageId)) {
+          return prev;
+        }
+        return { ...prev, [message.roomId]: [...roomMessages, message] };
+      });
+
+      // If not currently viewing this room, increment unread count and notify
       if (activeRoomIdRef.current !== message.roomId) {
         setUnreadBySender((prev) => ({
           ...prev,
@@ -149,27 +153,20 @@ const AppContextProvider = (props) => {
     setUnreadBookingCount,
   ]);
 
-  // Keep unread chat counts fresh while user is logged in.
   useEffect(() => {
     if (!user) return;
-
     fetchUnreadCounts();
     const chatInterval = setInterval(fetchUnreadCounts, 10000);
-
     return () => clearInterval(chatInterval);
   }, [user, fetchUnreadCounts]);
 
-  // Poll booking notifications only for service providers.
   useEffect(() => {
     if (!isServiceProvider(user)) return;
-
     fetchBookingNotifications();
     const bookingInterval = setInterval(fetchBookingNotifications, 30000);
-
     return () => clearInterval(bookingInterval);
   }, [user, isServiceProvider, fetchBookingNotifications]);
 
-  // Shared context object consumed by app components.
   const value = {
     backendUrl,
     currSymbol,
