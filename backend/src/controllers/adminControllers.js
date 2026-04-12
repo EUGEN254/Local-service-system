@@ -490,7 +490,7 @@ export const updateUserStatus = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, email, phone, role } = req.body;
+    const { name, email, phone, role, status } = req.body;
 
     if (!name || !email || !role) {
       return res.status(400).json({
@@ -507,6 +507,21 @@ export const updateUser = async (req, res) => {
       });
     }
 
+    // ── Primary admin protection ──────────────────────────────────────────────
+    const PRIMARY_ADMIN_EMAIL = process.env.PRIMARY_ADMIN_EMAIL;
+
+    if (
+      PRIMARY_ADMIN_EMAIL &&
+      user.email === PRIMARY_ADMIN_EMAIL &&
+      role !== "admin"
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "The primary admin's role cannot be changed.",
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     // Check if email already exists (excluding current user)
     const existingUser = await User.findOne({ email, _id: { $ne: id } });
     if (existingUser) {
@@ -522,6 +537,7 @@ export const updateUser = async (req, res) => {
       email,
       phone: phone || user.phone,
       role,
+      status: status || user.status,
     };
 
     // Handle image upload if provided
@@ -532,9 +548,6 @@ export const updateUser = async (req, res) => {
       updateData.image = result.secure_url;
     }
 
-    // Use findByIdAndUpdate to avoid running full document validators that
-    // may require fields not being updated (e.g. termsAccepted). If you
-    // prefer validation on updated fields, set `runValidators: true`.
     const updatedUser = await User.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: false,
@@ -583,6 +596,17 @@ export const deleteUser = async (req, res) => {
         message: "You cannot delete your own account",
       });
     }
+
+    // ── Primary admin protection ──────────────────────────────────────────────
+    const PRIMARY_ADMIN_EMAIL = process.env.PRIMARY_ADMIN_EMAIL;
+
+    if (PRIMARY_ADMIN_EMAIL && user.email === PRIMARY_ADMIN_EMAIL) {
+      return res.status(403).json({
+        success: false,
+        message: "The primary admin account cannot be deleted.",
+      });
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     await User.findByIdAndDelete(id);
 

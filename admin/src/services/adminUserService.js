@@ -67,6 +67,7 @@ export const createUser = async (formData) => {
         headers: { "Content-Type": "multipart/form-data" },
       },
     );
+  
     return data;
   } catch (error) {
     throw error.response?.data || error;

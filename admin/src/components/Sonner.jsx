@@ -1,10 +1,11 @@
 import { Toaster as Sonner } from "sonner";
+import { toast } from "sonner";
 
 const Toaster = (props) => {
   return (
     <Sonner
       position="top-right"
-      duration={1000}
+      duration={3000}
       className="toaster group"
       toastOptions={{
         classNames: {
@@ -26,4 +27,4 @@ const Toaster = (props) => {
   );
 };
 
-export { Toaster };
+export { Toaster, toast };
