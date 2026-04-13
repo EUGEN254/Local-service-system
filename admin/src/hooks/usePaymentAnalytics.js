@@ -1,10 +1,10 @@
-// hooks/usePaymentAnalytics.js
 import { useState, useCallback, useContext } from "react";
 import axios from "axios";
 import { AdminContext } from "../context/AdminContext";
 
 export const usePaymentAnalytics = () => {
   const { API_BASE } = useContext(AdminContext);
+
   const [paymentData, setPaymentData] = useState({
     summary: {
       totalRevenue: 0,
@@ -18,6 +18,7 @@ export const usePaymentAnalytics = () => {
     statusDistribution: [],
     dailyTrend: [],
     allTransactions: [],
+    customerTransactions: [],
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -33,52 +34,25 @@ export const usePaymentAnalytics = () => {
         if (endDate) params.append("endDate", endDate);
         if (groupBy) params.append("groupBy", groupBy);
 
-        const url = `${API_BASE}/api/payment-analytics?${params}`;
-        
-        console.log("🔍 Fetching payment analytics:", {
-          url,
-          startDate,
-          endDate,
-          groupBy,
-          API_BASE
-        });
-
-        const response = await axios.get(url, {
-          withCredentials: true
-        });
-
-        console.log("✅ Payment analytics response:", response.data);
+        const response = await axios.get(
+          `${API_BASE}/api/payment-analytics?${params}`,
+          { withCredentials: true }
+        );
 
         if (response.data.success && response.data.data) {
-          console.log("📊 Setting payment data:", {
-            summary: response.data.data.summary,
-            monthlySummaryCount: response.data.data.monthlySummary?.length || 0,
-            topCustomersCount: response.data.data.topCustomers?.length || 0,
-            dailyTrendCount: response.data.data.dailyTrend?.length || 0,
-          });
           setPaymentData(response.data.data);
           return response.data.data;
-        } else {
-          console.warn("⚠️ No payment data received from server");
-          return paymentData;
         }
+        return paymentData;
       } catch (err) {
-        console.error("❌ Error fetching payment analytics:", {
-          message: err.message,
-          response: err.response?.data,
-          status: err.response?.status,
-          url: err.config?.url
-        });
-        setError(
-          err.response?.data?.error || "Failed to fetch payment analytics",
-        );
-        // Keep existing data on error
+        console.error("Error fetching payment analytics:", err.message);
+        setError(err.response?.data?.error || "Failed to fetch payment analytics");
         return paymentData;
       } finally {
         setLoading(false);
       }
     },
-    [API_BASE],
+    [API_BASE]
   );
 
   return { paymentData, loading, error, fetchPaymentAnalytics };
